@@ -1,0 +1,78 @@
+<div class="row main-body">
+    <!-- <div layout="col" layout-align="start center" class="cover" flex-gt-md="70" hide-xs hide-sm>
+        <div flex="60" class="cover-content">
+            <h1 class="md-display-2 cover-title">Self Service</h1>
+            <p class="md-headline">Self Service is designed by the Mifos Initiative - a global community that aims to
+                speed-up the elimination of poverty by enabling organizations to more effectively and efficiently
+                deliver responsible financial services to the world’s poor and unbanked.</p>
+        </div>
+    </div> -->
+    <div class="col-md-8">
+              <div class="cover">
+                  <div class="cover-body">
+                      <div class="cover-title">
+                          Self Service
+                      </div>
+                      <div class="cover-content">
+                          Self Service is designed by the Mifos Initiative -
+                          a global community that aims to speed-up the elimination of poverty by enabling organizations
+                          to more effectively and efficiently deliver responsible financial services to the world’s poor and unbanked.
+                      </div>
+                    </div>
+              </div>
+
+    </div>
+    <div class="col-md-4">
+
+
+        <form  #loginForm="ngForm" (ngSubmit)='login(loginForm)' >
+              <mat-form-field class="language-container">
+                  <mat-select placeholder="Translate" [(ngModel)]="selected" name="language">
+                    <mat-option value="english">English (Default)</mat-option>
+                    <mat-option value="hindi">Hindi</mat-option>
+                    <mat-option value="marathi">Marathi</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              <img src="https://www.google-melange.com/archive/gci/2014/orgs/mifos/logo-200.png" alt="No Image found">
+              <mat-form-field>
+                  <input [(ngModel)]="username" name="username" required matInput placeholder="Username">
+                </mat-form-field>
+                <mat-form-field>
+                    <input [(ngModel)]="password" name="password" type="password" required matInput placeholder="Password">
+                  </mat-form-field>
+                  <button type="submit" [disabled]="!loginForm.valid"  mat-raised-button id="login-color">Login</button>
+        </form>
+        <button mat-raised-button (click)="onForgotPassword()">Forgot Password ?</button>
+        <button mat-raised-button color="accent" (click)="onSignUp()">New User ? Sign Up</button>
+
+    </div>
+    <!-- <div class="login-container" flex flex-gt-md="30">
+        <div class="md-padding translate-container" layout="row" layout-align="end">
+            <translate-helper></translate-helper>
+        </div>
+        <div flex class="logo" layout-margin>
+            <img width="200px" src="assets/images/MifosX_logo.png">
+            <h1 class="md-title">{{ 'login.heading.logintoyouraccount' | translate }}</h1>
+        </div>
+        <div flex="80" class="login-form" layout-padding>
+            <form name="loginForm" ng-submit="doLogin()">
+                <md-input-container class="md-block md-icon-float">
+                    <label>Username</label>
+                    <input ng-model="loginData.username">
+                </md-input-container>
+                <md-input-container class="md-block md-icon-float">
+                    <label>Password</label>
+                    <input type="password" ng-model="loginData.password">
+                </md-input-container>
+
+                <section layout="column" layout-align="start">
+                    <md-button type="submit" class="md-primary md-raised">{{ 'login.btn.login' | translate }}
+                    </md-button>
+                    <md-button class="md-default" ui-sref="forgot">{{ 'login.btn.forgot' | translate }}</md-button>
+                    <md-button class="md-primary" ui-sref="register">{{ 'login.btn.register' | translate }}</md-button>
+
+                </section>
+            </form>
+        </div>
+    </div> -->
+</div>

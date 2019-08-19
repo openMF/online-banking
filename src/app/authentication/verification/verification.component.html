@@ -1,0 +1,9 @@
+<form  #loginForm="ngForm" >
+  <img src="https://www.google-melange.com/archive/gci/2014/orgs/mifos/logo-200.png" alt="No Image found">
+    <mat-form-field>
+        <input [(ngModel)]="otp" name="otp"  required matInput placeholder="OTP">
+      </mat-form-field>
+      <button type="submit" [disabled]="!loginForm.valid"  mat-raised-button color="primary" (click)="onSubmit()">Submit</button>
+      <button mat-stroked-button color="accent" (click)="onNoClick()">Registered? Login</button>
+</form>
+

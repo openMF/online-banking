@@ -1,0 +1,108 @@
+<div class="row">
+  <div class="col-md-3">
+    <mat-card class="upper-card shadow">
+      <mat-card-header >
+        <div mat-card-avatar class="example-header-image"></div>
+        <mat-card-title class="upper-card-title font-style">TOTAL ACCOUNTS   </mat-card-title>              
+      </mat-card-header>
+      <mat-divider></mat-divider>
+      <mat-card-content>
+        <p class="upper-card-content font-style">
+        {{totalAccounts}}
+        </p>
+      </mat-card-content>
+   
+    </mat-card>
+  </div>
+
+  <div class="col-md-3">
+    <mat-card class="upper-card shadow">
+      <mat-card-header >
+        <div mat-card-avatar class="example-header-image"></div>
+        <mat-card-title class="upper-card-title font-style">LOAN ACCOUNTS</mat-card-title>              
+      </mat-card-header>
+      <mat-divider></mat-divider>
+      <mat-card-content>
+        <p class="upper-card-content font-style">
+        {{totalLoanAccounts}}
+        </p>
+      </mat-card-content>
+   
+    </mat-card>
+  </div>
+
+  <div class="col-md-3">
+    <mat-card class="upper-card shadow">
+      <mat-card-header >
+        <div mat-card-avatar class="example-header-image"></div>
+        <mat-card-title class="upper-card-title font-style">SAVINGS ACCOUNTS</mat-card-title>              
+      </mat-card-header>
+      <mat-divider></mat-divider>
+      <mat-card-content>
+        <p class="upper-card-content font-style">
+        {{totalSavingsAccounts}}
+        </p>
+      </mat-card-content>
+   
+    </mat-card>
+  </div>
+
+  <div class="col-md-3">
+    <mat-card class="upper-card shadow">
+      <mat-card-header >
+        <div mat-card-avatar class="example-header-image"></div>
+        <mat-card-title class="upper-card-title font-style">SHARES ACCOUNTS</mat-card-title>              
+      </mat-card-header>
+      <mat-divider></mat-divider>
+      <mat-card-content>
+        <p class="upper-card-content font-style">
+        {{totalSharesAccounts}}
+        </p>
+      </mat-card-content>
+   
+    </mat-card>
+  </div>
+</div>
+
+
+<div class="row">
+  <div class="col-lg-6">
+  <mat-card class="mid-card shadow accounts font-style">
+      <div>
+          <p class="mid-card-left ">Total Accounts Bal.</p>
+          <p class="mid-card-right ">{{savingsBalance}}</p>
+        </div>  
+    </mat-card>
+</div>
+<div class="col-lg-6">
+  <mat-card class="mid-card shadow loans font-style">
+      <div>
+          <p class="mid-card-left ">Total Loan Amt.</p>
+          <p class="mid-card-right">{{loansBalance}}</p>
+        </div>  
+    </mat-card>
+</div>
+</div>
+<div class="container-fluid">
+
+<div class="row" id="charts">
+  <div class="col-md-4">
+<mat-card class="shadow">
+    <app-savings-account-pie-chart></app-savings-account-pie-chart>
+</mat-card>
+
+  </div>
+  <div class="col-md-4">
+      <mat-card class="shadow">
+          <app-loans-account-pie-chart></app-loans-account-pie-chart>
+
+</mat-card>
+  </div>
+  <div class="col-md-4">
+      <mat-card class="shadow">
+          <app-shares-account-pie-chart></app-shares-account-pie-chart>
+</mat-card>
+  </div>
+</div>
+  
+</div>

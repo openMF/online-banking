@@ -1,0 +1,103 @@
+.upper-card{
+    width : 100%;
+    border-radius: 0%;
+    text-align: center;
+    display: inline-block;   
+    margin : 10px;
+  }
+  
+.upper-card-title{
+  font-size: 12px;
+  font-weight: bold;
+ 
+}
+.upper-card-content{
+  
+  font-size: 45px;
+  font-weight: bolder;
+}
+.mid-card{
+    width: 100%;
+    display: inline-block;
+    border-radius: 0%;
+   
+    font-weight: bold;
+    font-size: 30px;
+    margin : 10px;
+    color:black
+}
+.mid-card-left{
+  display: inline;
+}
+.accounts{
+  background-color: greenyellow;
+}
+.loans {
+  background-color: red;
+
+}
+.mid-card-right{
+  float : right;
+  display: inline;
+}
+.chart-card{
+  width: 100%;
+    display: inline-block;
+    margin : 10px;
+    font-weight: bold;
+    font-size: 20px;
+    border-radius: 0%
+}
+.shadow {
+  -webkit-box-shadow: 3px 3px 5px 6px #ccc;  /* Safari 3-4, iOS 4.0.2 - 4.2, Android 2.3+ */
+  -moz-box-shadow:    3px 3px 5px 6px #ccc;  /* Firefox 3.5 - 3.6 */
+  box-shadow:         3px 3px 5px 6px #ccc;  /* Opera 10.5, IE 9, Firefox 4+, Chrome 6+, iOS 5 */
+}
+@media only screen and (max-width: 768px) {
+  /* For mobile phones: */
+  .upper-card{
+    width : 90%;
+    margin : auto;
+    border-radius: 0%;
+    display: block;
+    margin-top: 20px; 
+  }
+  .mid-card{
+    width : 90%;
+    
+    margin : auto;
+    margin-top: 20px; 
+    border-radius: 0%;
+    display: block;
+    font-size: 18px;
+  }
+  .chart-card{
+    width: 100%;
+    margin : auto;
+    margin-top: 20px; 
+    margin-left: 5px;
+    margin-right: 5px;
+    font-weight: bold;
+    font-size: 15px;
+    border-radius: 0%;
+  }
+}
+.bottom-card{
+  width: 100%;
+    margin : 10px;
+    font-weight: bold;
+    font-size: 15px;
+    border-radius: 0%
+}
+.example-form{
+  width :100%;
+}
+.example-full-width{
+  width :100%;
+}
+.font-style {
+  font-family: 'Lexend Deca', sans-serif;
+}
+#charts {
+margin-top:5px;
+}

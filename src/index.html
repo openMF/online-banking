@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Online Banking App</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css?family=Lexend+Deca&display=swap" rel="stylesheet">
+  <link href="nv.d3.min.css" rel="stylesheet">
+
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+    google.charts.load('current', {'packages':['corechart']});
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+
+      var data = google.visualization.arrayToDataTable([
+        ['Task', 'Hours per Day'],
+        ['Work',     11],
+        ['Eat',      2],
+        ['Commute',  2],
+        ['Watch TV', 2],
+        ['Sleep',    7]
+      ]);
+
+      var options = {
+        title: 'My Daily Activities'
+      };
+
+      var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+      var chart2 = new google.visualization.PieChart(document.getElementById('piechart2'));
+      var chart3 = new google.visualization.PieChart(document.getElementById('piechart3'));
+
+
+      chart.draw(data, options);
+      chart2.draw(data, options);
+      chart3.draw(data, options);
+    }
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+  <script src="nv.d3.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/canvasjs/1.7.0/canvasjs.js"></script>
+</body>
+</html>
