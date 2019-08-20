@@ -1,28 +1,77 @@
-
-
-  
-
-<form  #loginForm="ngForm" (ngSubmit)='onSignUp(loginForm)' >
+<form #loginForm="ngForm" (ngSubmit)='onSignUp(loginForm)'>
 
   <img src="https://www.google-melange.com/archive/gci/2014/orgs/mifos/logo-200.png" alt="No Image found">
-  <mat-form-field>
-      <input [(ngModel)]="username" name="username" required matInput placeholder="Username">
-    </mat-form-field>
-    <mat-form-field>
-        <input [(ngModel)]="password" name="password" type="password" required matInput placeholder="Password">
+  <mat-form-field class="font-style">
+    <input [formControl]="Username" [(ngModel)]="user.username" name="username" matInput placeholder="Username">
+    <mat-error *ngIf="Username.hasError('required')">
+      Username is <strong>required</strong>
+    </mat-error>
+  </mat-form-field>
+
+  <div class="row">
+    <div class="col-md-6">
+      <mat-form-field class="font-style">
+        <input [formControl]="Firstname" [(ngModel)]="user.firstname" name="firstname" matInput
+          placeholder="First Name">
+        <mat-error *ngIf="Firstname.hasError('required')">
+          First name is <strong>required</strong>
+        </mat-error>
       </mat-form-field>
-      <mat-form-field>
-          <input [(ngModel)]="firstname" name="firstname"  required matInput placeholder="First Name">
+    </div>
+    <div class="col-md-6">
+      <mat-form-field class="font-style">
+        <input [formControl]="Lastname" [(ngModel)]="user.lastname" name="lastname" matInput placeholder="Last Name">
+        <mat-error *ngIf="Lastname.hasError('required')">
+          Last name is <strong>required</strong>
+        </mat-error>
       </mat-form-field>
-      <mat-form-field>
-          <input [(ngModel)]="lastname" name="lastname" required matInput placeholder="Last Name">
-      </mat-form-field>
-      <mat-form-field>
-          <input [(ngModel)]="email" name="email" required matInput placeholder="E-mail">
-      </mat-form-field>
-      <button type="submit" [disabled]="!loginForm.valid"  mat-raised-button color="primary">Sign up</button>
-      <button mat-stroked-button color="accent" (click)="onNoClick()">Registered? Login</button>
+    </div>
+  </div>
 
 
+  <mat-form-field class="font-style">
+    <input [formControl]="Email" [(ngModel)]="user.email" name="email" type="email" matInput placeholder="E-mail">
+    <mat-error *ngIf="Email.hasError('required')">
+      Email is <strong>required</strong>
+    </mat-error>
+    <mat-error *ngIf="Email.hasError('email')">
+      Email is <strong>not valid!</strong>
+    </mat-error>
+  </mat-form-field>
+  <mat-form-field class="font-style">
+    <input [formControl]="Mobile" [(ngModel)]="user.mobile" name="mobile" type="number" matInput
+      placeholder="Mobile Number">
+    <mat-error *ngIf="Mobile.hasError('required')">
+      Mobile number is <strong>required</strong>
+    </mat-error>
+    <mat-error *ngIf="Mobile.hasError('min') || Mobile.hasError('max')">
+      Mobile number should be of <strong>10 digits including country code</strong>
+    </mat-error>
+  </mat-form-field>
+  <mat-form-field class="font-style">
+    <input [formControl]="Password" [(ngModel)]="user.password" name="password" type="password" matInput
+      placeholder="Password">
+    <mat-error *ngIf="Password.hasError('required')">
+      Password is <strong>required</strong>
+    </mat-error>
+  </mat-form-field>
+  <mat-form-field class="font-style">
+    <input [formControl]="ConfirmPassword" [(ngModel)]="user.confirmPassword" name="confirmPassword" type="password"
+      matInput placeholder="Password (Confirm)">
+    <mat-error *ngIf="ConfirmPassword.hasError('required')">
+      Field <strong>required</strong>
+    </mat-error>
+  </mat-form-field>
+  <p *ngIf="showText" class="password-no-match">Passwords do not <b>match</b> !</p>
+
+
+  <div class="checkbox">
+    <mat-checkbox [(ngModel)]="user.agreement" name='agreement'>I read and accept <span style="color:blue;">terms and
+        conditions</span></mat-checkbox>
+
+  </div>
+  <button class="font-style" type="submit" [disabled]="disabled" mat-raised-button color="primary">CREATE MY
+    ACCOUNT</button>
 </form>
-
+<div class="bottom-text"> Already have an account? <a class="font-style" color="primary" (click)="onNoClick()"><span
+      class="login-otherwise">Login</span></a></div>

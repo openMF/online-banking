@@ -8,10 +8,13 @@ import { MatDialogRef } from '@angular/material';
 export class VerificationComponent implements OnInit {
   otp: string;
   constructor(
-    public dialogRef: MatDialogRef<VerificationComponent>) {}
+    public dialogRef: MatDialogRef<VerificationComponent>) { }
+
+  // close the dialog
   onNoClick(): void {
     this.dialogRef.close();
   }
+
   ngOnInit() {
   }
   onSubmit() {

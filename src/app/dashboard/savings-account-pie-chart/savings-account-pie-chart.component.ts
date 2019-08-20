@@ -1,6 +1,7 @@
-import { Component, OnInit, AfterContentChecked, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterContentChecked, AfterViewInit, HostListener } from '@angular/core';
 import * as CanvasJS from './canvasjs.min';
-import { AccountsService } from 'src/app/services/accounts.service';
+import { ClientService } from 'src/app/services/client.service';
+import { AppService } from 'src/app/app.service';
 @Component({
   selector: 'app-savings-account-pie-chart',
   templateUrl: './savings-account-pie-chart.component.html',
@@ -8,81 +9,75 @@ import { AccountsService } from 'src/app/services/accounts.service';
 })
 export class SavingsAccountPieChartComponent implements OnInit {
   submittedAndPendingApproval = 0;
-  approved = 0;
-  rejected = 0;
-  withdrawnByApplicant = 0;
   active = 0;
-  closed = 0;
-  prematureClosed = 0;
-  transferInProgress = 0;
-  transferOnHold = 0;
-  matured = 0;
-
   title = 'Savings Account';
   type = 'PieChart';
   data = [];
   columnNames = ['Status', 'Percentage'];
   options = {
-    is3D: false
+    titleTextStyle: {
+      fontSize: 30,
+    },
+    fontName: 'Lexend Deca',
+    fontSize: 12,
   };
-  width = 402;
-  height = 400 ;
-  constructor(private accountsService: AccountsService) { }
+  width = 310;
+  height = 300;
+
+  innerWidth: number;
+  // Initialise all instance variables
+  constructor(private clientService: ClientService,
+              private appService: AppService) { }
 
   ngOnInit() {
-    this.getLoanSummary();
+    this.onResize();
+    this.getSavingsSummary();
+    this.appService.emitSavingsChartObservable(false);
   }
-getLoanSummary() {
-  this.accountsService.getClientAccounts().subscribe((data: any) => {
-    for (const item of data.savingsAccounts) {
-      if (item.status.submittedAndPendingApproval) {
-        this.submittedAndPendingApproval = this.submittedAndPendingApproval + 1;
-      }
-      if (item.status.approved) {
-        this.approved = this.approved + 1;
-      }
-      if (!item.status.rejected) {
-        this.rejected = this.rejected + 1;
-      }
-      if (!item.status.withdrawnByApplicant) {
-        this.withdrawnByApplicant = this.withdrawnByApplicant + 1;
-      }
-      if (!item.status.active) {
-        this.active = this.active + 1;
-      }
-      if (!item.status.closed) {
-        this.closed = this.closed + 1;
-      }
-      if (!item.status.prematureClosed) {
-        this.prematureClosed = this.prematureClosed + 1;
-      }
-      if (!item.status.transferInProgress) {
-        this.transferInProgress = this.transferInProgress + 1;
-      }
-      if (!item.status.transferOnHold) {
-        this.transferOnHold = this.transferOnHold + 1;
-      }
-      if (!item.status.matured) {
-        this.matured = this.matured + 1;
-      }
-      console.log(this.submittedAndPendingApproval);
+  // Repeateadly checks width for responsiveness
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.innerWidth = window.innerWidth;
+    if (this.innerWidth > 600) {
+      this.width = 350;
+      this.height = 350;
+      this.options.fontSize = 10;
+      this.options.titleTextStyle.fontSize = 20;
+    } else {
+      this.width = 400;
+      this.height = 300;
+      this.options.fontSize = 7;
+      this.options.titleTextStyle.fontSize = 15;
     }
-  }).add(
-    () => {
-      this.data = [
-        ['Submitted', this.submittedAndPendingApproval],
-        ['Approved', this.approved],
-        ['Rejected', this.rejected],
-        ['Withdrawn ', this.withdrawnByApplicant],
-        ['Active', this.active],
-        ['Closed', this.closed],
-        ['Premature Closed', this.prematureClosed],
-        ['Transfer In Progress', this.transferInProgress],
-        ['Transfer On Hold', this.transferOnHold],
-        ['Matured', this.matured]
-     ];
-    }
-  );
+  }
+
+// Fetch the Savings Account details from the accounts service
+// Once data has arrived, intialise the graph
+// Notify the app service that the chart has been loaded successfully via an Observable
+  getSavingsSummary() {
+    this.clientService.getClientAccounts(localStorage.getItem('id')).subscribe((data: any) => {
+      for (const item of data.savingsAccounts) {
+        if (item.status.submittedAndPendingApproval) {
+          this.submittedAndPendingApproval = this.submittedAndPendingApproval + 1;
+        }
+        if (item.status.active) {
+          this.active = this.active + 1;
+        }
+      }
+    },
+    err => {
+      console.log('From Savings charts');
+    }).add(
+      () => {
+        this.data = [
+          ['Submitted and Pending', this.submittedAndPendingApproval],
+          ['Active', this.active],
+        ];
+      }
+    )
+      .add(() => {
+        this.appService.emitSavingsChartObservable(true);
+      });
   }
 
 }

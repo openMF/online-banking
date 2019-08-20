@@ -1,47 +1,79 @@
-.main-body{
-    background-color: white
+.main-body {
+  background-color: white
 }
-.cover {
-    background-image: url('../../../assets/images/cover.png');
-    background-size: cover;
-    color: white;
-    height: 900px;
-  }
-  .cover-body{
-      padding: 70px;
-  }
-  .cover-content{
-    color : white;
-    font-style: italic;
-    font-size: 30px;
-  }
-  .cover-title {
-    border-bottom: 1px solid white;
-    padding-bottom: 10px;
-    font-size: 35px;
-  }
 
-  img{
-      width: 200px;
-      height: 200px;
-      display:block;
-      margin:auto;
+.cover {
+  background-image: url('../../../assets/images/cover.png');
+  background-size: cover;
+  color: white;
+  height: 900px;
+}
+
+.cover-body {
+  padding: 150px;
+}
+
+.cover-content {
+  margin-top: 25px;
+  color: white;
+  font-size: 23px;
+}
+
+.cover-title {
+  border-bottom: 1px solid white;
+  padding-bottom: 10px;
+  font-size: 30px;
+}
+
+img {
+  width: 180px;
+  height: 180px;
+  display: block;
+  margin: auto;
+}
+
+.mat-form-field {
+  width: 100%;
+  // padding: 10px;
+}
+
+button {
+  display: block;
+  margin: auto;
+  width: 80%;
+  margin-top: 5px;
+}
+
+@media only screen and (max-width: 600px) {
+  .cover {
+    display: none;
   }
-  .mat-form-field{
-      width: 100%;
-      padding: 10px;
-  }
-  button{
-    display:block;
-    margin:auto;
-    width: 70%;
-    margin-top: 5px;
-  }
-  @media only screen and (max-width: 600px) {
-    .cover {
-        display: none;
-      }
-  }
-  #login-color{
- background-color: lightgreen;
-  }
+}
+
+#login-color {
+  background-color: #1E88E5;
+  color: white;
+}
+.input-width {
+  display: block;
+  margin: auto;
+  width: 95%;
+}
+.forgot-password-button {
+  color: #C4C4C4;
+}
+.new-user-button {
+  color: #1E88E5;
+}
+.input-margin {
+  margin: 17px;
+}
+#message {
+  color: darkgray;
+  text-align: center;
+  font-size: 20px;
+}
+.input-width-dropdown {
+  width: 60%;
+  float: right;
+}

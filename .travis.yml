@@ -1,23 +1,23 @@
 language: node_js
 node_js:
-- '12.4.0'
+  - "12.4.0"
 dist: trusty
 sudo: required
 branches:
   only:
-  - master
+    - master
 before_script:
-- npm install -g @angular/cli@7.3.9
+  - npm install -g @angular/cli@7.3.9
 script:
-- ng lint
-- ng build --prod --base-href https://openmf.github.io/online-banking-app/
+  - ng lint
+  - ng build --prod --base-href https://openmf.github.io/online-banking-app/
 deploy:
   provider: pages
   skip_cleanup: true
   local_dir: ./dist/online-banking-app
-  github_token: $GITHUB_TOKEN
+  github_token: $GIT_TOKEN
   on:
     branch: master
 env:
   global:
-  - secure: d8TFOMV3jLyVeGFxhqxO/T/jJdGrmpDIrh/NH2whOfF1/nBiRN7YZYYdoIcEJjPP2VPDeAw0GruGmHICPUKrzQr3HT6XsXjDy1qKo3exd8+ZHT5X1TYXctUxkES+l50epgQIrQCtX6PozLdlvsZVt0p7L4wyb81tm+3101+L5m8rv8tbhGnEBJPw0Kf4Z414M8mntjGYIMOB8GDtPQsIwO3xJTBN8GAHCS4tCmRm6uY3cJ1eIzOxUqjBxUY9jiDfOzJdQ4xhPi3gWvnf5noKSWP39YPzRmNnpkov5Nb5cvaG3OQgXG12u2oEVycu3ijLUlUKTab5dIVfnFmmDriXQNSmYqW9doCEIItCvVCaxWlOU5DBFqyEEv1CjwA4Qfl1kGhai8lVjmIuzhYTqgOaXbLtBzkwA8KaZpAQ/thnEI8osc9fkrkYatYLrCqtclM4sfZb23a+iwLC2k4s4E8Z+RF48kk59Sq5CuuU2/WYzvMHs0JRnjeD+cLsPyCntD2l1cFU3X/g1bT+jsHirkKoALRA9geAmvfRBEqCuDSMGwWUu2Qlah6xEkko03xhnXpxBXv/sY6MJgJlBy4FHRz55Ursx0vbLYyKJkjo8pXOFjWh1p4bGWP7N8HsjmVGgyrGcHz4Y25H+HsCyPWaU/nlndmy8EvYrWaBrG7m/ssTqxY=
+    - secure: qou4asfmdzzcv010+z7Syazm2A6rsQOoJDwHC5joq5OL14m8XrV2/nY1jntexAa0wUfeFhQDAOicvP1sh/fZNi65Pe3Wtr7CtXP4YF650Ri1xukj2IAK5MbrwQQU9YwTb+LB7sZe4u4b/wvQ7e0mxQhuQ8ua82Ouxmgpt0paHMZC69NomefXbzugA9v3Ddp6m5KYxcpgByuNT4EkDeKQtoZJwuBWni3Iy8Ik5uCJUpAHoj9F3OFQCxh+jMHzekv65BqA35UA9AeuQR/Kl+zNaKgVUsU2I5PVOpWsX+Vp9rZb1JZPpkeUGSdsmqxbmCDLB9LOs7sz+j9yz+vir9bA39i2edZheSFyMH2HdlHne5dD1P04ODrxro0/rmaC2y2SFKt1KrN0JqK54/YVIEzNKwpJrVp0yEmP4QwC5T6KKy7pvwBe1PerYutbeKLGc9bVDabVFO9qbUUPAJHjgh02+NGAQDuRVNL0TQo10F/Y4JrtZ0kIR00rrYjmlfrOMJedJ/9fs/4LmgtDheCX0yS3B6Lgv6o6XWkokurd+UYfHV1wlbtwTwbMbp8/Sjk8czC3ax4r/2a+NmOXuYG+Bmllp6r9XvCm1JtFifnw46cY/RdkDb62OgGgmAlRc1DoW6nSYlGPkQfNnjKI0LzqCmi7XiHxv/XkZiV8/El7dIcqJ4Y=

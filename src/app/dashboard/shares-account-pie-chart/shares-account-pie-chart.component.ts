@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { AccountsService } from 'src/app/services/accounts.service';
+import { Component, OnInit, HostListener } from '@angular/core';
+import { ClientService } from 'src/app/services/client.service';
+import { AppService } from 'src/app/app.service';
 
 @Component({
   selector: 'app-shares-account-pie-chart',
@@ -12,49 +13,68 @@ export class SharesAccountPieChartComponent implements OnInit {
   data = [];
   columnNames = ['Status', 'Percentage'];
   options = {
-    is3D: false
+    titleTextStyle: {
+      fontSize: 30,
+    },
+    fontSize: 12,
+    fontName: 'Lexend Deca',
+
   };
-  width = 402;
-  height = 400 ;
+  width = 310;
+  height = 300;
   submittedAndPendingApproval: any;
-  approved = 0;
-  rejected = 0;
   active = 0;
-  closed = 0;
-  constructor(private accountsService: AccountsService) { }
+  innerWidth: number;
+  constructor(private clientService: ClientService,
+              private appService: AppService) { }
   ngOnInit() {
     this.getSharesSummary();
+    this.onResize();
+    this.appService.emitSharesChartObservable(false);
   }
+  // Repeateadly check the inner width for responsiveness
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.innerWidth = window.innerWidth;
+    if (this.innerWidth > 600) {
+      this.width = 350;
+      this.height = 350;
+      this.options.fontSize = 10;
+      this.options.titleTextStyle.fontSize = 20;
+    } else {
+      this.width = 400;
+      this.height = 300;
+      this.options.fontSize = 9;
+      this.options.titleTextStyle.fontSize = 15;
+    }
+  }
+  // Fetch the Shares accounts details from the accounts service
+  // Once data has arrived, intialise the graph
+  // Notify the app service that the chart has been loaded successfully via an Observable
   getSharesSummary() {
-    this.accountsService.getClientAccounts().subscribe((data: any) => {
+    this.clientService.getClientAccounts(localStorage.getItem('id')).subscribe((data: any) => {
       for (const item of data.shareAccounts) {
         if (item.status.submittedAndPendingApproval) {
           this.submittedAndPendingApproval = this.submittedAndPendingApproval + 1;
         }
-        if (item.status.approved) {
-          this.approved = this.approved + 1;
-        }
-        if (!item.status.rejected) {
-          this.rejected = this.rejected + 1;
-        }
-        if (!item.status.active) {
+        if (item.status.active) {
           this.active = this.active + 1;
         }
-        if (!item.status.closed) {
-          this.closed = this.closed + 1;
-        }
       }
+    },
+    err => {
+      console.log('From Shares charts');
     }).add(
       () => {
         this.data = [
           ['Submitted', this.submittedAndPendingApproval],
-          ['Approved', this.approved],
-          ['Rejected', this.rejected],
           ['Active', this.active],
-          ['Closed', this.closed],
-       ];
+        ];
       }
-    );
-    }
+    )
+      .add(() => {
+        this.appService.emitSharesChartObservable(true);
+      });
+  }
 
 }
