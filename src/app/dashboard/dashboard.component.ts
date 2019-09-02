@@ -1,18 +1,17 @@
-import {AfterContentInit, Component, OnInit, AfterContentChecked} from '@angular/core';
-import { LoanService } from '../services/loan.service';
-import { SavingsService } from '../services/savings.service';
-import { SharesService } from '../services/shares.service';
-import { AccountsService } from '../services/accounts.service';
+import { AfterContentInit, Component, OnInit, AfterContentChecked, DoCheck } from '@angular/core';
+import { ClientService } from '../services/client.service';
 import { Router } from '@angular/router';
+import { AppService } from '../app.service';
+import { MatSnackBar } from '@angular/material';
+import { AuthenticationService } from '../services/authentication.service';
+
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit, AfterContentInit, AfterContentChecked {
-  items = [1, 2, 3, 4];
-  items2 = [1, 2, 3];
+export class DashboardComponent implements OnInit, AfterContentChecked, DoCheck {
   show = true;
   totalLoanAccounts = 0;
   totalSavingsAccounts = 0;
@@ -25,45 +24,53 @@ export class DashboardComponent implements OnInit, AfterContentInit, AfterConten
   loanAccounts: any[] = [];
   savingsAccounts: any[] = [];
   shareAccounts: any[] = [];
-
-  constructor(private loanService: LoanService,
-              private savingsService: SavingsService,
-              private sharesService: SharesService,
-              private accountsService: AccountsService,
-              private router: Router) {
-               }
-  ngAfterContentInit() {
-    this.show = false;
+  chartFlag = false;
+  // Initialise all instance variables
+  constructor(
+    private clientService: ClientService,
+    private router: Router,
+    private appService: AppService,
+    private snackBar: MatSnackBar,
+    private authenticationService: AuthenticationService
+  ) {
   }
+  // Calculate the total accounts after the number of Savings, Loan and Shares accounts have been calculated
   ngAfterContentChecked() {
     this.totalAccounts = this.totalSavingsAccounts + this.totalLoanAccounts + this.totalSharesAccounts;
+
   }
+  // Notify the app service spinner observable that data is loaded.
+  // once the data has been loaded, the loading screen is hidden.
+  ngDoCheck() {
+    if (!this.totalAccounts || !this.totalLoanAccounts || !this.totalSavingsAccounts &&
+      this.totalSharesAccounts || !this.savingsBalance || !this.loansBalance) {
+      this.appService.emitSpinnerObservable(true);
+    } else {
+      this.appService.emitSpinnerObservable(false);
+    }
+  }
+  // Open the snack bar at the bottom
+  openSnackBar(message, action) {
+    this.snackBar.open(message, action, {
+      duration: 2000,
+    });
+  }
+
   // Fetching client account summary
   ngOnInit() {
-    this.accountsService.getClientAccounts().subscribe((data: any) => {
-
+    this.clientService.getClientAccounts(localStorage.getItem('id')).subscribe((data: any) => {
       // Check if user has loan accounts
       if (data.loanAccounts) {
-        // Find totol number of loan accounts
+        // Find total number of loan accounts
         this.totalLoanAccounts = data.loanAccounts.length;
-        // Find sum of loan amt assured.
-        for (const item of data.loanAccounts) {
-          if (item.loanBalance) {
-            this.loansBalance = this.loansBalance + item.originalLoan;
-          }
-        }
+        this.loansBalance = data.loanAccounts.reduce(this.getTotalLoan, 0).toFixed(2);
       }
 
       // Check if user has savings account
       if (data.savingsAccounts) {
         // Calculate total number of savings accounts
         this.totalSavingsAccounts = data.savingsAccounts.length;
-        // find sum of all Savings Account Balances
-        for (const item of data.savingsAccounts) {
-        if (item.accountBalance) {
-            this.savingsBalance = this.savingsBalance + item.accountBalance;
-        }
-    }
+        this.savingsBalance = data.savingsAccounts.reduce(this.getTotalSavings, 0).toFixed(2);
       }
       if (data.shareAccounts) {
         this.totalSharesAccounts = data.shareAccounts.length;
@@ -71,8 +78,26 @@ export class DashboardComponent implements OnInit, AfterContentInit, AfterConten
       this.savingsAccounts = data.savingsAccounts;
       this.loanAccounts = data.loanAccounts;
       this.shareAccounts = data.shareAccounts;
+    },
+    err => {
+      console.log('From Dashboard');
     });
 
   }
-
+  // This method is passed to reducer function above, which calculates total Loan Balance
+  getTotalLoan(total, acc) {
+    if (acc.loanBalance) {
+      return total + acc.loanBalance;
+    } else {
+      return total;
+    }
+  }
+  // This method is passes to the reducer function above, which calculates total Savings
+  getTotalSavings(total, acc) {
+    if (acc.accountBalance) {
+      return total + acc.accountBalance;
+    } else {
+      return total;
+    }
+  }
 }

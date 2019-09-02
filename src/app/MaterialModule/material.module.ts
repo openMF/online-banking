@@ -62,7 +62,7 @@ import {
     MatStepperModule,
     MatProgressBarModule
   ],
-  exports : [
+  exports: [
     MatButtonModule,
     MatCheckboxModule,
     MatSidenavModule,
@@ -92,4 +92,5 @@ import {
     MatProgressBarModule
   ]
 })
+// Import all the material modules and export it.
 export class MaterialModule { }

@@ -1,64 +1,52 @@
-# WebSelfServiceApplication
+# Online Banking App 3.0
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.3.9.
+## How to setup Development server and contribute
 
-`Specificaitions`
-Angular CLI: 7.3.6
-Node: 11.6.0
-OS: win32 x64
-Angular:
-...
+1. Fork the repository to your github account
+`click the fork icon the top right of the org github project page`
 
-Package                      Version
-------------------------------------------------------
-@angular-devkit/architect    0.13.6
-@angular-devkit/core         7.3.6
-@angular-devkit/schematics   7.3.6
-@schematics/angular          7.3.6
-@schematics/update           0.13.6
-rxjs                         6.3.3
-typescript                   3.2.4
+2. Clone the repo (the forked one on your account) on your local system via git CLI or Git clients (Gitkraken preferred).
 
-## Development server
+3. Run `npm i` in the projects root folder which will install all dependencies by 
+    referring to the package.json file
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+4. Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
-`Username : mifos`
+5. Type in the mock credentials
+    `Username : mifos`
 
-`Password : mifos`
+    `Password : password`
+
+6. The app now loads successfully and all the components are displayed.
+   For contributing, create a separate branch from the master branch, and start pushing code (Must ammend commits) in that branch.
+
+7. Once done with the changes, you can open a PR by visiting the org's project page, you will see pull request option. Click on compare and pull. 
+
+8. Type in the title, description, attach images, gifs of your work.
+
+9. Click on open pull request, and done, you can now wait until the maintainer reviews your work and provides valuable feedback.
+
 
 ## Code scaffolding
 
 Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
 
-## Build
-
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
 
 ## Libraries Integrated
 
-+ Ng2 charts (Charts)
 + AOS (CSS Animations)
 + Angular Material (UI)
-+ Bootstrap (Grid)
++ Angular Google Charts
 
-New feature "Notifications Panel" now in progress.
+## Backend API integration
 
-And REST APIs need to be incorporated. So added dummy data temporarily.
+Visit the link
 
-## REST APIs
+`https://demo.openmf.org/api-docs/apiLive.htm`
 
-`https://demo.openmf.org/api-docs/apiLive.htm#authentication_overview`
+And for testing the APIs, here is the postman collection of some of the tested apis
+
+`https://documenter.getpostman.com/view/6651486/SVYtLH51`
+
+Just click on 'Run in postman' and you will have an exact copy of the postman collection.
 

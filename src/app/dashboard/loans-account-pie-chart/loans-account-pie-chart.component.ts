@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import * as CanvasJS from './canvasjs.min';
-import { AccountsService } from 'src/app/services/accounts.service';
-
+import { ClientService } from 'src/app/services/client.service';
+import { HostListener } from '@angular/core';
+import { Router } from '@angular/router';
+import { AppService } from 'src/app/app.service';
 @Component({
   selector: 'app-loans-account-pie-chart',
   templateUrl: './loans-account-pie-chart.component.html',
@@ -9,70 +10,76 @@ import { AccountsService } from 'src/app/services/accounts.service';
 })
 export class LoansAccountPieChartComponent implements OnInit {
   pendingApproval = 0;
-  waitingForDisbursal = 0;
   active = 0;
-  closedObligationsMet = 0;
-  closedWrittenOff = 0;
-  closedRescheduled = 0;
-  closed = 0;
-  overpaid = 0;
 
   title = 'Loan Accounts';
   type = 'PieChart';
   data = [];
   columnNames = ['Status', 'Percentage'];
   options = {
-    is3D: false
-  };
-  width = 402;
-  height = 400 ;
+    titleTextStyle: {
 
-  constructor(private accountsService: AccountsService) { }
+      fontSize: 30,
+  },
+  fontName: 'Lexend Deca',
+  fontSize: 15,
+  };
+  width = 800;
+  height = 300;
+  innerWidth: number;
+  // Initialise all instance variables
+  constructor(private clientService: ClientService,
+              private router: Router,
+              private appService: AppService) { }
 
   ngOnInit() {
     this.getLoanSummary();
+    this.onResize();
+    this.appService.emitLoansChartObservable(false);
   }
+  // Repeateadly checks the width of the screen for responsiveness
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+  this.innerWidth = window.innerWidth;
+  if (this.innerWidth > 600) {
+    this.width = 350;
+    this.height = 350;
+    this.options.fontSize =  10;
+    this.options.titleTextStyle.fontSize = 20;
+  } else {
+    this.width = 400;
+    this.height = 300;
+    this.options.fontSize =  9;
+    this.options.titleTextStyle.fontSize = 15;
+  }
+  }
+
+// Fetch the loan Account details from the accounts service
+// Once data has arrived, intialise the graph
+// Notify the app service that the chart has been loaded successfully via an Observable
 getLoanSummary() {
-  this.accountsService.getClientAccounts().subscribe((data: any) => {
+  this.clientService.getClientAccounts(localStorage.getItem('id')).subscribe((data: any) => {
     for (const item of data.loanAccounts) {
       if (item.status.pendingApproval) {
         this.pendingApproval = this.pendingApproval + item.status.pendingApproval;
       }
-      if (item.status.waitingForDisbursal) {
-        this.waitingForDisbursal = this.waitingForDisbursal + item.status.waitingForDisbursal;
-      }
       if (item.status.active) {
         this.active = this.active + item.status.active;
       }
-      if (item.status.closedObligationsMet) {
-        this.closedObligationsMet = this.closedObligationsMet + item.status.closedObligationsMet;
-      }
-      if (item.status.closedWrittenOff) {
-        this.closedWrittenOff = this.closedWrittenOff + item.status.closedWrittenOff;
-      }
-      if (item.status.closedRescheduled) {
-        this.closedRescheduled = this.closedRescheduled + item.status.closedRescheduled;
-      }
-      if (item.status.closed) {
-        this.closed = this.closed + item.status.closed;
-      }
-      if (item.status.overpaid) {
-        this.overpaid = this.overpaid + item.status.overpaid;
-      }
     }
+  },
+  err => {
+    console.log('From loan charts');
   }).add(
     () => {
       this.data = [
-        ['Pending approval', this.pendingApproval],
-        ['Waiting for disbursal', this.waitingForDisbursal],
+        ['Submitted and Pending', this.pendingApproval],
         ['Active', this.active],
-        ['Closed obligations met ', this.closedObligationsMet],
-        ['Closed written off', this.closedWrittenOff],
-        ['Closed rescheduled', this.closedRescheduled],
-        ['Closed', this.closed],
-        ['overpaid', this.overpaid],
      ];
     }
-  );
+  )
+  .add(() => {
+    this.appService.emitLoansChartObservable(true);
+  });
   }
 }
