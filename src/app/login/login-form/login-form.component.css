@@ -1,0 +1,75 @@
+.cover {
+  background-image: url('../../../assets/images/cover.png');
+  background-size: cover;
+  color: white;
+  height: 100vh;
+}
+.cover-body{
+  padding: 70px;
+}
+.cover-content{
+  margin-top: 35vh;
+  padding-left: 10vh;
+  padding-right: 30vh;
+  color : white;
+  font-size: x-large;
+}
+.cover-title {
+  border-bottom: 1px solid white;
+  padding-bottom: 15px;
+  font-size: xx-large;
+}
+.mat-form-field{
+  width: 150%;
+  padding: 15px;
+  position: relative;
+}
+button{
+  display:block;
+  width: 150%;
+  margin-top: 20px;
+}
+.login-button{
+  min-height: 35px;
+  color: white;
+  line-height: 35px;
+}
+.enabled{
+  background-color: dodgerblue;
+}
+.disabled{
+  background-color: lightgrey;
+}
+
+.forgot-button{
+  background-color: transparent;
+}
+
+
+img{
+  margin-top: 10vh;
+  height: 25vh;
+  width: 15vw;
+}
+
+.login-container{
+  display: flex;
+  align-items: center;
+}
+mat-spinner{
+  position: absolute;
+  color: red;
+  z-index: 1031;
+  top: 50%;
+  left: 50%;
+}
+@media only screen and (max-width: 700px) {
+  .cover {
+    display: none !important;
+  }
+}
+
+
+
+
+

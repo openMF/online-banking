@@ -1,0 +1,55 @@
+<div>
+  <div>
+  <mat-spinner *ngIf="loading" ></mat-spinner>
+  </div>
+  <div fxFlex="70%" fxLayout="column" class="cover">
+    <div class="cover-content">
+      <h1 class="md-display-1 cover-title">Self Service</h1>
+      <p class="md-headline">
+        Self Service is designed by the Mifos Initiative - a global community that aims to speed-up the elimination of poverty by enabling organizations to more effectively and efficiently deliver responsible financial services to the world’s poor and unbanked.
+      </p>
+    </div>
+  </div>
+
+  <div fxFlex="30%" fxLayout="column" class="login-container">
+    <div>
+      <img src="../../../assets/images/MifosX_logo.png" alt="mifos-logo"/>
+    </div>
+    <div class="mat-dialog-title login-text">
+      Login to your account
+    </div>
+    <div>
+    <form fxLayout="column" [formGroup]="loginForm" (ngSubmit)="login()" id="login-form">
+
+      <mat-form-field fxFlexAlign="center" class="login-input">
+    <span matPrefix>
+      <fa-icon icon="user-circle" size="lg"></fa-icon>&nbsp;&nbsp;
+    </span>
+        <input matInput type="text" autocomplete="off" placeholder="Username" formControlName="username">
+      </mat-form-field>
+
+      <mat-form-field fxFlexAlign="center" class="login-input">
+    <span matPrefix>
+      <fa-icon icon="lock" size="lg"></fa-icon>&nbsp;&nbsp;
+    </span>
+        <input matInput type="{{ passwordInputType }}" placeholder="Password" formControlName="password">
+      </mat-form-field>
+
+      <button mat-raised-button fxFlexAlign="center" *ngIf="loginForm.valid" class="login-button enabled" [disabled]="!loginForm.valid">
+        Login
+      </button>
+      <button mat-raised-button fxFlexAlign="center" *ngIf="!loginForm.valid" class="login-button disabled" [disabled]="!loginForm.valid">
+        Login
+      </button>
+
+      <button type="button" mat-button fxFlexAlign="center" class="forgot-button" (click)="forgotPassword()">
+        Forgot Password?
+      </button>
+
+    </form>
+    </div>
+
+
+  </div>
+
+</div>
