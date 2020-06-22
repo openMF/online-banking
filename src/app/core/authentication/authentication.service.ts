@@ -16,6 +16,7 @@ import { AuthenticationInterceptor } from './authentication.interceptor';
 /** Custom Models */
 import { LoginContext } from './login-context';
 import { Credentials } from './credentials';
+import {environment} from '../../../environments/environment';
 
 /**
  * Authentication Workflow
@@ -83,11 +84,21 @@ export class AuthenticationService {
   }
 
   /**
+   * @returns {boolean} True if the user has self service role
+   */
+  isSelfServiceUser(): boolean {
+    const userCredentials: Credentials = JSON.parse(this.storage.getItem(this.credentialsStorageKey));
+    if (!(userCredentials)) {
+      return false;
+    }
+    return userCredentials.roles.filter( (role) => role.id === environment.selfServiceRoleId).length > 0;
+  }
+  /**
    * Checks if user is authenticated
    * @returns {boolean} True if the user is authenticated
    */
   isAuthenticated(): boolean {
-    return !!(JSON.parse(this.storage.getItem(this.credentialsStorageKey)));
+    return !!(JSON.parse(this.storage.getItem(this.credentialsStorageKey))) && this.isSelfServiceUser();
   }
 
   /**
