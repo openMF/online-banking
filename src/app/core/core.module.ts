@@ -13,6 +13,8 @@ import {HttpService} from './http/http.service';
 import {RouteReusableStrategy} from './route/route-reusable-strategy';
 import { ShellComponent } from './shell/shell.component';
 import { ContentComponent } from './shell/content/content.component';
+import { SidenavComponent } from './shell/sidenav/sidenav.component';
+import { ToolbarComponent } from './shell/toolbar/toolbar.component';
 
 
 
@@ -49,7 +51,9 @@ import { ContentComponent } from './shell/content/content.component';
   ],
   declarations: [
     ShellComponent,
-    ContentComponent]
+    ContentComponent,
+    SidenavComponent,
+    ToolbarComponent]
 })
 export class CoreModule {
   constructor(@Optional() @SkipSelf() parentModule: CoreModule) {

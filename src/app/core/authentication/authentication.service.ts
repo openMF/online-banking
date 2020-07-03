@@ -93,6 +93,7 @@ export class AuthenticationService {
     }
     return userCredentials.roles.filter( (role) => role.id === environment.selfServiceRoleId).length > 0;
   }
+
   /**
    * Checks if user is authenticated
    * @returns {boolean} True if the user is authenticated
