@@ -26,13 +26,11 @@
     "@fortawesome/angular-fontawesome": "latest",
     "@fortawesome/fontawesome-svg-core": "latest",
     "@fortawesome/free-solid-svg-icons": "latest",
-    "@ngx-translate/core": "latest",
-    "canvasjs": "^1.8.3",
-    "chart.js": "^2.9.3",
     "core-js": "^3.6.5",
     "rxjs": "~6.5.4",
     "tslib": "^1.10.0",
-    "zone.js": "~0.10.2"
+    "zone.js": "~0.10.2",
+    "@ngx-translate/core": "latest"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~0.901.7",

@@ -12,6 +12,6 @@ export interface Credentials {
   permissions?: any;
   roles?: any;
   staffDisplayName?: string;
-  userId?: number;
+  staffId?: number;
   username: string;
 }

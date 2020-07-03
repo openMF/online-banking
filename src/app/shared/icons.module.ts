@@ -83,16 +83,7 @@ import {
   faTimes,
   faStickyNote,
   faStop,
-  faBan,
-  faWallet,
-  faChartLine,
-  faFileInvoiceDollar,
-  faExchangeAlt,
-  faPeopleArrows,
-  faUserFriends,
-  faClipboard,
-  faInfoCircle,
-  faClipboardList
+  faBan
 } from '@fortawesome/free-solid-svg-icons';
 
 
@@ -186,15 +177,6 @@ export class IconsModule {
       faTimes,
       faStickyNote,
       faStop,
-      faBan,
-      faWallet,
-      faChartLine,
-      faFileInvoiceDollar,
-      faExchangeAlt,
-      faPeopleArrows,
-      faUserFriends,
-      faClipboard,
-      faInfoCircle,
-      faClipboardList);
+      faBan);
   }
 }
