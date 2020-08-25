@@ -1,1 +1,76 @@
-<p>home works!</p>
+<div class="accounts-bar">
+  <div class="account-item">
+    <mat-card>
+      <mat-card-title>TOTAL ACCOUNTS</mat-card-title>
+      <mat-divider></mat-divider>
+      <mat-card-content>{{totalAccounts }}</mat-card-content>
+    </mat-card>
+  </div>
+  <div class="account-item">
+    <mat-card>
+      <mat-card-title>LOAN ACCOUNTS</mat-card-title>
+      <mat-divider></mat-divider>
+      <mat-card-content>{{loanAccounts.length}}</mat-card-content>
+    </mat-card>
+  </div>
+  <div class="account-item">
+    <mat-card>
+      <mat-card-title>SAVINGS ACCOUNTS</mat-card-title>
+      <mat-divider></mat-divider>
+      <mat-card-content>{{savingsAccounts.length}}</mat-card-content>
+    </mat-card>
+  </div>
+  <div class="account-item">
+
+    <mat-card>
+      <mat-card-title>SHARE ACCOUNTS</mat-card-title>
+      <mat-divider></mat-divider>
+      <mat-card-content>{{shareAccounts.length}}</mat-card-content>
+    </mat-card>
+
+  </div>
+</div>
+
+<div class="balance-summary">
+  <div class="total-savings-container">
+    <div class="summary-content">
+      <span class="left-text">Total Account Balance</span>
+      <span class="right-text">{{totalSavings}}</span>
+    </div>
+  </div>
+  <div class="total-loan-container">
+    <div class="summary-content">
+      <span class="left-text">Total Loan Amount</span>
+      <span class="right-text">{{totalLoan}}</span>
+    </div>
+  </div>
+
+</div>
+
+
+<div class="charts-container">
+  <div class="chart-item">
+    <mat-card>
+      <mat-card-title>Loan Accounts Overview</mat-card-title>
+      <mat-card-content>
+        <self-service-loan-overview-pie [loanAccounts]="loanAccounts" *ngIf="!loading"></self-service-loan-overview-pie>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  <div class="chart-item">
+    <mat-card>
+      <mat-card-title>Savings Accounts Overview</mat-card-title>
+      <self-service-savings-overview-pie [savingsAccounts]="savingsAccounts" *ngIf="!loading"></self-service-savings-overview-pie>
+    </mat-card>
+  </div>
+  <div class="chart-item">
+    <mat-card>
+      <mat-card-title>Share Accounts Overview</mat-card-title>
+      <self-service-share-overview-pie [shareAccounts]="shareAccounts" *ngIf="!loading"></self-service-share-overview-pie>
+    </mat-card>
+  </div>
+
+</div>
+
+
+

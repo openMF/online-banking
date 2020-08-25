@@ -1,0 +1,110 @@
+<div
+  [ngClass]="{
+  'sidebar-full': !sidenavCollapsed,
+  'sidebar-compact': sidenavCollapsed
+  }">
+
+  <div class="navigation-panel" fxLayout="column">
+
+    <div class="app-brand" [routerLink]="['/home']">
+      <img src="../../../../assets/images/MifosX_logo.png" alt="app-logo" class="app-logo">
+    </div>
+
+    <div class="app-user">
+      <div class="app-user-photo">
+        <!-- TODO: Decision to be taken on providing this feature -->
+        <img src="assets/images/user_placeholder.png" alt="app-user-photo">
+      </div>
+      <span class="app-user-name mb-05">
+        {{ username }}
+      </span>
+      <div class="app-user-controls">
+        <button class="text-muted xs-button" mat-icon-button matTooltip="Settings" [routerLink]="['/settings']">
+          <fa-icon icon="cog"></fa-icon>
+        </button>
+        <button class="text-muted xs-button" mat-icon-button matTooltip="Sign Out" (click)="logout()">
+          <fa-icon icon="sign-out-alt"></fa-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="app-sidenav">
+
+      <div class="nav-item-sep">
+        <mat-divider></mat-divider>
+        <span class="text-muted">Main Items</span>
+      </div>
+
+      <mat-nav-list>
+        <mat-list-item [routerLink]="['/home']">
+          <mat-icon matListIcon>
+            <fa-icon icon="home" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Dashboard</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/accounts']">
+          <mat-icon matListIcon>
+            <fa-icon icon="wallet" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Accounts</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/recenttransactions']">
+          <mat-icon matListIcon>
+            <fa-icon icon="chart-line" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Recent Transactions</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/charges']">
+          <mat-icon matListIcon>
+            <fa-icon icon="file-invoice-dollar" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Charges</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/transfers']">
+          <mat-icon matListIcon>
+            <fa-icon icon="exchange-alt" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Transfers</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/tpt']">
+          <mat-icon matListIcon>
+            <fa-icon icon="people-arrows" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Third Party Transfers</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/beneficiaries']">
+          <mat-icon matListIcon>
+            <fa-icon icon="user-friends" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Beneficiaries</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/loans/apply']">
+          <mat-icon matListIcon>
+            <fa-icon icon="hand-holding-usd" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Apply for Loan</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/surveys']">
+          <mat-icon matListIcon>
+            <fa-icon icon="clipboard-list" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Surveys</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/about-us']">
+          <mat-icon matListIcon>
+            <fa-icon icon="info-circle" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>About Us</a>
+        </mat-list-item>
+        <mat-list-item [routerLink]="['/help']">
+          <mat-icon matListIcon>
+            <fa-icon icon="question-circle" size="sm"></fa-icon>
+          </mat-icon>
+          <a matLine>Help</a>
+        </mat-list-item>
+      </mat-nav-list>
+    </div>
+
+  </div>
+
+</div>
