@@ -1,0 +1,55 @@
+<div class="container">
+    <div fxLayout="row">
+      <mat-form-field fxFlex>
+        <mat-label>Filter</mat-label>
+        <input matInput (keyup)="applyFilter($event.target.value)">
+      </mat-form-field>
+    </div>
+  
+    <div class="mat-elevation-z8">
+  
+      <table mat-table [dataSource]="dataSource" matSort>
+  
+  
+        <ng-container matColumnDef="accountNo">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header> Account No. </th>
+          <td mat-cell *matCellDef="let account">{{account.accountNo}}
+          </td>
+        </ng-container>
+  
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let account">{{account.status.value}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="type">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header> Account Type </th>
+          <td mat-cell *matCellDef="let account">{{account.shortProductName}}({{account.productName}})
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="accountBalance">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header> Account Balance </th>
+          <td mat-cell *matCellDef="let account">{{account.balance?account.currency.displaySymbol: ' '}} {{account.accountBalance}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="submittedOn">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header> Submitted On (MM/DD/YYYY) </th>
+          <td mat-cell *matCellDef="let account">{{account.timeline.submittedOnDate[1]}}/{{account.timeline.submittedOnDate[2]}}/{{account.timeline.submittedOnDate[0]}} 
+          </td>
+        </ng-container>
+
+  
+  
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  
+      </table>
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100, 200]" showFirstLastButtons></mat-paginator>
+    </div>
+  
+  
+  </div>
+  

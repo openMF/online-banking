@@ -4,6 +4,7 @@ import { Route } from '../core/route/route.service';
 
 import { HomeComponent } from './home.component';
 import {extract} from '../core/i18n/i18n.service';
+import { HomeResolver } from './home.resolver';
 
 const routes: Routes = [
   Route.withShell([{
@@ -14,14 +15,15 @@ const routes: Routes = [
   {
      path: 'home',
      component: HomeComponent,
-     data: {title: extract('Home')}}
+     data: {title: extract('Home')},
+      resolve: { accounts: HomeResolver }}
      ])
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
-  providers: [ ]
+  providers: [ HomeResolver ]
 })
 export class HomeRoutingModule { }
 

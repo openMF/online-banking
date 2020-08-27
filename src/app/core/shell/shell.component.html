@@ -1,5 +1,5 @@
 <!-- Application Shell -->
-<mat-sidenav-container id="self-service-shell-container" autosize>
+<mat-sidenav-container id="online-banking-shell-container" autosize>
 
   <!-- Sidenav -->
   <mat-sidenav
@@ -13,7 +13,7 @@
     [mode]="(isHandset$ | async) ? 'over' : 'side'"
     [opened]="(isHandset$ | async) === false ">
 
-    <self-service-sidenav [sidenavCollapsed]="sidenavCollapsed"></self-service-sidenav>
+    <online-banking-sidenav [sidenavCollapsed]="sidenavCollapsed"></online-banking-sidenav>
 
   </mat-sidenav>
 
@@ -21,10 +21,10 @@
   <mat-sidenav-content>
 
     <!-- Toolbar -->
-    <self-service-toolbar [sidenav]="sidenav" (collapse)="toggleCollapse($event)"></self-service-toolbar>
+    <online-banking-toolbar [sidenav]="sidenav" (collapse)="toggleCollapse($event)"></online-banking-toolbar>
 
     <!-- Content -->
-    <self-service-content></self-service-content>
+    <online-banking-content></online-banking-content>
     <!-- Footer -->
 
   </mat-sidenav-content>

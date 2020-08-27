@@ -1,5 +1,5 @@
 .cover {
-  background-image: url('../../../assets/images/cover.png');
+  background-image: url('../../../assets/images//cover.png');
   background-size: cover;
   color: white;
   height: 100vh;
@@ -12,12 +12,14 @@
   padding-left: 10vh;
   padding-right: 30vh;
   color : white;
-  font-size: x-large;
+  font-size: 2rem;
+  line-height: 1.3;
 }
 .cover-title {
   border-bottom: 1px solid white;
-  padding-bottom: 15px;
-  font-size: xx-large;
+  padding-bottom: 2rem;
+  font-size: 3rem;
+  font-weight: bold;
 }
 .mat-form-field{
   width: 150%;

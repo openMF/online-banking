@@ -9,7 +9,7 @@ import { AuthenticationService } from '../../core/authentication/authentication.
 import {AlertService} from '../../core/alert/alert.service';
 
 @Component({
-  selector: 'self-service-login-form',
+  selector: 'online-banking-login-form',
   templateUrl: './login-form.component.html',
   styleUrls: ['./login-form.component.css']
 })

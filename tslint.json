@@ -19,13 +19,13 @@
     "directive-selector": [
       true,
       "attribute",
-      "self-service",
+      "online-banking",
       "camelCase"
     ],
     "component-selector": [
       true,
       "element",
-      "self-service",
+      "online-banking",
       "kebab-case"
     ],
     "eofline": true,

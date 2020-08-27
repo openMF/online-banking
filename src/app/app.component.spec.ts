@@ -16,16 +16,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have as title 'self-service-app'`, () => {
+  it(`should have as title 'online-banking'`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('self-service-app');
+    expect(app.title).toEqual('online-banking');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement;
-    expect(compiled.querySelector('.content span').textContent).toContain('self-service-app app is running!');
+    expect(compiled.querySelector('.content span').textContent).toContain('online-banking app is running!');
   });
 });

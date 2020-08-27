@@ -19,6 +19,13 @@ import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {ServiceWorkerModule} from '@angular/service-worker';
 import {environment} from '../environments/environment';
 import {CoreModule} from './core/core.module';
+import {AccountsModule} from './accounts/accounts.module';
+import {BeneficiariesModule} from './beneficiaries/beneficiaries.module';
+import { TransfersModule } from './transfers/transfers.module';
+import { RecentTransactionsModule } from './recent-transactions/recent-transactions.module';
+import { ChargesModule } from './charges/charges.module';
+import { TptModule } from './tpt/tpt.module';
+import { AboutUsModule } from './about-us/about-us.module';
 
 /**
  * App Module
@@ -33,11 +40,18 @@ import {CoreModule} from './core/core.module';
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
-    ServiceWorkerModule.register('./ngsw-worker.js', { enabled: environment.production }),
+    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production }),
     CoreModule,
     LoginModule,
     HomeModule,
-    AppRoutingModule
+    AccountsModule,
+    BeneficiariesModule,
+    TransfersModule,
+    RecentTransactionsModule,
+    ChargesModule,
+    TptModule,
+    AboutUsModule,
+    AppRoutingModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

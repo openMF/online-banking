@@ -2,7 +2,7 @@ import {Component, Input, OnInit} from '@angular/core';
 import Chart from 'chart.js';
 
 @Component({
-  selector: 'self-service-loan-overview-pie',
+  selector: 'online-banking-loan-overview-pie',
   templateUrl: './loan-overview-pie.component.html',
   styleUrls: ['./loan-overview-pie.component.css']
 })
@@ -14,6 +14,7 @@ export class LoanOverviewPieComponent implements OnInit {
   ngOnInit(): void {
     const labels = [];
     const data = [];
+    console.log('From the loan pie chart component', this.loanAccounts);
     this.loanAccounts.forEach((account) => {
       if (labels.indexOf(account.status.value) !== -1){
         data[labels.indexOf(account.status.value)] += 1;

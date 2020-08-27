@@ -1,0 +1,29 @@
+.transfer-form-container {
+    margin: 5%;
+}
+
+#transfer-form {
+    display: flex;
+    flex-direction: column;
+    padding: 2% 5% 2% 5%;
+
+    .mat-form-field {
+        margin-bottom: 1.5rem;
+    }
+    .mat-card {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1.5 rem;
+    }
+}
+.button-group {
+    display: flex;
+    justify-content: space-between;
+
+    button {
+        margin-bottom: 1.5rem;
+        height: 3rem;
+        width: 45%;
+    }
+}
+

@@ -8,7 +8,7 @@ import {Alert} from '../core/alert/alert';
 
 
 @Component({
-  selector: 'self-service-login',
+  selector: 'online-banking-login',
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })

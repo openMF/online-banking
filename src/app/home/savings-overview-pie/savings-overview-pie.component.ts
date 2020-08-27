@@ -2,7 +2,7 @@ import {Component, Input, OnInit} from '@angular/core';
 import Chart from 'chart.js';
 
 @Component({
-  selector: 'self-service-savings-overview-pie',
+  selector: 'online-banking-savings-overview-pie',
   templateUrl: './savings-overview-pie.component.html',
   styleUrls: ['./savings-overview-pie.component.css']
 })

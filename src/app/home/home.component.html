@@ -53,20 +53,20 @@
     <mat-card>
       <mat-card-title>Loan Accounts Overview</mat-card-title>
       <mat-card-content>
-        <self-service-loan-overview-pie [loanAccounts]="loanAccounts" *ngIf="!loading"></self-service-loan-overview-pie>
+        <online-banking-loan-overview-pie [loanAccounts]="loanAccounts" *ngIf="!loading"></online-banking-loan-overview-pie>
       </mat-card-content>
     </mat-card>
   </div>
   <div class="chart-item">
     <mat-card>
       <mat-card-title>Savings Accounts Overview</mat-card-title>
-      <self-service-savings-overview-pie [savingsAccounts]="savingsAccounts" *ngIf="!loading"></self-service-savings-overview-pie>
+      <online-banking-savings-overview-pie [savingsAccounts]="savingsAccounts" *ngIf="!loading"></online-banking-savings-overview-pie>
     </mat-card>
   </div>
   <div class="chart-item">
     <mat-card>
       <mat-card-title>Share Accounts Overview</mat-card-title>
-      <self-service-share-overview-pie [shareAccounts]="shareAccounts" *ngIf="!loading"></self-service-share-overview-pie>
+      <online-banking-share-overview-pie [shareAccounts]="shareAccounts" *ngIf="!loading"></online-banking-share-overview-pie>
     </mat-card>
   </div>
 

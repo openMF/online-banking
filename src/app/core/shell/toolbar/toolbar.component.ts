@@ -5,10 +5,10 @@ import {animate, style, transition, trigger} from '@angular/animations';
 import {Observable} from 'rxjs';
 import {BreakpointObserver, Breakpoints} from '@angular/cdk/layout';
 import {map} from 'rxjs/operators';
-import {MatSidenav} from '@angular/material';
+import {MatSidenav} from '@angular/material/sidenav';
 
 @Component({
-  selector: 'self-service-toolbar',
+  selector: 'online-banking-toolbar',
   templateUrl: './toolbar.component.html',
   styleUrls: ['./toolbar.component.css'],
   animations: [
