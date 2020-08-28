@@ -1,0 +1,9 @@
+table {
+    width: 100%;
+  }
+.mat-elevation-z8 {
+  margin: 1rem;
+}
+mat-form-field {
+  margin: 1rem;
+}

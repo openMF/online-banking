@@ -2,7 +2,7 @@ import {Component, Input, OnInit} from '@angular/core';
 import Chart from 'chart.js';
 
 @Component({
-  selector: 'self-service-share-overview-pie',
+  selector: 'online-banking-share-overview-pie',
   templateUrl: './share-overview-pie.component.html',
   styleUrls: ['./share-overview-pie.component.css']
 })

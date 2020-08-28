@@ -4,11 +4,11 @@ import {Title} from '@angular/platform-browser';
 import {MatSnackBar} from '@angular/material/snack-bar';
 
 @Component({
-  selector: 'self-service-root',
+  selector: 'online-banking-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
 
-  title = 'self-service-app';
+  title = 'online-banking';
 }

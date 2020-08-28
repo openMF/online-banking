@@ -4,7 +4,7 @@ import {Observable, Subscription} from 'rxjs';
 import {map} from 'rxjs/operators';
 
 @Component({
-  selector: 'self-service-shell',
+  selector: 'online-banking-shell',
   templateUrl: './shell.component.html',
   styleUrls: ['./shell.component.scss']
 })

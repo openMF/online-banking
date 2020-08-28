@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 
 @Component({
-  selector: 'self-service-content',
+  selector: 'online-banking-content',
   templateUrl: './content.component.html',
   styleUrls: ['./content.component.css']
 })

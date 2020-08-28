@@ -1,0 +1,70 @@
+<div class="container">
+    <div fxLayout="row">
+      <mat-form-field fxFlex>
+        <mat-label>Filter</mat-label>
+        <input matInput>
+      </mat-form-field>
+    </div>
+  
+    <div class="mat-elevation-z8">
+  
+      <table mat-table [dataSource]="dataSource" matSort>
+  
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Id</th>
+          <td mat-cell *matCellDef="let account">{{account.id}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="accountNo">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Account No.</th>
+          <td mat-cell *matCellDef="let account">{{account.accountNo}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="accountType">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Account Type</th>
+          <td mat-cell *matCellDef="let account">{{account.accountType.value}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="transferLimit">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Transfer Limit</th>
+          <td mat-cell *matCellDef="let account">{{account.transferLimit}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Name</th>
+          <td mat-cell *matCellDef="let account">{{account.name}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="officeName">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Office Name</th>
+          <td mat-cell *matCellDef="let account">{{account.officeName}}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="clientName">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Client Name</th>
+          <td mat-cell *matCellDef="let account">{{account.clientName}}
+          </td>
+        </ng-container>
+  
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Action</th>
+          <td mat-cell *matCellDef="let account"> Edit
+          </td>
+        </ng-container>
+  
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  
+      </table>
+      <mat-paginator [pageSizeOptions]="[10, 25, 50, 100, 200]" showFirstLastButtons></mat-paginator>
+    </div>
+  
+  
+  </div>
+  

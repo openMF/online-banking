@@ -10,11 +10,11 @@ before_script:
 - npm install -g @angular/cli@7.3.9
 script:
 - ng lint
-- ng build --prod --base-href https://openmf.github.io/online-banking-app/
+- ng build --prod --base-href https://openmf.github.io/online-banking/
 deploy:
   provider: pages
   skip_cleanup: true
-  local_dir: ./dist/online-banking-app
+  local_dir: ./dist/online-banking
   github_token: $GITHUB_TOKEN
   on:
     branch: master

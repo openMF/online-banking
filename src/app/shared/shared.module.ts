@@ -5,7 +5,7 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 /** Custom Modules */
 import { IconsModule } from './icons.module';
-import { MaterialModule } from './material.module';
+import {MaterialModule} from './material.module';
 
 /**
  * Shared Modules

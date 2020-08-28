@@ -6,14 +6,15 @@
 
   <div class="navigation-panel" fxLayout="column">
 
-    <div class="app-brand" [routerLink]="['/home']">
-      <img src="../../../../assets/images/MifosX_logo.png" alt="app-logo" class="app-logo">
-    </div>
+     <!-- Removing the app-logo for a better UX -->
+    <!-- <div class="app-brand" [routerLink]="['/home']">
+      <img src="./assets/images/MifosX_logo.png" alt="app-logo" class="app-logo">
+    </div> -->
 
     <div class="app-user">
-      <div class="app-user-photo">
-        <!-- TODO: Decision to be taken on providing this feature -->
-        <img src="assets/images/user_placeholder.png" alt="app-user-photo">
+      <!-- Depreceate: The user avatar is already displayed on the toolbar -->
+      <!-- <div class="app-user-photo">
+        <img src="./assets/images/user_placeholder.png" alt="app-user-photo">
       </div>
       <span class="app-user-name mb-05">
         {{ username }}
@@ -25,14 +26,13 @@
         <button class="text-muted xs-button" mat-icon-button matTooltip="Sign Out" (click)="logout()">
           <fa-icon icon="sign-out-alt"></fa-icon>
         </button>
-      </div>
+      </div> -->
     </div>
 
     <div class="app-sidenav">
 
       <div class="nav-item-sep">
-        <mat-divider></mat-divider>
-        <span class="text-muted">Main Items</span>
+        <!-- <span class="text-muted">Main Items</span> -->
       </div>
 
       <mat-nav-list>
@@ -48,7 +48,7 @@
           </mat-icon>
           <a matLine>Accounts</a>
         </mat-list-item>
-        <mat-list-item [routerLink]="['/recenttransactions']">
+        <mat-list-item [routerLink]="['/recent-transactions']">
           <mat-icon matListIcon>
             <fa-icon icon="chart-line" size="sm"></fa-icon>
           </mat-icon>

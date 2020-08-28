@@ -1,9 +1,10 @@
 import {Component, OnInit} from '@angular/core';
 import {HomeService} from './home.service';
-import {Router} from '@angular/router';
+import {Router, ActivatedRoute} from '@angular/router';
+import { Accounts } from './accounts.model';
 
 @Component({
-  selector: 'self-service-home',
+  selector: 'online-banking-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
@@ -18,21 +19,28 @@ export class HomeComponent implements OnInit {
   loading = true;
 
   constructor(private homeService: HomeService,
+              private route: ActivatedRoute,
               private router: Router) {
+                this.route.data.subscribe((data: { accounts: Accounts }) => {
+                  const { loanAccounts, savingsAccounts, shareAccounts } = data.accounts;
+                  this.loanAccounts = loanAccounts ? loanAccounts : [];
+                  this.savingsAccounts = savingsAccounts ? savingsAccounts : [];
+                  this.shareAccounts = shareAccounts ? shareAccounts : [] ;
+                });
   }
 
   ngOnInit(): void {
+
+    console.log('from ngoninit for home.component', 'loan Accounts ', this.loanAccounts, 'share Accounts ', this.shareAccounts, 'savings Accounts ', this.savingsAccounts);
+
+
     this.setAccounts();
   }
 
   setAccounts(): void {
-    this.homeService.getAccounts().subscribe((accounts) => {
-        console.log(accounts);
-        const {loanAccounts, savingsAccounts, shareAccounts} = accounts;
-        this.loanAccounts = loanAccounts;
-        this.savingsAccounts = savingsAccounts;
-        this.shareAccounts = shareAccounts;
+
         this.totalAccounts = this.loanAccounts.length + this.savingsAccounts.length + this.shareAccounts.length;
+        console.log('From the set acounts method here is the total accounts', this.totalAccounts);
         let savingsBalance = 0;
         this.savingsAccounts.forEach((account) => {
           const {accountBalance} = account;
@@ -50,10 +58,5 @@ export class HomeComponent implements OnInit {
         });
         this.totalLoan = loansBalance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         this.loading = false;
-      },
-      (error => {
-        console.log(error);
-        this.router.navigate(['/login'], {replaceUrl: true});
-      }));
-  }
+      }
 }

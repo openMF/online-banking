@@ -8,7 +8,6 @@ import { LoginRoutingModule } from './login-routing.module';
 import { LoginComponent } from './login.component';
 import { LoginFormComponent } from './login-form/login-form.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
-import {MaterialModule} from '../shared/material.module';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {IconsModule} from '../shared/icons.module';
 
@@ -18,7 +17,6 @@ import {IconsModule} from '../shared/icons.module';
   imports: [
     SharedModule,
     LoginRoutingModule,
-    MaterialModule,
     FormsModule,
     ReactiveFormsModule,
     IconsModule

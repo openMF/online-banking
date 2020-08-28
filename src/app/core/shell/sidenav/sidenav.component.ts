@@ -3,7 +3,7 @@ import {Router} from '@angular/router';
 import {AuthenticationService} from '../../authentication/authentication.service';
 
 @Component({
-  selector: 'self-service-sidenav',
+  selector: 'online-banking-sidenav',
   templateUrl: './sidenav.component.html',
   styleUrls: ['./sidenav.component.scss']
 })

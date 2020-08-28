@@ -1,5 +1,5 @@
 <div class="m-toolbar">
-<mat-toolbar fxLayout="row" color="primary" id="self-service-toolbar">
+<mat-toolbar fxLayout="row" color="primary" id="online-banking-toolbar">
 
   <button mat-icon-button *ngIf="!sidenavCollapsed" (click)="toggleSidenav()" matTooltip="Toggle Hide/Open">
     <fa-icon icon="bars" size="lg" ></fa-icon>
@@ -12,7 +12,7 @@
   <span fxFlex="auto"></span>
 
   <button mat-icon-button class="ml-1 img-button" [matMenuTriggerFor]="applicationMenu">
-    <img src="../../../../assets/images/user_placeholder.png">
+    <img src="./assets/images/user_placeholder.png">
   </button>
 </mat-toolbar>
 

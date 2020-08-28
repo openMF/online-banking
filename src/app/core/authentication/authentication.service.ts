@@ -44,6 +44,13 @@ export class AuthenticationService {
               private alertService: AlertService,
               private authenticationInterceptor: AuthenticationInterceptor) {
     this.storage = sessionStorage;
+    const savedCredentials = JSON.parse(
+      sessionStorage.getItem(this.credentialsStorageKey) || localStorage.getItem(this.credentialsStorageKey));
+
+    if (savedCredentials) {
+      authenticationInterceptor.setAuthorizationToken(savedCredentials.base64EncodedAuthenticationKey);
+    }
+
   }
 
   /**

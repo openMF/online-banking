@@ -1,0 +1,46 @@
+<mat-card class='transfer-form-container'>
+
+
+    <form [formGroup]="transferForm" (ngSubmit)="submitTransferRequest()" id="transfer-form">
+  <mat-form-field>
+    <mat-label>Pay To</mat-label>
+    <mat-select formControlName="toAccount" (selectionChange)="handleToFieldOption($event.value)" >
+      <mat-option>None</mat-option>
+      <mat-option *ngFor="let accountOption of displayedToAccountOptions" [value]="accountOption">{{accountOption.accountNo}} ({{accountOption.accountType.value}})</mat-option>
+    </mat-select>
+  </mat-form-field>
+  
+  <mat-form-field>
+      <mat-label>Pay From</mat-label>
+      <mat-select formControlName="fromAccount" (selectionChange)="handleFromFieldOption($event.value)" >
+        <mat-option>None</mat-option>
+        <mat-option *ngFor="let accountOption of displayedFromAccountOptions" [value]="accountOption">{{accountOption.accountNo}} ({{accountOption.accountType.value}})</mat-option>
+      </mat-select>
+    </mat-form-field>
+  
+  
+  
+    <mat-form-field class="example-full-width">
+      <mat-label>Amount</mat-label>
+      <input matInput  type="number" steps="0.01" formControlName="amount">
+    </mat-form-field>
+  
+  
+   <mat-card><span>Transfer Date</span> <span>{{date | date:'yyyy-MM-dd'}}</span> </mat-card>
+  
+  
+      <mat-form-field>
+        <textarea formControlName="remarks" matInput placeholder="Remarks"></textarea>
+      </mat-form-field>
+  
+    
+    <div class="button-group">
+      <button [routerLink]="['/home']" type="button" mat-raised-button color="warn">Cancel</button>
+      <button [disabled]="!transferForm.valid" mat-raised-button color="primary">Review Transfer</button>
+    </div>
+            
+    
+  
+    </form>
+  </mat-card>
+  
