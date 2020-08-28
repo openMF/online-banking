@@ -6,6 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "test": "ng test",
+    "build:dev": "ng build --base-href /online-baking/",
+    "build:production": "ng build --prod --base-href /online-banking/",
+    "deploy": "npm run build:production && angular-cli-ghpages --dir=dist/online-banking",
     "lint": "ng lint",
     "e2e": "ng e2e"
   },
@@ -27,6 +30,7 @@
     "@fortawesome/fontawesome-svg-core": "latest",
     "@fortawesome/free-solid-svg-icons": "latest",
     "@ngx-translate/core": "latest",
+    "angular-cli-ghpages": "^0.6.2",
     "canvasjs": "^1.8.3",
     "chart.js": "^2.9.3",
     "core-js": "^3.6.5",
