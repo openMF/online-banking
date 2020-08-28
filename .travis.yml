@@ -17,7 +17,7 @@ deploy:
   provider: pages
   skip-cleanup: true
   local-dir: dist/online-banking
-  github-token: $GITHUB_TOKEN
+  github-token: $GIT_TOKEN
   keep-history: true
   on:
     branch: master
