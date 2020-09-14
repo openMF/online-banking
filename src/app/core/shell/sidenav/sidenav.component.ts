@@ -12,13 +12,15 @@ export class SidenavComponent implements OnInit {
   @Input() sidenavCollapsed: boolean;
   /** Username of authenticated user. */
   username: string;
+  displayImage: string;
 
   /**
    * @param {Router} router Router for navigation.
    * @param {AuthenticationService} authenticationService Authentication Service.
    */
   constructor(private router: Router,
-              private authenticationService: AuthenticationService) { }
+              private authenticationService: AuthenticationService
+              ) { }
 
   /**
    * Sets the username of the authenticated user.
@@ -27,6 +29,13 @@ export class SidenavComponent implements OnInit {
     const credentials = this.authenticationService.getCredentials();
     this.username = credentials.username;
   }
+
+  // TODO: Implement this method for displaying the profile picture
+  // setDisplayImage() {
+  //   this.sidenavService.getClientImage().subscribe((displayImage) => {
+  //     this.displayImage = displayImage.toString();
+  //   })
+  // }
 
   /**
    * Logs out the authenticated user and redirects to login page.
