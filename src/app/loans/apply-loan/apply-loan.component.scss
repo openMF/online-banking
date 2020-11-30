@@ -1,0 +1,40 @@
+.applyLoan-form-container {
+    margin: 5%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#applyLoan-form {
+    display: flex;
+    flex-direction: column;
+    padding: 2% 5% 2% 5%;
+
+    .mat-form-field {
+        margin-bottom: 1.5rem;
+    }
+    .mat-card {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1.5 rem;
+    }
+    .loan-dates{
+        margin-bottom: 1.34375em;
+    }
+    .invalid-field{
+        position: absolute;
+        left: 0;
+        bottom: -15px;
+        color: red;
+    }
+}
+.button-group {
+    display: flex;
+    justify-content: space-between;
+
+    button {
+        margin-bottom: 1.5rem;
+        height: 3rem;
+        width: 45%;
+    }
+}

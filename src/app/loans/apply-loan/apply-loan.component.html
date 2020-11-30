@@ -1,0 +1,51 @@
+<mat-card class="applyLoan-form-container">
+
+  <form [formGroup]="applyLoanForm" (ngSubmit)="newLoanRequest()" #loanApplyForm id="applyLoan-form">
+    <mat-form-field>
+      <mat-label>Loan Product Options</mat-label>
+      <mat-select formControlName="productId" (selectionChange)="loanProductSelected($event)">
+        <mat-option *ngFor="let productOption of productOptions" [value]="productOption.id">{{ productOption.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Loan Purpose</mat-label>
+      <mat-select formControlName="loanPurposeId">
+        <mat-option *ngFor="let purpose of loanProductDetails?.loanPurposeOptions" [value]="purpose.id">{{ purpose.name }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="example-full-width">
+      <mat-label>Principal</mat-label>
+      <input *ngIf="!loanProductLoaded" matInput type="number" steps="0.01" disabled="true"/>
+      <input *ngIf="loanProductLoaded" matInput type="number" steps="0.01" formControlName="principal"/>
+      <small *ngIf="getPrincipal().errors?.required && getPrincipal().touched && loanProductLoaded" class="invalid-field">Principal is required</small>
+      <small *ngIf="getPrincipal().errors?.forbiddenPrincipal && getPrincipal().touched && loanProductLoaded" class="invalid-field">
+        Principal should be between {{ getPrincipal().errors?.forbiddenPrincipal.bounds.lower }} and {{ getPrincipal().errors?.forbiddenPrincipal.bounds.upper }} for the selected loan product.
+      </small>
+    </mat-form-field>
+
+    <mat-form-field class="example-full-width">
+      <mat-label>Currency</mat-label>
+      <input matInput type="text" steps="0.01" formControlName="currency"/>
+    </mat-form-field>
+
+      <mat-card class="loan-dates">
+        <span>Submitted On</span> <span>{{ date }}</span>
+      </mat-card>
+
+    <mat-card class="loan-dates">
+      <span>Expected Disbursement Date</span>
+      <span>{{ date }}</span>
+    </mat-card>
+
+    <div class="button-group">
+      <button [routerLink]="['/home']" type="button" mat-raised-button color="warn">
+        Cancel
+      </button>
+      <button [disabled]="!applyLoanForm.valid" mat-raised-button color="primary">
+        Apply
+      </button>
+    </div>
+  </form>
+</mat-card>
