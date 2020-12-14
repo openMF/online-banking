@@ -26,6 +26,7 @@ import { RecentTransactionsModule } from './recent-transactions/recent-transacti
 import { ChargesModule } from './charges/charges.module';
 import { TptModule } from './tpt/tpt.module';
 import { AboutUsModule } from './about-us/about-us.module';
+import { LoansModule } from './loans/loans.module';
 
 /**
  * App Module
@@ -51,6 +52,7 @@ import { AboutUsModule } from './about-us/about-us.module';
     ChargesModule,
     TptModule,
     AboutUsModule,
+    LoansModule,
     AppRoutingModule,
   ],
   providers: [],

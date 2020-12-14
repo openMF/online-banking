@@ -10,7 +10,7 @@ before_script:
   - npm install -g --silent @angular/cli@9.1.7
 
 script:
-  - ng lint
+  - ng lint --force
   - npm run build:production
 
 deploy:
