@@ -1,0 +1,49 @@
+<mat-card class="beneficiaries-form-container">
+    <form [formGroup]="beneficiariesForm" (ngSubmit)="submitBeneficiaryForm()" id="beneficiaries-form">
+      <mat-form-field class="example-full-width">
+        <mat-label>Name</mat-label>
+        <input matInput type="text" formControlName="name"/>
+        <mat-error>Name is <strong>required</strong></mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="example-full-width">
+        <mat-label>Office Name</mat-label>
+        <input matInput type="text" formControlName="officeName"/>
+        <mat-error>Office Name is <strong>required</strong></mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="example-full-width">
+        <mat-label>Account Number</mat-label>
+        <input matInput type="text" formControlName="accountNumber"/>
+        <mat-error>Account Number is <strong>required</strong></mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="example-full-width">
+        <mat-label>Transfer Limit</mat-label>
+        <input matInput type="number" formControlName="transferLimit"/>
+        <mat-error>Transfer Limit should be greater than 0 or blank</mat-error>
+      </mat-form-field>
+
+      <!-- we get only the account type options from the transfer template -->
+      <mat-form-field>
+        <mat-label>Account Type</mat-label>
+        <mat-select formControlName="accountType">
+          <mat-option *ngFor="let type of accountTypeOptions" [value]="type.id">
+            {{ type.value }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+  
+      <div class="button-group">
+        <button [routerLink]="['/beneficiaries']" type="button" mat-raised-button color="warn">
+          Cancel
+        </button>
+        <button *ngIf="!editMode" [disabled]="!beneficiariesForm.valid" mat-raised-button color="primary">
+          Add Beneficiary
+        </button>
+        <button *ngIf="editMode" [disabled]="!beneficiariesForm.valid" mat-raised-button color="primary">
+          Update Beneficiary
+        </button>
+      </div>
+    </form>
+</mat-card>

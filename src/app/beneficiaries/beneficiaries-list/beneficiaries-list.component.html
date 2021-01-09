@@ -7,6 +7,12 @@
     </div>
   
     <div class="mat-elevation-z8">
+
+      <div class="add-beneficiary">
+        <button mat-button [routerLink]="['create']">
+          <fa-icon icon="plus"></fa-icon>&nbsp;&nbsp;Add Beneficiary
+        </button>
+      </div>
   
       <table mat-table [dataSource]="dataSource" matSort>
   
@@ -54,7 +60,8 @@
   
         <ng-container matColumnDef="action">
           <th mat-header-cell *matHeaderCellDef Def mat-sort-header>Action</th>
-          <td mat-cell *matCellDef="let account"> Edit
+          <td mat-cell *matCellDef="let account"> 
+            <span class="edit-beneficiary" (click)="editBeneficiary(account)">Edit</span>
           </td>
         </ng-container>
   
