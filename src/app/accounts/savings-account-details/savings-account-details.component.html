@@ -1,1 +1,29 @@
-<p>savings-account-details works!</p>
+<div class="container">
+  
+    <div class="mat-elevation-z8">
+        <mat-card-title>
+            Savings Account Details
+        </mat-card-title>
+        <div fxLayout="row" class="two-row">
+            <div class="two-row-item">
+                <mat-card-subtitle>Account no. : {{ this.accountDetails?.accountNo }}</mat-card-subtitle>
+            </div>
+            <div class="two-row-item">
+                <mat-card-subtitle>Client Name : {{ this.accountDetails?.clientName }}</mat-card-subtitle>
+            </div>
+        </div>
+        <div fxLayout="row">
+            <div class="two-row-item">
+                <mat-card-subtitle>
+                    Currency : {{ this.accountDetails?.currency?.displayLabel }}
+                </mat-card-subtitle>
+            </div>
+            <div class="two-row-item">
+                <mat-card-subtitle>Client Name : {{ this.accountDetails?.clientName }}</mat-card-subtitle>
+            </div>
+        </div>
+    </div>
+  
+  
+  </div>
+  

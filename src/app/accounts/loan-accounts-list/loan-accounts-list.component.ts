@@ -52,4 +52,5 @@ export class LoanAccountsListComponent implements OnInit, AfterViewInit {
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
+
 }

@@ -3,6 +3,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { startWith, delay, tap } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'online-banking-savings-accounts-list',
@@ -13,7 +14,7 @@ export class SavingsAccountsListComponent implements OnInit, AfterViewInit {
 
   @Input() savingsAccounts: any;
 
-  displayedColumns: string[] = ['accountNo', 'status', 'type' , 'accountBalance', 'submittedOn' ];
+  displayedColumns: string[] = ['accountNo', 'status', 'type' , 'accountBalance', 'submittedOn', 'action' ];
 
   dataSource: MatTableDataSource<any>;
 
@@ -21,7 +22,7 @@ export class SavingsAccountsListComponent implements OnInit, AfterViewInit {
 
   @ViewChild(MatSort) sort: MatSort;
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
   }
@@ -54,4 +55,8 @@ export class SavingsAccountsListComponent implements OnInit, AfterViewInit {
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
+  viewSavingsAccount(account: any){
+    console.log(account);
+    this.router.navigate([`accounts/savings`], { queryParams: { id: account.id } });
+  }
 }

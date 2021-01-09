@@ -7,3 +7,6 @@ table {
 mat-form-field {
   margin: 1rem;
 }
+.view-savings-account{
+  cursor: pointer;
+}
