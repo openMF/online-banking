@@ -19,7 +19,7 @@
       Login to your account
     </div>
     <div>
-    <form fxLayout="column" [formGroup]="loginForm" id="login-form">
+    <form fxLayout="column" [formGroup]="loginForm" (keydown.enter)="login()" id="login-form">
 
       <mat-form-field fxFlexAlign="center" class="login-input">
     <span matPrefix>
