@@ -3,6 +3,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { startWith, delay, tap } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'online-banking-beneficiaries-list',
@@ -21,7 +22,7 @@ export class BeneficiariesListComponent implements OnInit, AfterViewInit {
 
   @ViewChild(MatSort) sort: MatSort;
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
 
@@ -44,5 +45,7 @@ export class BeneficiariesListComponent implements OnInit, AfterViewInit {
     this.dataSource.sort = this.sort;
   }
 
-
+  editBeneficiary(account) {
+    this.router.navigate(['/beneficiaries/edit'], {state: {...account, editMode: true}});
+  }
 }

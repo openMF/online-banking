@@ -4,6 +4,16 @@ table {
 .mat-elevation-z8 {
   margin: 1rem;
 }
+.add-beneficiary {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 56px;
+  flex-wrap: wrap-reverse;
+  width: 100%;
+}
+.edit-beneficiary {
+  cursor: pointer;
+}
 mat-form-field {
   margin: 1rem;
 }
