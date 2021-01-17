@@ -49,45 +49,80 @@ export class BeneficiariesFormComponent implements OnInit {
   }
 
   submitBeneficiaryForm() {
-    if(this.editMode) {
-      const beneficiary: any = {
-        name: this.beneficiariesForm.get('name').value,
-        transferLimit: this.beneficiariesForm.get('transferLimit').value
+    if (this.editMode)
+      this.updateBeneficiary();
+    else
+      this.addBeneficiary();
+  }
+
+  addBeneficiary() {
+    const beneficiary: BeneficiariesForm = {
+      ...this.beneficiariesForm.value,
+    };
+
+    const messages = {
+      success: {
+        head: 'New Beneficiary Successfully added',
+        body: 'You will be redirected to beneficiaries section'
+      },
+      failure: {
+        head: 'Something went wrong',
+        body: 'Please provide valid account number and office name, beneficiary name should be unique'
       }
-      this.beneficiariesService.updateBeneficiary(beneficiary, this.accountDetails.id).subscribe(res => {
-        this.beneficiariesForm.reset();
-        Object.keys(this.beneficiariesForm.controls).forEach(key => {
-          this.beneficiariesForm.controls[key].setErrors(null);
-        });
-        this.toastr.success('You will be redirected to beneficiaries section', 'Beneficiary Successfully Updated');
-        setTimeout(() => {
-          this.router.navigate(['/beneficiaries']);
-        }, 2000);
-      }, err => {
-        if (err.error){
-          console.log(err);
-          this.toastr.error('Please provide valid account number and office name, beneficiary name should be unique', 'Something went wrong');
-        }
-      });
-    } else {
-      const beneficiary: BeneficiariesForm = {
-        ...this.beneficiariesForm.value,
-      };
-      this.beneficiariesService.addBeneficiary(beneficiary).subscribe(res => {
-        this.beneficiariesForm.reset();
-        Object.keys(this.beneficiariesForm.controls).forEach(key => {
-          this.beneficiariesForm.controls[key].setErrors(null);
-        });
-        this.toastr.success('You will be redirected to beneficiaries section', 'New Beneficiary Successfully added');
-        setTimeout(() => {
-          this.router.navigate(['/beneficiaries']);
-        }, 2000);
-      }, err => {
-        if (err.error){
-          console.log(err);
-          this.toastr.error('Please provide valid account number and office name, beneficiary name should be unique', 'Something went wrong');
-        }
-      });
     }
+
+    const successfullyAddedBeneficiary = (res: any) => {
+      this.beneficiariesForm.reset();
+      Object.keys(this.beneficiariesForm.controls).forEach(key => {
+        this.beneficiariesForm.controls[key].setErrors(null);
+      });
+      this.toastr.success(messages.success.body, messages.success.head);
+      setTimeout(() => this.router.navigate(['/beneficiaries']), 2000);
+    }
+
+    const failedToAddBeneficiary = (err: any) => {
+      if (err.error){
+        console.log(err);
+        this.toastr.error(messages.failure.body, messages.failure.head);
+      }
+    }
+
+    this.beneficiariesService.addBeneficiary(beneficiary).subscribe(successfullyAddedBeneficiary, failedToAddBeneficiary);
+  }
+
+  updateBeneficiary() {
+    const beneficiary: any = {
+      name: this.beneficiariesForm.get('name').value,
+      transferLimit: this.beneficiariesForm.get('transferLimit').value
+    }
+
+    const messages = {
+      success: {
+        head: 'Beneficiary Successfully Updated',
+        body: 'You will be redirected to beneficiaries section'
+      },
+      failure: {
+        head: 'Something went wrong',
+        body: 'Beneficiary name should be unique, Please provide valid values and try again in some time'
+      }
+    }
+
+    const successfullyUpdatedBeneficiary = (res: any) => {
+      this.beneficiariesForm.reset();
+      Object.keys(this.beneficiariesForm.controls).forEach(key => {
+        this.beneficiariesForm.controls[key].setErrors(null);
+      });
+      this.toastr.success(messages.success.body, messages.success.head);
+      setTimeout(() => this.router.navigate(['/beneficiaries']), 2000);
+    }
+
+    const failedToUpdateBeneficiary = (err: any) => {
+      if (err.error){
+        console.log(err);
+        this.toastr.error(messages.failure.body, messages.failure.head);
+      }
+    }
+
+    this.beneficiariesService.updateBeneficiary(beneficiary, this.accountDetails.id).subscribe(successfullyUpdatedBeneficiary, failedToUpdateBeneficiary);
   }
 }

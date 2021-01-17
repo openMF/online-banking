@@ -18,12 +18,12 @@ const routes: Routes = [
     {
       path: 'beneficiaries/create',
       component: BeneficiariesFormComponent,
-      data: {title: extract('Add Beneficiary')}, // think of a way to use this
+      data: {title: extract('Add Beneficiary')},
       resolve: { accountTypeOptions: BeneficiariesFormResolver}},
     {
       path: 'beneficiaries/edit',
       component: BeneficiariesFormComponent,
-      data: {title: extract('Edit Beneficiary')}, // think of a way to use this
+      data: {title: extract('Edit Beneficiary')},
       resolve: { accountTypeOptions: BeneficiariesFormResolver}}
   ])
 ];
@@ -37,4 +37,3 @@ const routes: Routes = [
   ]
 })
 export class BeneficiariesRoutingModule { }
-

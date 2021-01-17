@@ -21,7 +21,7 @@ export class BeneficiariesService {
   }
 
   addBeneficiary(beneficiary: BeneficiariesForm) {
-    beneficiary.locale = "en_GB";
+    beneficiary.locale = navigator.language;
     return this.http.post('/self/beneficiaries/tpt', beneficiary);
   }
 
