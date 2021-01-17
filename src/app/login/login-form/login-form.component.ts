@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators, FormGroupDirective } from '@angular/forms';
 
 /** rxjs Imports */
 import { finalize } from 'rxjs/operators';
 
 /** Custom Services */
 import { AuthenticationService } from '../../core/authentication/authentication.service';
-import {AlertService} from '../../core/alert/alert.service';
+import { AlertService } from '../../core/alert/alert.service';
 
 @Component({
   selector: 'online-banking-login-form',
@@ -25,8 +25,8 @@ export class LoginFormComponent implements OnInit {
    * @param {AuthenticationService} authenticationService Authentication Service
    */
   constructor(private formBuilder: FormBuilder,
-              private authenticationService: AuthenticationService,
-              private alertService: AlertService) { }
+    private authenticationService: AuthenticationService,
+    private alertService: AlertService) { }
 
   /**
    * Create Login Form
@@ -40,15 +40,16 @@ export class LoginFormComponent implements OnInit {
   /**
    * Authenticate user credentials
    */
-  login(){
+  login(formDirective: FormGroupDirective) {
     this.loading = true;
     this.loginForm.disable();
     console.log('Trying to login with', this.loginForm.value);
     this.loginForm.enable();
     this.authenticationService.login(this.loginForm.value)
       .pipe(finalize(() => {
-        this.loginForm.reset();
+        formDirective.resetForm();
         this.loginForm.markAsPristine();
+        // this.loginForm.reset();
         // Angular Material Bug: Validation errors won't get removed on reset.
         this.loginForm.enable();
         this.loading = false;
@@ -66,7 +67,7 @@ export class LoginFormComponent implements OnInit {
   /**
    * Create Login Form
    */
-  private createLoginForm(){
+  private createLoginForm() {
     this.loginForm = this.formBuilder.group({
       username: ['', Validators.required],
       password: ['', Validators.required]

@@ -19,7 +19,7 @@
       Login to your account
     </div>
     <div>
-    <form fxLayout="column" [formGroup]="loginForm" (ngSubmit)="login()" id="login-form">
+    <form fxLayout="column" #formDirective="ngForm" [formGroup]="loginForm" (ngSubmit)="login(formDirective)" id="login-form">
 
       <mat-form-field fxFlexAlign="center" class="login-input">
     <span matPrefix>
