@@ -1,0 +1,17 @@
+.mat-elevation-z8 {
+  margin: 2rem 3rem;
+  padding: 2rem;
+}
+
+.two-row {
+  display: flex;
+  justify-content: stretch;
+}
+
+.two-row-item {
+    display: flex;
+    justify-content: flex-start;
+    margin: 8px 0 8px 0;
+    width: 50%;
+    align-items: center;
+}

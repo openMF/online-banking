@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'online-banking-savings-account-details',
@@ -7,7 +8,15 @@ import { Component, OnInit } from '@angular/core';
 })
 export class SavingsAccountDetailsComponent implements OnInit {
 
-  constructor() { }
+  accountDetails: any;
+
+  constructor(private route: ActivatedRoute,
+              private router: Router) {
+    this.route.data.subscribe((data: { accountDetails: any }) => {
+      this.accountDetails = data.accountDetails;
+      console.log(this.accountDetails);
+    });
+  }
 
   ngOnInit(): void {
   }

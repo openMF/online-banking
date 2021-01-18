@@ -19,4 +19,11 @@ export class AccountsService {
     return this.http.get(`/self/clients/${userId}/accounts`);
   }
 
+  getSavingsAccountDetails(accountId: string): Observable<any> {
+    return this.http.get(`/self/savingsaccounts/${accountId}`);
+  }
+
+  getLoanAccountDetails(loanId: string): Observable<any> {
+    return this.http.get(`/self/loans/${loanId}`);
+  }
 }
