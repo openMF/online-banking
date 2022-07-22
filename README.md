@@ -40,6 +40,8 @@ The application is using the development server mobile instance with basic authe
 
 **Important Note:** Please do not make any alterations to these credentials.
 
+![alt text](https://fintecheando.mx/mifos/onlineBanking.png)
+
 ## Code scaffolding
 
 Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
