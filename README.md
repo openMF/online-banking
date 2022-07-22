@@ -10,9 +10,9 @@ Online Banking App is the revamped version of Web Self Service App. The app leve
 
     [`npm`](https://nodejs.org/en/download/)
 
-2. Install [angular-cli](https://github.com/angular/angular-cli) globally.
+2. Install [angular-cli](https://github.com/angular/angular-cli) locally.
 ```
-npm install -g @angular/cli@9.1.7
+npm install @angular/cli@9.1.7
 ```
 
 3. Clone the project locally into your system.
@@ -29,7 +29,8 @@ npm install
 
 6. To preview the app, run the following command and navigate to `http://localhost:4200/`.
 ```
-ng serve
+export NODE_OPTIONS=--openssl-legacy-provider
+npm run ng serve
 ```
 
 The application is using the development server mobile instance with basic authentication by default. The credentials for the same are:
@@ -38,6 +39,8 @@ The application is using the development server mobile instance with basic authe
     Password - password
 
 **Important Note:** Please do not make any alterations to these credentials.
+
+![alt text](https://fintecheando.mx/mifos/onlineBanking.png)
 
 ## Code scaffolding
 
