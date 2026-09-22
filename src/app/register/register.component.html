@@ -1,0 +1,107 @@
+<div fxLayout="row" fxLayout.xs="column">
+  
+  <div>
+    <mat-spinner *ngIf="loading" ></mat-spinner>
+  </div>
+
+  <div fxFlex="65%" fxLayout="column" class="cover" fxHide.xs>
+    <div class="cover-content">
+      <h1 class="md-display-1 cover-title">Online Banking</h1>
+      <p class="md-headline">
+        Create your Self-Service account to effectively and efficiently manage your responsible financial services.
+      </p>
+    </div>
+  </div>
+
+  <div fxFlex="35%" fxLayout="column" class="login-container">
+    <div>
+      <img src="./assets/images/MifosX_logo.png" alt="mifos-logo"/>
+    </div>
+    <div class="mat-dialog-title login-text" style="text-align: center; margin-bottom: 10px;">
+      Register for an account
+    </div>
+
+    <div style="width: 100%; padding: 0 10%; box-sizing: border-box;">
+      <!-- Step 1: Registration Form -->
+      <form *ngIf="!isVerificationStep" fxLayout="column" [formGroup]="registerForm" (ngSubmit)="submitRegistration()">
+        
+        <mat-form-field appearance="outline" class="login-input">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" (input)="registrationError = null" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="login-input">
+          <mat-label>Password</mat-label>
+          <input matInput type="password" formControlName="password" (input)="registrationError = null" required>
+        </mat-form-field>
+
+        <div fxLayout="row" fxLayoutGap="15px">
+          <mat-form-field fxFlex appearance="outline" class="login-input">
+            <mat-label>First Name</mat-label>
+            <input matInput formControlName="firstName" (input)="registrationError = null" required>
+          </mat-form-field>
+          <mat-form-field fxFlex appearance="outline" class="login-input">
+            <mat-label>Last Name</mat-label>
+            <input matInput formControlName="lastName" (input)="registrationError = null" required>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="login-input">
+          <mat-label>Account Number</mat-label>
+          <input matInput formControlName="accountNumber" (input)="registrationError = null" required>
+        </mat-form-field>
+
+        <div fxLayout="row" fxLayoutGap="15px">
+          <mat-form-field fxFlex appearance="outline" class="login-input">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" (input)="registrationError = null" required>
+          </mat-form-field>
+          <mat-form-field fxFlex appearance="outline" class="login-input">
+            <mat-label>Mobile Number</mat-label>
+            <input matInput formControlName="mobileNumber" (input)="registrationError = null">
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="login-input">
+          <mat-label>Verification Method</mat-label>
+          <mat-select formControlName="authenticationMode" (selectionChange)="registrationError = null">
+            <mat-option value="email">Email</mat-option>
+            <mat-option value="mobile">SMS</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div *ngIf="registrationError" class="error-banner">
+          <i class="fa fa-exclamation-circle"></i>
+          <span>{{ registrationError }}</span>
+        </div>
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="registerForm.invalid || loading" class="login-button login-text" style="width: 100%; margin-top: 15px;">
+          Register
+        </button>
+      </form>
+
+      <!-- Step 2: Verification Form -->
+      <form *ngIf="isVerificationStep" fxLayout="column" [formGroup]="verifyForm" (ngSubmit)="submitVerification()">
+        <p style="text-align: center; color: green; margin-bottom: 15px;">Verification token sent! Please enter it below.</p>
+        
+        <mat-form-field appearance="outline" class="login-input">
+          <mat-label>Verification Token</mat-label>
+          <input matInput formControlName="authenticationToken" (input)="verificationError = null" required>
+        </mat-form-field>
+
+        <div *ngIf="verificationError" class="error-banner">
+          <i class="fa fa-exclamation-circle"></i>
+          <span>{{ verificationError }}</span>
+        </div>
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="verifyForm.invalid || loading" class="login-button login-text" style="width: 100%; margin-top: 15px;">
+          Activate Account
+        </button>
+      </form>
+
+      <div fxLayoutAlign="center center" style="margin-top: 20px; margin-bottom: 40px; text-align: center;">
+        <a routerLink="/login" style="color: #4a90e2; text-decoration: none; font-weight: 500;">Already have an account? Login here</a>
+      </div>
+    </div>
+  </div>
+</div>

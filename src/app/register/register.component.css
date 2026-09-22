@@ -1,5 +1,5 @@
 .cover {
-  background-image: url('../../../assets/images/cover.png');
+  background-image: url('../../assets/images/cover.png');
   background-size: cover;
   background-position: center;
   color: white;
@@ -23,16 +23,15 @@
   width: 100%;
   padding: 5px 0;
 }
-button {
-  display: block;
+button{
+  display:block;
   width: 100%;
-  margin-top: 15px;
+  margin-top: 20px;
 }
-.login-button {
-  min-height: 45px;
+.login-button{
+  min-height: 35px;
   color: white;
-  font-size: 1.1rem;
-  border-radius: 8px;
+  line-height: 35px;
 }
 .enabled{
   background-color: dodgerblue;
@@ -43,8 +42,6 @@ button {
 
 .forgot-button{
   background-color: transparent;
-  color: #666;
-  margin-top: 10px;
 }
 
 img{
@@ -57,6 +54,21 @@ img{
 
 .login-container{
   display: flex;
+  align-items: center;
+  overflow-y: auto;
+  height: 100vh;
+}
+mat-spinner{
+  position: absolute;
+  color: red;
+  z-index: 1031;
+  top: 50%;
+  left: 50%;
+}
+@media only screen and (max-width: 700px) {
+  .cover {
+    display: none !important;
+  }
 }
 
 .error-banner {
@@ -78,15 +90,4 @@ img{
   font-size: 20px;
   width: 20px;
   height: 20px;
-}mat-spinner{
-  position: absolute;
-  color: red;
-  z-index: 1031;
-  top: 50%;
-  left: 50%;
-}
-@media only screen and (max-width: 700px) {
-  .cover {
-    display: none !important;
-  }
 }
