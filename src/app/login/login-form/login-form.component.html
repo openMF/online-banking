@@ -2,7 +2,7 @@
   <div>
   <mat-spinner *ngIf="loading" ></mat-spinner>
   </div>
-  <div fxFlex="70%" fxLayout="column" class="cover">
+  <div fxFlex="65%" fxLayout="column" class="cover" fxHide.xs>
     <div class="cover-content">
       <h1 class="md-display-1 cover-title">Online Banking</h1>
       <p class="md-headline">
@@ -11,45 +11,51 @@
     </div>
   </div>
 
-  <div fxFlex="30%" fxLayout="column" class="login-container">
+  <div fxFlex="35%" fxLayout="column" class="login-container">
     <div>
       <img src="./assets/images/MifosX_logo.png" alt="mifos-logo"/>
     </div>
-    <div class="mat-dialog-title login-text">
+    <div class="mat-dialog-title login-text" style="text-align: center; margin-bottom: 20px;">
       Login to your account
     </div>
-    <div>
-    <form fxLayout="column" #formDirective="ngForm" [formGroup]="loginForm" (ngSubmit)="login(formDirective)" id="login-form">
+    <div style="width: 100%; padding: 0 15%; box-sizing: border-box;">
+      <form fxLayout="column" #formDirective="ngForm" [formGroup]="loginForm" (ngSubmit)="login(formDirective)" id="login-form">
 
-      <mat-form-field fxFlexAlign="center" class="login-input">
-    <span matPrefix>
-      <fa-icon icon="user-circle" size="lg"></fa-icon>&nbsp;&nbsp;
-    </span>
-        <input matInput type="text" autocomplete="off" placeholder="Username" formControlName="username">
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="login-input">
+          <mat-label>Username</mat-label>
+          <span matPrefix>
+            <fa-icon icon="user-circle" size="lg"></fa-icon>&nbsp;&nbsp;
+          </span>
+          <input matInput type="text" autocomplete="off" formControlName="username" (input)="loginError = null">
+        </mat-form-field>
 
-      <mat-form-field fxFlexAlign="center" class="login-input">
-    <span matPrefix>
-      <fa-icon icon="lock" size="lg"></fa-icon>&nbsp;&nbsp;
-    </span>
-        <input matInput type="{{ passwordInputType }}" placeholder="Password" formControlName="password">
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="login-input">
+          <mat-label>Password</mat-label>
+          <span matPrefix>
+            <fa-icon icon="lock" size="lg"></fa-icon>&nbsp;&nbsp;
+          </span>
+          <input matInput type="{{ passwordInputType }}" formControlName="password" (input)="loginError = null">
+        </mat-form-field>
 
-      <button mat-raised-button fxFlexAlign="center" *ngIf="loginForm.valid" class="login-button enabled" [disabled]="!loginForm.valid">
-        Login
-      </button>
-      <button mat-raised-button fxFlexAlign="center" *ngIf="!loginForm.valid" class="login-button disabled" [disabled]="!loginForm.valid">
-        Login
-      </button>
+        <div *ngIf="loginError" class="error-banner">
+          <i class="fa fa-exclamation-circle"></i>
+          <span>{{ loginError }}</span>
+        </div>
 
-      <button type="button" mat-button fxFlexAlign="center" class="forgot-button" (click)="forgotPassword()">
-        Forgot Password?
-      </button>
+        <button mat-raised-button color="primary" [disabled]="!loginForm.valid" class="login-button login-text" type="submit">
+          Login
+        </button>
 
-    </form>
+        <div fxLayoutAlign="center center" style="margin-top: 15px; text-align: center;">
+          <a routerLink="/register" style="color: #4a90e2; text-decoration: none; font-weight: 500;">Don't have an account? Register here</a>
+        </div>
+
+        <button type="button" mat-button class="forgot-button" (click)="forgotPassword()">
+          Forgot Password?
+        </button>
+
+      </form>
     </div>
-
-
   </div>
 
 </div>

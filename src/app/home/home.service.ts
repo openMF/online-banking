@@ -14,9 +14,10 @@ export class HomeService {
               private authenticationService: AuthenticationService) { }
 
   getAccounts(): Observable<any> {
-    const userId = this.authenticationService.getCredentials().userId;
-    console.log('From the home service get account method ', userId);
-    return this.http.get(`/self/clients/${userId}/accounts`);
+    const clients = this.authenticationService.getCredentials().clients;
+    const clientId = clients && clients.length > 0 ? clients[0] : null;
+    console.log('From the home service get account method, clientId: ', clientId);
+    return this.http.get(`/self/clients/${clientId}/accounts`);
   }
 
 }

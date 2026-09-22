@@ -37,23 +37,44 @@ export class LoginFormComponent implements OnInit {
     this.passwordInputType = 'password';
   }
 
+  loginError: string | null = null;
+
   /**
    * Authenticate user credentials
    */
   login(formDirective: FormGroupDirective) {
     this.loading = true;
     this.loginForm.disable();
-    console.log('Trying to login with', this.loginForm.value);
+    this.loginError = null;
     this.loginForm.enable();
+    
     this.authenticationService.login(this.loginForm.value)
       .pipe(finalize(() => {
-        formDirective.resetForm();
-        this.loginForm.markAsPristine();
-        // this.loginForm.reset();
-        // Angular Material Bug: Validation errors won't get removed on reset.
+        if (!this.loginError) {
+          formDirective.resetForm();
+          this.loginForm.markAsPristine();
+        }
         this.loginForm.enable();
         this.loading = false;
-      })).subscribe();
+      })).subscribe({
+        next: () => {
+          // handled in auth service
+        },
+        error: (error) => {
+          let msg = '';
+          if (error.error?.errors && error.error.errors.length > 0) {
+            msg = error.error.errors[0].defaultUserMessage || error.error.errors[0].developerMessage;
+          } else {
+            msg = error.error?.defaultUserMessage || error.error?.developerMessage || error.message || 'Invalid username or password.';
+          }
+          
+          if (msg === 'Unauthenticated. Please login.' || msg === 'Unauthenticated. Please login') {
+            msg = 'Wrong username or password';
+          }
+          
+          this.loginError = msg;
+        }
+      });
   }
 
   /**

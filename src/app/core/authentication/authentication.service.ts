@@ -118,12 +118,19 @@ export class AuthenticationService {
   }
 
   /**
-   * Sends a password reset mail
-   * @param {string} email Email id of user
+   * Requests a password reset token
+   * @param {string} username Username of user
    */
-  resetPassword(email: string) {
-    // TODO: Implementation
-    return true;
+  requestPasswordReset(username: string): Observable<any> {
+    return this.http.post('/self/password/request', { username });
+  }
+
+  /**
+   * Renews the password using the token
+   * @param {any} payload Request ID, token, password, repeatPassword
+   */
+  renewPassword(payload: any): Observable<any> {
+    return this.http.post('/self/password/renew', payload);
   }
 
   /**

@@ -1,16 +1,14 @@
 .cover {
-  background-image: url('../../../assets/images//cover.png');
+  background-image: url('../../../assets/images/cover.png');
   background-size: cover;
+  background-position: center;
   color: white;
-  height: 100vh;
-}
-.cover-body{
-  padding: 70px;
+  min-height: 100vh;
 }
 .cover-content{
   margin-top: 35vh;
   padding-left: 10vh;
-  padding-right: 30vh;
+  padding-right: 10vh;
   color : white;
   font-size: 2rem;
   line-height: 1.3;
@@ -21,20 +19,20 @@
   font-size: 3rem;
   font-weight: bold;
 }
-.mat-form-field{
-  width: 150%;
-  padding: 15px;
-  position: relative;
+.mat-form-field {
+  width: 100%;
+  padding: 5px 0;
 }
-button{
-  display:block;
-  width: 150%;
-  margin-top: 20px;
+button {
+  display: block;
+  width: 100%;
+  margin-top: 15px;
 }
-.login-button{
-  min-height: 35px;
+.login-button {
+  min-height: 45px;
   color: white;
-  line-height: 35px;
+  font-size: 1.1rem;
+  border-radius: 8px;
 }
 .enabled{
   background-color: dodgerblue;
@@ -45,18 +43,22 @@ button{
 
 .forgot-button{
   background-color: transparent;
+  color: #666;
+  margin-top: 10px;
 }
 
-
 img{
-  margin-top: 10vh;
-  height: 25vh;
-  width: 15vw;
+  margin-top: 5vh;
+  max-height: 120px;
+  max-width: 100%;
+  object-fit: contain;
+  margin-bottom: 20px;
 }
 
 .login-container{
   display: flex;
   align-items: center;
+  height: 100vh;
 }
 mat-spinner{
   position: absolute;
@@ -69,9 +71,25 @@ mat-spinner{
   .cover {
     display: none !important;
   }
+}.error-banner {
+  display: flex;
+  align-items: center;
+  background-color: #fdecea;
+  color: #f44336;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #f44336;
 }
 
-
-
+.error-banner i {
+  margin-right: 10px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
 
 

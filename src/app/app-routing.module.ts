@@ -12,7 +12,8 @@ const routes: Routes = [
   {
     path: '*',
     component: NotFoundComponent
-  }
+  },
+  { path: 'register', loadChildren: () => import('./register/register.module').then(m => m.RegisterModule) }
 ];
 
 /**

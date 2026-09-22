@@ -33,6 +33,8 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/home'], {replaceUrl: true});
       } else if (alertType === 'Password Reset Required'){
         this.resetPassword = true;
+      } else if (alertType === 'Cancel Password Reset') {
+        this.resetPassword = false;
       }
     });
   }

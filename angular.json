@@ -132,5 +132,8 @@
       }
     }
   },
-  "defaultProject": "online-banking"
+  "defaultProject": "online-banking",
+  "cli": {
+    "analytics": "26638da0-35b8-40b5-9c03-43370382649d"
+  }
 }
