@@ -1,0 +1,65 @@
+<div class="profile-container" fxLayout="row" fxLayoutAlign="center start">
+  
+  <div *ngIf="loading" class="spinner-container" fxLayout="column" fxLayoutAlign="center center">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Loading Profile...</p>
+  </div>
+
+  <div *ngIf="!loading && error" class="error-banner">
+    <fa-icon icon="exclamation-circle"></fa-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <mat-card class="profile-card" *ngIf="!loading && clientDetails">
+    <div class="profile-header" fxLayout="column" fxLayoutAlign="center center">
+      <div class="avatar-circle">
+        <span class="avatar-initial">{{ clientDetails.firstname.charAt(0) }}{{ clientDetails.lastname.charAt(0) }}</span>
+      </div>
+      <h2>{{ clientDetails.displayName }}</h2>
+      <span class="status-badge" [ngClass]="{'active': clientDetails.active}">
+        {{ clientDetails.status?.value || 'Inactive' }}
+      </span>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <mat-card-content class="profile-content">
+      <div class="info-row" fxLayout="row" fxLayoutAlign="start center">
+        <fa-icon icon="university"></fa-icon>
+        <div class="info-details">
+          <label>Account Number</label>
+          <span>{{ clientDetails.accountNo }}</span>
+        </div>
+      </div>
+
+      <div class="info-row" fxLayout="row" fxLayoutAlign="start center">
+        <fa-icon icon="building"></fa-icon>
+        <div class="info-details">
+          <label>Office / Branch</label>
+          <span>{{ clientDetails.officeName }}</span>
+        </div>
+      </div>
+
+      <div class="info-row" fxLayout="row" fxLayoutAlign="start center">
+        <fa-icon icon="mobile-alt"></fa-icon>
+        <div class="info-details">
+          <label>Mobile Number</label>
+          <span class="value-text" [class.empty]="!clientDetails.mobileNo">
+            {{ clientDetails.mobileNo || 'Not provided' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="info-row" fxLayout="row" fxLayoutAlign="start center">
+        <fa-icon icon="calendar-alt"></fa-icon>
+        <div class="info-details">
+          <label>Activation Date</label>
+          <span class="value-text" [class.empty]="!clientDetails.activationDate">
+            {{ clientDetails.activationDate ? (clientDetails.activationDate[0] + '-' + clientDetails.activationDate[1] + '-' + clientDetails.activationDate[2]) : 'Unknown' }}
+          </span>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+</div>

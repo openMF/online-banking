@@ -17,11 +17,11 @@
 </mat-toolbar>
 
 <mat-menu #applicationMenu="matMenu" [overlapTrigger]="false" yPosition="below" xPosition="after">
-  <button mat-menu-item [routerLink]="['/settings']">
+  <button mat-menu-item [routerLink]="['/profile']">
     <mat-icon>
-      <fa-icon icon="cog" size="sm"></fa-icon>
+      <fa-icon icon="user" size="sm"></fa-icon>
     </mat-icon>
-    <span>Settings</span>
+    <span>My Profile</span>
   </button>
   <button mat-menu-item (click)="logout()">
     <mat-icon>
