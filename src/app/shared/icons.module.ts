@@ -92,6 +92,8 @@ import {
   faUserFriends,
   faClipboard,
   faInfoCircle,
+  faPhone,
+  faMobileAlt,
   faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -195,6 +197,8 @@ export class IconsModule {
       faUserFriends,
       faClipboard,
       faInfoCircle,
+      faPhone,
+      faMobileAlt,
       faClipboardList);
   }
 }

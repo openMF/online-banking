@@ -9,11 +9,12 @@ import { NotFoundComponent } from './not-found/not-found.component';
  * Default fallback in case of undefined prior-route
  */
 const routes: Routes = [
+  { path: 'register', loadChildren: () => import('./register/register.module').then(m => m.RegisterModule) },
+  { path: 'profile', loadChildren: () => import('./profile/profile.module').then(m => m.ProfileModule) },
   {
-    path: '*',
+    path: '**',
     component: NotFoundComponent
-  },
-  { path: 'register', loadChildren: () => import('./register/register.module').then(m => m.RegisterModule) }
+  }
 ];
 
 /**
