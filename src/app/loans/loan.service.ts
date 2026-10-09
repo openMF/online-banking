@@ -12,17 +12,21 @@ export class LoanService {
               private authenticationService: AuthenticationService) { }
 
   getProductOptions() {
-   const userId = this.authenticationService.getCredentials().userId;
-   return this.http.get(`/self/loans/template?templateType=individual&clientId=${userId}`);
+   const clients = this.authenticationService.getCredentials().clients;
+   const clientId = clients && clients.length > 0 ? clients[0] : null;
+   return this.http.get(`/self/loans/template?templateType=individual&clientId=${clientId}`);
   }
 
   getProductOptionDetails(productId: number){
-    const userId = this.authenticationService.getCredentials().userId;
-    return this.http.get(`/self/loans/template?templateType=individual&clientId=${userId}&productId=${productId}`);
+    const clients = this.authenticationService.getCredentials().clients;
+    const clientId = clients && clients.length > 0 ? clients[0] : null;
+    return this.http.get(`/self/loans/template?templateType=individual&clientId=${clientId}&productId=${productId}`);
   }
 
   requestNewLoan(loan: LoanRequest){
-    loan.clientId = this.authenticationService.getCredentials().userId;
+    const clients = this.authenticationService.getCredentials().clients;
+    const clientId = clients && clients.length > 0 ? clients[0] : null;
+    loan.clientId = clientId;
     loan.principal = loan.principal.toString();
     console.log(loan);
     return this.http.post('/self/loans', loan);

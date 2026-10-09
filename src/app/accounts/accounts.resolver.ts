@@ -6,12 +6,13 @@ import { Resolve } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { AccountsService } from './accounts.service';
+import { ClientAccounts } from './accounts.model';
 
 /**
  * Accounts List Resolver
  */
 @Injectable()
-export class AccountsResolver implements Resolve<object>{
+export class AccountsResolver implements Resolve<ClientAccounts> {
 
   /**
    * @param accountsService
@@ -21,9 +22,9 @@ export class AccountsResolver implements Resolve<object>{
 
   /**
    * Returns the list of accounts
-   * @returns {Observable<any>}
+   * @returns {Observable<ClientAccounts>}
    */
-  resolve(): Observable<any> {
+  resolve(): Observable<ClientAccounts> {
     return this.accountsService.getAccounts();
   }
 

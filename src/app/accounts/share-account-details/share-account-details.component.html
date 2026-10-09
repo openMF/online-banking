@@ -1,0 +1,52 @@
+<div class="container m-t-20 m-b-20">
+  <!-- Loading & Error States -->
+  <mat-spinner *ngIf="loading"></mat-spinner>
+  
+  <mat-card class="m-b-20" *ngIf="error">
+    <mat-card-content class="error-text">{{ error }}</mat-card-content>
+  </mat-card>
+
+  <!-- Account Details Card -->
+  <div *ngIf="!loading && !error && shareAccount" fxLayout="column" fxLayoutGap="20px">
+    <mat-card class="mat-elevation-z4 account-header-card">
+      <mat-card-content>
+        <div fxLayout="row" fxLayoutAlign="space-between center" fxLayout.xs="column" fxLayoutAlign.xs="start start">
+          <div fxLayout="column">
+            <h2 class="mat-h2 m-b-0">{{ shareAccount.productName }}</h2>
+            <p class="mat-body-1 text-muted">Account No: {{ shareAccount.accountNo }}</p>
+          </div>
+          <div fxLayout="column" fxLayoutAlign="end end" fxLayoutAlign.xs="start start">
+            <h1 class="mat-display-1 balance-text text-primary">
+              {{ shareAccount.totalApprovedShares }} Shares
+            </h1>
+            <span class="status-badge" [ngClass]="{'active': shareAccount.status.active, 'closed': shareAccount.status.closed}">
+              {{ shareAccount.status.value }}
+            </span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <div fxLayout="row" fxLayoutGap="20px">
+        <mat-card class="mat-elevation-z4" fxFlex>
+            <mat-card-header>
+              <mat-card-title>Total Approved Shares</mat-card-title>
+            </mat-card-header>
+            <mat-divider></mat-divider>
+            <mat-card-content class="p-t-20">
+                <h1 class="mat-display-1">{{ shareAccount.totalApprovedShares }}</h1>
+            </mat-card-content>
+          </mat-card>
+          
+          <mat-card class="mat-elevation-z4" fxFlex>
+            <mat-card-header>
+              <mat-card-title>Pending Shares</mat-card-title>
+            </mat-card-header>
+            <mat-divider></mat-divider>
+            <mat-card-content class="p-t-20">
+                <h1 class="mat-display-1">{{ shareAccount.totalPendingForApprovalShares }}</h1>
+            </mat-card-content>
+          </mat-card>
+    </div>
+  </div>
+</div>

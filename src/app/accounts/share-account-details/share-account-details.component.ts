@@ -2,16 +2,16 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AccountsService } from '../accounts.service';
-import { LoanAccountDetails } from '../accounts.model';
+import { ShareAccountDetails } from '../accounts.model';
 
 @Component({
-  selector: 'online-banking-loan-account-details',
-  templateUrl: './loan-account-details.component.html',
-  styleUrls: ['./loan-account-details.component.css']
+  selector: 'app-share-account-details',
+  templateUrl: './share-account-details.component.html',
+  styleUrls: ['./share-account-details.component.css']
 })
-export class LoanAccountDetailsComponent implements OnInit, OnDestroy {
+export class ShareAccountDetailsComponent implements OnInit, OnDestroy {
 
-  loanAccount: LoanAccountDetails | null = null;
+  shareAccount: ShareAccountDetails | null = null;
   loading = true;
   error = '';
   private routeSub: Subscription;
@@ -33,13 +33,13 @@ export class LoanAccountDetailsComponent implements OnInit, OnDestroy {
   fetchAccountDetails(id: string): void {
     this.loading = true;
     this.error = '';
-    this.accountsService.getLoanAccount(id).subscribe({
-      next: (account: LoanAccountDetails) => {
-        this.loanAccount = account;
+    this.accountsService.getShareAccount(id).subscribe({
+      next: (account: ShareAccountDetails) => {
+        this.shareAccount = account;
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load loan account details.';
+        this.error = 'Failed to load share account details.';
         this.loading = false;
         console.error(err);
       }

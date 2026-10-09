@@ -9,6 +9,7 @@ import {IconsModule} from '../shared/icons.module';
 import { SavingsAccountsListComponent } from './savings-accounts-list/savings-accounts-list.component';
 import { LoanAccountsListComponent } from './loan-accounts-list/loan-accounts-list.component';
 import { ShareAccountsListComponent } from './share-accounts-list/share-accounts-list.component';
+import { ShareAccountDetailsComponent } from './share-account-details/share-account-details.component';
 
 
 
@@ -19,7 +20,8 @@ import { ShareAccountsListComponent } from './share-accounts-list/share-accounts
     LoanAccountDetailsComponent,
     SavingsAccountsListComponent,
     LoanAccountsListComponent,
-    ShareAccountsListComponent],
+    ShareAccountsListComponent,
+    ShareAccountDetailsComponent],
   imports: [
     SharedModule,
     AccountsRoutingModule,

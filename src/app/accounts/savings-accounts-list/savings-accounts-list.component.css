@@ -1,9 +1,7 @@
-table {
-    width: 100%;
-  }
-.mat-elevation-z8 {
-  margin: 1rem;
+.clickable-row {
+  cursor: pointer;
 }
-mat-form-field {
-  margin: 1rem;
+
+.clickable-row:hover {
+  background-color: #f5f5f5;
 }
