@@ -32,29 +32,12 @@
   color: white;
 }
 
-.full-width-table {
-  width: 100%;
-  border-collapse: collapse;
+.p-t-20 {
+    padding-top: 20px;
 }
 
-.full-width-table th,
-.full-width-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid rgba(0,0,0,0.12);
-}
-
-.full-width-table th {
-  font-weight: 500;
-  color: rgba(0,0,0,0.54);
-}
-
-.text-success {
-  color: #4caf50;
-}
-
-.text-danger {
-  color: #f44336;
+.text-primary {
+  color: #1976d2;
 }
 
 .error-text {

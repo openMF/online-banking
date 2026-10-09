@@ -3,16 +3,16 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription, of } from 'rxjs';
 import { switchMap, catchError, tap } from 'rxjs/operators';
 import { AccountsService } from '../accounts.service';
-import { SavingsAccountDetails } from '../accounts.model';
+import { ShareAccountDetails } from '../accounts.model';
 
 @Component({
-  selector: 'online-banking-savings-account-details',
-  templateUrl: './savings-account-details.component.html',
-  styleUrls: ['./savings-account-details.component.css']
+  selector: 'app-share-account-details',
+  templateUrl: './share-account-details.component.html',
+  styleUrls: ['./share-account-details.component.css']
 })
-export class SavingsAccountDetailsComponent implements OnInit, OnDestroy {
+export class ShareAccountDetailsComponent implements OnInit, OnDestroy {
 
-  savingsAccount: SavingsAccountDetails | null = null;
+  shareAccount: ShareAccountDetails | null = null;
   loading = true;
   error = '';
   private routeSub: Subscription;
@@ -31,9 +31,9 @@ export class SavingsAccountDetailsComponent implements OnInit, OnDestroy {
       switchMap(params => {
         const id = params.get('id');
         if (id) {
-          return this.accountsService.getSavingsAccount(id).pipe(
+          return this.accountsService.getShareAccount(id).pipe(
             catchError(err => {
-              this.error = 'Failed to load savings account details.';
+              this.error = 'Failed to load share account details.';
               console.error(err);
               return of(null);
             })
@@ -41,9 +41,9 @@ export class SavingsAccountDetailsComponent implements OnInit, OnDestroy {
         }
         return of(null);
       })
-    ).subscribe((account: SavingsAccountDetails | null) => {
+    ).subscribe((account: ShareAccountDetails | null) => {
       if (account) {
-        this.savingsAccount = account;
+        this.shareAccount = account;
       }
       this.loading = false;
     });
