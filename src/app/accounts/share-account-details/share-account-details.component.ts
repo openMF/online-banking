@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, of } from 'rxjs';
+import { switchMap, catchError, tap } from 'rxjs/operators';
 import { AccountsService } from '../accounts.service';
 import { ShareAccountDetails } from '../accounts.model';
 
@@ -22,27 +23,29 @@ export class ShareAccountDetailsComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.routeSub = this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.fetchAccountDetails(id);
-      }
-    });
-  }
-
-  fetchAccountDetails(id: string): void {
-    this.loading = true;
-    this.error = '';
-    this.accountsService.getShareAccount(id).subscribe({
-      next: (account: ShareAccountDetails) => {
+    this.routeSub = this.route.paramMap.pipe(
+      tap(() => {
+        this.loading = true;
+        this.error = '';
+      }),
+      switchMap(params => {
+        const id = params.get('id');
+        if (id) {
+          return this.accountsService.getShareAccount(id).pipe(
+            catchError(err => {
+              this.error = 'Failed to load share account details.';
+              console.error(err);
+              return of(null);
+            })
+          );
+        }
+        return of(null);
+      })
+    ).subscribe((account: ShareAccountDetails | null) => {
+      if (account) {
         this.shareAccount = account;
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load share account details.';
-        this.loading = false;
-        console.error(err);
       }
+      this.loading = false;
     });
   }
 

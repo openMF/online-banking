@@ -52,7 +52,9 @@
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"
           [routerLink]="['/accounts/loans', row.id]"
-          class="clickable-row"></tr>
+          class="clickable-row"
+          tabindex="0"
+          (keydown.enter)="$event.target.click()"></tr>
 
     </table>
     <mat-paginator [pageSizeOptions]="[10, 25, 50, 100, 200]" showFirstLastButtons></mat-paginator>

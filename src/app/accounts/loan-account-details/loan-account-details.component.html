@@ -19,7 +19,7 @@
           </div>
           <div fxLayout="column" fxLayoutAlign="end end" fxLayoutAlign.xs="start start">
             <h1 class="mat-display-1 balance-text text-danger">
-              {{ loanAccount.currency.displaySymbol }} {{ (loanAccount.loanBalance !== undefined ? loanAccount.loanBalance : loanAccount.summary?.totalOutstanding) | number:'1.2-2' }}
+              {{ loanAccount.currency.displaySymbol }} {{ (loanAccount.loanBalance !== undefined ? loanAccount.loanBalance : loanAccount.summary?.totalOutstanding) | number:'1.' + (loanAccount.currency.decimalPlaces || 2) + '-' + (loanAccount.currency.decimalPlaces || 2) }}
             </h1>
             <span class="status-badge" [ngClass]="{'active': loanAccount.status.active, 'closed': loanAccount.status.closed}">
               {{ loanAccount.status.value }}
@@ -56,10 +56,10 @@
               </td>
               <td>
                 <span [ngClass]="{'text-success': txn.type.deposit, 'text-danger': txn.type.withdrawal}">
-                  {{ txn.type.deposit ? '+' : '' }}{{ txn.currency.displaySymbol }}{{ txn.amount | number:'1.2-2' }}
+                  {{ txn.type.deposit ? '+' : '' }}{{ txn.currency.displaySymbol }}{{ txn.amount | number:'1.' + (txn.currency.decimalPlaces || 2) + '-' + (txn.currency.decimalPlaces || 2) }}
                 </span>
               </td>
-              <td>{{ txn.currency.displaySymbol }}{{ txn.runningBalance || txn.outstandingLoanBalance | number:'1.2-2' }}</td>
+              <td>{{ txn.currency.displaySymbol }}{{ (txn.runningBalance !== undefined && txn.runningBalance !== null ? txn.runningBalance : txn.outstandingLoanBalance) | number:'1.' + (txn.currency.decimalPlaces || 2) + '-' + (txn.currency.decimalPlaces || 2) }}</td>
             </tr>
           </tbody>
         </table>

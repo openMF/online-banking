@@ -18,7 +18,7 @@
             <p class="mat-body-1 text-muted">Account No: {{ shareAccount.accountNo }}</p>
           </div>
           <div fxLayout="column" fxLayoutAlign="end end" fxLayoutAlign.xs="start start">
-            <h1 class="mat-display-1 balance-text text-primary">
+            <h1 class="mat-display-1 balance-text">
               {{ shareAccount.totalApprovedShares }} Shares
             </h1>
             <span class="status-badge" [ngClass]="{'active': shareAccount.status.active, 'closed': shareAccount.status.closed}">

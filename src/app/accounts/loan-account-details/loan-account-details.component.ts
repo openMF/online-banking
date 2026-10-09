@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, of } from 'rxjs';
+import { switchMap, catchError, tap } from 'rxjs/operators';
 import { AccountsService } from '../accounts.service';
 import { LoanAccountDetails } from '../accounts.model';
 
@@ -22,27 +23,29 @@ export class LoanAccountDetailsComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.routeSub = this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.fetchAccountDetails(id);
-      }
-    });
-  }
-
-  fetchAccountDetails(id: string): void {
-    this.loading = true;
-    this.error = '';
-    this.accountsService.getLoanAccount(id).subscribe({
-      next: (account: LoanAccountDetails) => {
+    this.routeSub = this.route.paramMap.pipe(
+      tap(() => {
+        this.loading = true;
+        this.error = '';
+      }),
+      switchMap(params => {
+        const id = params.get('id');
+        if (id) {
+          return this.accountsService.getLoanAccount(id).pipe(
+            catchError(err => {
+              this.error = 'Failed to load loan account details.';
+              console.error(err);
+              return of(null);
+            })
+          );
+        }
+        return of(null);
+      })
+    ).subscribe((account: LoanAccountDetails | null) => {
+      if (account) {
         this.loanAccount = account;
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load loan account details.';
-        this.loading = false;
-        console.error(err);
       }
+      this.loading = false;
     });
   }
 

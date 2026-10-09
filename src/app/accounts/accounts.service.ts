@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { AuthenticationService } from '../core/authentication/authentication.service';
 import { ClientAccounts, SavingsAccountDetails, LoanAccountDetails, ShareAccountDetails } from './accounts.model';
 
@@ -20,8 +20,13 @@ export class AccountsService {
    * @returns An Observable of ClientAccounts
    */
   getAccounts(): Observable<ClientAccounts> {
-    const clients = this.authenticationService.getCredentials().clients;
+    const clients = this.authenticationService.getCredentials()?.clients;
     const clientId = clients && clients.length > 0 ? clients[0] : null;
+    
+    if (!clientId) {
+      return throwError(() => new Error('No valid client ID found.'));
+    }
+
     return this.http.get<ClientAccounts>(`/self/clients/${clientId}/accounts`);
   }
 
