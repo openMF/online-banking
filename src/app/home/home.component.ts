@@ -44,22 +44,29 @@ export class HomeComponent implements OnInit {
   }
 
   private formatBalances(accounts: any[], balanceKey: string): string {
-    const totals: { [code: string]: { amount: number, symbol: string } } = {};
+    const totals: { [code: string]: { amount: number, symbol: string, decimals: number } } = {};
     
     accounts.forEach(account => {
       const balance = account[balanceKey];
       if (balance !== undefined && balance !== null) {
         const code = account.currency?.code || 'UNK';
         const symbol = account.currency?.displaySymbol || '';
+        const decimals = account.currency?.decimalPlaces ?? 2;
         if (!totals[code]) {
-          totals[code] = { amount: 0, symbol: symbol };
+          totals[code] = { amount: 0, symbol: symbol, decimals: decimals };
         }
         totals[code].amount += Number(balance);
       }
     });
 
-    const entries = Object.values(totals);
+    const entries = Object.entries(totals);
     if (entries.length === 0) return '0';
-    return entries.map(t => `${t.symbol} ${t.amount.toLocaleString('en-US')}`).join(' | ');
+    return entries.map(([code, t]) => {
+      const formattedAmount = t.amount.toLocaleString('en-US', {
+        minimumFractionDigits: t.decimals,
+        maximumFractionDigits: t.decimals
+      });
+      return `${code} ${t.symbol}${formattedAmount}`;
+    }).join(' | ');
   }
 }

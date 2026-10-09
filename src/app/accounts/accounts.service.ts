@@ -24,7 +24,7 @@ export class AccountsService {
     const clientId = clients && clients.length > 0 ? clients[0] : null;
     
     if (!clientId) {
-      return throwError(() => new Error('No valid client ID found.'));
+      return throwError(new Error('No valid client ID found.'));
     }
 
     return this.http.get<ClientAccounts>(`/self/clients/${clientId}/accounts`);

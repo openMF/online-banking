@@ -27,7 +27,7 @@ export class LoanService {
       const clientId = this.getClientId();
       return this.http.get(`/self/loans/template?templateType=individual&clientId=${clientId}`);
     } catch (e) {
-      return throwError(() => e);
+      return throwError(e);
     }
   }
 
@@ -36,7 +36,7 @@ export class LoanService {
       const clientId = this.getClientId();
       return this.http.get(`/self/loans/template?templateType=individual&clientId=${clientId}&productId=${productId}`);
     } catch (e) {
-      return throwError(() => e);
+      return throwError(e);
     }
   }
 
@@ -47,7 +47,7 @@ export class LoanService {
       console.log(loan);
       return this.http.post('/self/loans', loan);
     } catch (e) {
-      return throwError(() => e);
+      return throwError(e);
     }
   }
 
