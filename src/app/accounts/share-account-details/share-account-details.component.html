@@ -1,6 +1,8 @@
 <div class="container m-t-20 m-b-20">
   <!-- Loading & Error States -->
-  <mat-spinner *ngIf="loading"></mat-spinner>
+  <div *ngIf="loading" fxLayout="row" fxLayoutAlign="center center" style="height: 60vh;">
+    <mat-spinner></mat-spinner>
+  </div>
   
   <mat-card class="m-b-20" *ngIf="error">
     <mat-card-content class="error-text">{{ error }}</mat-card-content>
