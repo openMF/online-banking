@@ -101,6 +101,7 @@ export interface AccountTransaction {
   currency: Currency;
   amount: number;
   runningBalance: number;
+  outstandingLoanBalance?: number;
   reversed: boolean;
   type: {
     id: number;
@@ -119,6 +120,9 @@ export interface SavingsAccountDetails extends SavingsAccount {
 
 export interface LoanAccountDetails extends LoanAccount {
   transactions?: AccountTransaction[];
+  summary?: {
+    totalOutstanding: number;
+  };
 }
 
 export interface ShareAccountDetails extends ShareAccount {
