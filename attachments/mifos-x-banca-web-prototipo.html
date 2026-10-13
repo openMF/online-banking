@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mifos X - Banca Web | Prototipo</title>
+  <style>
+    :root {
+      --green-dark: #0D47A1;
+      --green-primary: #1976D2;
+      --green-light: #E3F2FD;
+      --green-btn: #2196F3;
+      --green-btn-hover: #1565C0;
+      --gray-100: #F5F5F5;
+      --gray-200: #EEEEEE;
+      --gray-300: #E0E0E0;
+      --gray-500: #9E9E9E;
+      --gray-700: #616161;
+      --gray-900: #212121;
+      --white: #FFFFFF;
+      --error: #D32F2F;
+      --success: #2E7D32;
+      --shadow: 0 4px 20px rgba(0,0,0,0.12);
+      --radius: 8px;
+      --sidebar-width: 240px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--gray-100);
+      color: var(--gray-900);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    /* ========== UTILITIES ========== */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .w-full { width: 100%; }
+    .text-center { text-align: center; }
+    .text-sm { font-size: 0.875rem; }
+    .text-xs { font-size: 0.75rem; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+
+    /* ========== BUTTONS ========== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      gap: 0.5rem;
+    }
+    .btn-primary {
+      background: var(--green-primary);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--green-btn-hover); }
+    .btn-secondary {
+      background: #757575;
+      color: white;
+    }
+    .btn-secondary:hover { background: #616161; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-700);
+    }
+    .btn-outline:hover { background: var(--gray-100); }
+    .btn-block { width: 100%; }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ========== INPUTS ========== */
+    .form-group {
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--gray-700);
+      margin-bottom: 0.35rem;
+      font-weight: 500;
+    }
+    .input {
+      width: 100%;
+      padding: 0.7rem 1rem 0.7rem 2.5rem;
+      border: 1px solid var(--gray-300);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    .input:focus {
+      outline: none;
+      border-color: var(--green-primary);
+      box-shadow: 0 0 0 3px rgba(0,166,81,0.15);
+    }
+    .input.error { border-color: var(--error); }
+    .input-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-500);
+      font-size: 1.1rem;
+      pointer-events: none;
+    }
+    .form-group.has-label .input-icon { top: calc(50% + 0.6rem); }
+    .error-msg {
+      color: var(--error);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--gray-500);
+      font-size: 1rem;
+    }
+    .form-group.has-label .password-toggle { top: calc(50% + 0.6rem); }
+
+    /* ========== LANDING / AUTH ========== */
+    .auth-page {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0A3A7A 0%, #0D47A1 50%, #1565C0 100%);
+      display: flex;
+      flex-direction: column;
+    }
+    .auth-header {
+      background: var(--green-dark);
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      background: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--green-dark);
+      font-weight: 800;
+      font-size: 0.95rem;
+      letter-spacing: -0.5px;
+    }
+    .auth-nav {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .auth-nav a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+    }
+    .auth-nav a:hover { color: white; }
+
+    .auth-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .auth-main::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.6;
+    }
+
+    .auth-card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem 2.25rem;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 1;
+    }
+    .auth-card .avatar {
+      width: 64px;
+      height: 64px;
+      background: var(--gray-200);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+      font-size: 1.75rem;
+      color: var(--gray-500);
+    }
+    .auth-card h2 {
+      text-align: center;
+      font-size: 1.15rem;
+      margin-bottom: 1.5rem;
+      color: var(--gray-900);
+      letter-spacing: 0.5px;
+    }
+    .features-list {
+      position: absolute;
+      right: 8%;
+      top: 50%;
+      transform: translateY(-50%);
+      color: white;
+      font-size: 0.95rem;
+      z-index: 1;
+    }
+    .features-list li {
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .features-list li::before {
+      content: '•';
+      font-size: 1.4rem;
+      color: #64B5F6;
+    }
+
+    .auth-footer {
+      background: var(--green-dark);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.8rem;
+    }
+    .gov-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* ========== APP LAYOUT ========== */
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--green-dark);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 1.25rem 1.25rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+    .user-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .sidebar-nav {
+      flex: 1;
+      padding: 1rem 0;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+    .nav-item.active { border-left: 3px solid #64B5F6; }
+    .nav-icon { font-size: 1.15rem; width: 22px; text-align: center; }
+
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #F8F9FA;
+      overflow: auto;
+    }
+    .topbar {
+      background: var(--green-dark);
+      color: white;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .content-area {
+      padding: 1.5rem;
+      flex: 1;
+    }
+
+    /* ========== DASHBOARD ========== */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-align: center;
+    }
+    .stat-card .icon {
+      width: 48px;
+      height: 48px;
+      background: var(--green-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.75rem;
+      font-size: 1.4rem;
+      color: var(--green-dark);
+    }
+    .stat-card .label {
+      font-size: 0.8rem;
+      color: var(--gray-700);
+      margin-bottom: 0.35rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .stat-card .value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--green-dark);
+    }
+    .last-login {
+      font-size: 0.85rem;
+      color: var(--gray-500);
+      margin-bottom: 1.25rem;
+    }
+
+    /* ========== TRANSFER ========== */
+    .accounts-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .account-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      min-width: 220px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .account-card.selected { border-color: var(--green-primary); }
+    .account-card .bank-name {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      margin-bottom: 0.25rem;
+    }
+    .account-card .balance {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--green-dark);
+    }
+    .account-card .number {
+      font-size: 0.8rem;
+      color: var(--gray-700);
+      margin-top: 0.25rem;
+    }
+    .card-visual {
+      background: linear-gradient(135deg, #0D47A1, #1976D2);
+      color: white;
+      border-radius: 10px;
+      padding: 1rem;
+      width: 200px;
+      height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(0,107,63,0.3);
+    }
+    .card-visual .chip {
+      width: 28px;
+      height: 20px;
+      background: #FFD700;
+      border-radius: 3px;
+    }
+    .transfer-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .transfer-panel { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .panel-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--gray-900);
+    }
+    .beneficiary-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: 1px solid transparent;
+    }
+    .beneficiary-item:hover, .beneficiary-item.selected {
+      background: var(--green-light);
+      border-color: var(--green-primary);
+    }
+    .beneficiary-item .name { font-weight: 500; font-size: 0.9rem; }
+    .beneficiary-item .bank { font-size: 0.75rem; color: var(--gray-500); }
+
+    /* ========== TABLE ========== */
+    .table-wrap {
+      background: white;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.9rem 1.1rem;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th {
+      background: var(--green-dark);
+      color: white;
+      font-weight: 500;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    tr:nth-child(even) { background: #FAFAFA; }
+    tr:hover { background: var(--green-light); }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge-success { background: #E8F5E9; color: var(--success); }
+    .badge-out { background: #FFEBEE; color: var(--error); }
+
+    /* ========== MODALS ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+    .modal {
+      background: white;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      overflow: hidden;
+      animation: modalIn 0.25s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      background: var(--green-dark);
+      color: white;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 1rem; font-weight: 600; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.3rem;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+    .modal-close:hover { opacity: 1; }
+    .modal-body { padding: 1.5rem 1.25rem; }
+    .modal-footer {
+      padding: 1rem 1.25rem 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+    .clave-input {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin: 1.25rem 0;
+    }
+    .clave-input input {
+      width: 42px;
+      height: 48px;
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 600;
+      border: 1px solid var(--gray-300);
+      border-radius: 6px;
+    }
+    .clave-input input:focus {
+      border-color: var(--green-primary);
+      outline: none;
+    }
+    .success-icon {
+      width: 64px;
+      height: 64px;
+      background: #E8F5E9;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 2rem;
+      color: var(--success);
+    }
+
+    /* ========== SETTINGS ========== */
+    .settings-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      max-width: 480px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* ========== FAQ ========== */
+    .faq-item {
+      background: white;
+      border-radius: var(--radius);
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .faq-q {
+      padding: 1rem 1.25rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-q:hover { background: #FAFAFA; }
+    .faq-a {
+      padding: 0 1.25rem 1rem;
+      font-size: 0.9rem;
+      color: var(--gray-700);
+      display: none;
+    }
+    .faq-item.open .faq-a { display: block; }
+
+    /* ========== TOAST ========== */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--gray-900);
+      color: white;
+      padding: 0.85rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      z-index: 2000;
+      animation: toastIn 0.3s ease;
+      max-width: 360px;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ========== LOADING ========== */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1500;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--gray-300);
+      border-top-color: var(--green-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .features-list { display: none; }
+      .auth-card { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== AUTH PAGES ==================== -->
+  <div id="auth-section">
+    <!-- LANDING -->
+    <div id="page-landing" class="auth-page">
+      <header class="auth-header">
+        <div class="logo">
+          <div class="logo-icon">MX</div>
+          <div>
+            <div>Mifos X</div>
+            <div style="font-size:0.7rem;opacity:0.8;font-weight:400">Core Banking Platform</div>
+          </div>
+        </div>
+        <nav class="auth-nav">
+          <a href="#">PERSONAS</a>
+          <a href="#">EMPRESAS Y GOBIERNO</a>
+        </nav>
+      </header>
+      <main class="auth-main">
+        <div class="auth-card">
+          <div class="avatar">👤</div>
+          <h2>PERSONAS</h2>
+          <div class="form-group">
+            <span class="input-icon">👤</span>
+            <input type="text" class="input" id="client-number" placeholder="Número de Cliente" value="344988355" />
+          </div>
+          <button class="btn btn-primary btn-block mb-2" onclick="goTo('login')">CONTINUAR</button>
+          <button class="btn btn-secondary btn-block" onclick="goTo('register')">REGISTRARSE</button>
+        </div>
+        <ul class="features-list">
+          <li>Consulta de saldos</li>
+          <li>Consulta de movimientos</li>
+          <li>Transferencias entre cuentas propias</li>
+          <li>Transferencias a terceros mismo banco</li>
+        </ul>
+      </main>
+      <footer class="auth-footer">
+        <div class="gov-logo">
+          <span style="font-size:1.1rem;font-weight:700">Mifos</span>
+          <span>Open Source Core Banking</span>
+        </div>
+        <div>Mifos X — Plataforma de inclusión financiera de código abierto.</div>
+      </footer>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="page-register" class="auth-page hidden">
+      <header class="auth-header">
+        <div class="logo">
+          <div class="logo-icon">MX</div>
+          <div>Mifos X</div>
+        </div>
+        <div style="font-size:1rem;letter-spacing:1px">REGISTRO</div>
+        <div style="width:120px"></div>
+      </header>
+      <main class="auth-main" style="align-items:flex-start;padding-top:2rem">
+        <div class="auth-card" style="max-width:720px;padding:2rem">
+          <div class="avatar" style="margin-bottom:1.5rem">👤</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem 2rem">
+            <div>
+              <div class="form-group has-label">
+                <label>Nombre</label>
+                <span class="input-icon">👤</span>
+                <input type="text" class="input" id="reg-nombre" value="NOE" />
+              </div>
+              <div class="form-group has-label">
+                <label>Apellido Paterno</label>
+                <span class="input-icon">👤</span>
+                <input type="text" class="input" id="reg-paterno" value="LOPEZ" />
+              </div>
+              <div class="form-group has-label">
+                <label>Apellido Materno</label>
+                <span class="input-icon">👤</span>
+                <input type="text" class="input" id="reg-materno" value="GUZMAN" />
+              </div>
+              <div class="form-group has-label">
+                <label>Correo electrónico</label>
+                <span class="input-icon">✉️</span>
+                <input type="email" class="input" id="reg-email" value="correodepruebasinoegarcia@outlook.com" />
+              </div>
+              <div class="form-group has-label">
+                <label>Número de Cliente</label>
+                <span class="input-icon">#</span>
+                <input type="text" class="input" id="reg-cliente" value="344988355" />
+              </div>
+              <div class="form-group has-label">
+                <label>Contraseña</label>
+                <span class="input-icon">🔒</span>
+                <input type="password" class="input" id="reg-pass" value="Passw0rd" />
+                <button class="password-toggle" onclick="togglePass('reg-pass')">👁</button>
+              </div>
+              <div class="form-group has-label">
+                <label>Confirmar Contraseña</label>
+                <span class="input-icon">🔒</span>
+                <input type="password" class="input" id="reg-pass2" value="Passw0rd" />
+              </div>
+            </div>
+            <div>
+              <div class="form-group has-label">
+                <label>Número de Celular</label>
+                <span class="input-icon">📱</span>
+                <input type="text" class="input" id="reg-celular" value="9909978362" />
+              </div>
+              <div class="form-group has-label">
+                <label>CURP</label>
+                <span class="input-icon">🆔</span>
+                <input type="text" class="input" id="reg-curp" placeholder="CURP" />
+              </div>
+              <div class="form-group has-label">
+                <label>Fecha de Nacimiento *</label>
+                <span class="input-icon">📅</span>
+                <input type="text" class="input" id="reg-fecha" placeholder="dd/mm/aaaa" />
+              </div>
+              <div class="form-group" style="margin-top:1.5rem">
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                  <input type="checkbox" id="reg-terms" checked />
+                  Aceptar Términos y Condiciones
+                </label>
+              </div>
+              <div style="display:flex;gap:0.75rem;margin-top:1.5rem">
+                <button class="btn btn-primary" style="flex:1" onclick="submitRegister()">REGISTRAR</button>
+                <button class="btn btn-secondary" style="flex:1" onclick="goTo('landing')">CANCELAR</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+      <footer class="auth-footer">
+        <div class="gov-logo"><span style="font-weight:700">Mifos</span> Open Source Core Banking</div>
+        <div></div>
+      </footer>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="page-login" class="auth-page hidden">
+      <header class="auth-header">
+        <div class="logo">
+          <div class="logo-icon">MX</div>
+          <div>
+            <div>Mifos X</div>
+            <div style="font-size:0.7rem;opacity:0.8;font-weight:400">Core Banking Platform</div>
+          </div>
+        </div>
+        <nav class="auth-nav">
+          <a href="#">PERSONAS</a>
+          <a href="#">EMPRESAS Y GOBIERNO</a>
+        </nav>
+      </header>
+      <main class="auth-main">
+        <div class="auth-card">
+          <div class="avatar">👤</div>
+          <div class="text-center mb-4">
+            <div style="font-size:1.1rem;font-weight:600;letter-spacing:1px">N** L**** G****</div>
+            <p class="text-sm" style="color:var(--gray-700);margin-top:0.35rem">
+              Si las iniciales de tu nombre son correctas, ingresa tu contraseña.
+            </p>
+          </div>
+          <div class="form-group">
+            <span class="input-icon">🔒</span>
+            <input type="password" class="input" id="login-pass" placeholder="Contraseña" value="Passw0rd" />
+            <button class="password-toggle" onclick="togglePass('login-pass')">👁</button>
+          </div>
+          <button class="btn btn-primary btn-block mb-2" onclick="doLogin()">INICIAR SESIÓN</button>
+          <button class="btn btn-secondary btn-block" onclick="goTo('landing')">CANCELAR</button>
+          <p class="text-center text-sm mt-4">
+            <a href="#" style="color:var(--green-primary)" onclick="showToast('Funcionalidad de recuperación simulada')">¿Olvidó su contraseña?</a>
+          </p>
+        </div>
+        <ul class="features-list">
+          <li>Consulta de saldos</li>
+          <li>Consulta de movimientos</li>
+          <li>Transferencias entre cuentas propias</li>
+          <li>Transferencias a terceros mismo banco</li>
+        </ul>
+      </main>
+      <footer class="auth-footer">
+        <div class="gov-logo"><span style="font-weight:700">Mifos</span> Open Source Core Banking</div>
+        <div></div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ==================== APP (LOGGED IN) ==================== -->
+  <div id="app-section" class="app hidden">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo" style="font-size:1rem">
+          <div class="logo-icon" style="width:36px;height:36px;font-size:0.9rem">MX</div>
+          <span>Mifos X</span>
+        </div>
+        <div class="user-info">
+          <div class="user-avatar">👤</div>
+          <div class="user-name">¡Hola, Noe Lopez<br>Guzman!</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-page="dashboard" onclick="navTo('dashboard')">
+          <span class="nav-icon">🏠</span> INICIO
+        </button>
+        <button class="nav-item" data-page="transfer" onclick="navTo('transfer')">
+          <span class="nav-icon">↔️</span> TRANSFERENCIAS
+        </button>
+        <button class="nav-item" data-page="movements" onclick="navTo('movements')">
+          <span class="nav-icon">📋</span> MOVIMIENTOS
+        </button>
+        <button class="nav-item" data-page="request" onclick="navTo('request')">
+          <span class="nav-icon">📄</span> SOLICITAR
+        </button>
+        <button class="nav-item" data-page="settings" onclick="navTo('settings')">
+          <span class="nav-icon">⚙️</span> AJUSTES
+        </button>
+        <button class="nav-item" data-page="about" onclick="navTo('about')">
+          <span class="nav-icon">ℹ️</span> NOSOTROS
+        </button>
+        <button class="nav-item" data-page="help" onclick="navTo('help')">
+          <span class="nav-icon">❓</span> AYUDA
+        </button>
+        <button class="nav-item" onclick="logout()">
+          <span class="nav-icon">🚪</span> CERRAR SESIÓN
+        </button>
+      </nav>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-title" id="page-title">INICIO</div>
+        <div style="font-size:0.85rem;opacity:0.85">Mifos X</div>
+      </header>
+
+      <div class="content-area">
+        <!-- DASHBOARD -->
+        <div id="view-dashboard">
+          <p class="last-login">Último ingreso: 07/12/2020 1:08 p. m.</p>
+          <div class="cards-grid">
+            <div class="stat-card">
+              <div class="icon">📦</div>
+              <div class="label">Total de productos contratados</div>
+              <div class="value">2</div>
+            </div>
+            <div class="stat-card">
+              <div class="icon">💳</div>
+              <div class="label">Cuentas de crédito</div>
+              <div class="value">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="icon">🏦</div>
+              <div class="label">Cuenta de vista</div>
+              <div class="value">2</div>
+            </div>
+          </div>
+          <div class="cards-grid">
+            <div class="stat-card" style="text-align:left">
+              <div class="label">Resumen de cuentas de crédito</div>
+              <div class="value" style="font-size:1.4rem">$0.00</div>
+            </div>
+            <div class="stat-card" style="text-align:left">
+              <div class="label">Resumen de cuentas de vista</div>
+              <div class="value" style="font-size:1.4rem">$3,742.00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRANSFER -->
+        <div id="view-transfer" class="hidden">
+          <div class="accounts-row">
+            <div class="account-card selected" onclick="selectOrigin(this)">
+              <div class="bank-name">MIFOS X</div>
+              <div class="balance">$3,242.00</div>
+              <div class="number">Cta. 82616806117</div>
+            </div>
+            <div class="account-card" onclick="selectOrigin(this)">
+              <div class="bank-name">MIFOS X</div>
+              <div class="balance">$1,000.00</div>
+              <div class="number">Cta. 86812044751</div>
+            </div>
+          </div>
+
+          <div class="transfer-panel">
+            <div class="panel">
+              <div class="panel-title">📄 Cuenta Destino</div>
+              <div style="margin-bottom:0.75rem">
+                <input type="text" class="input" placeholder="Buscar..." style="padding-left:1rem" />
+              </div>
+              <div id="beneficiaries">
+                <div class="beneficiary-item selected" onclick="selectBenef(this, 'NOE LOPEZ', '83679983062')">
+                  <div>
+                    <div class="name">NOE LOPEZ</div>
+                    <div class="bank">MIFOS X · 83679983062</div>
+                  </div>
+                  <span>✏️</span>
+                </div>
+                <div class="beneficiary-item" onclick="selectBenef(this, 'CUENTA PROPIA', '86812044751')">
+                  <div>
+                    <div class="name">CUENTA PROPIA</div>
+                    <div class="bank">MIFOS X · 86812044751</div>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-block mt-4" onclick="openAddBenef()">+ Agregar beneficiario</button>
+            </div>
+
+            <div class="panel">
+              <div class="panel-title">↔️ Transferir</div>
+              <div id="transfer-form">
+                <p class="text-sm mb-2" style="color:var(--gray-700)">Beneficiario: <strong id="selected-benef">NOE LOPEZ (83679983062)</strong></p>
+                <div class="form-group has-label">
+                  <label>Monto</label>
+                  <input type="number" class="input" id="t-monto" value="500.00" style="padding-left:1rem" />
+                </div>
+                <div class="form-group has-label">
+                  <label>Referencia</label>
+                  <input type="text" class="input" id="t-ref" value="1234" style="padding-left:1rem" />
+                </div>
+                <div class="form-group has-label">
+                  <label>Concepto</label>
+                  <input type="text" class="input" id="t-concepto" value="PRESTAMO" style="padding-left:1rem" />
+                </div>
+                <button class="btn btn-primary btn-block" onclick="startTransfer()">CONFIRMAR</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MOVEMENTS -->
+        <div id="view-movements" class="hidden">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Acción</th>
+                  <th>Monto</th>
+                  <th>Saldo</th>
+                  <th>Folio</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="movements-body">
+                <tr>
+                  <td><span class="badge badge-out">Transferencia realizada</span></td>
+                  <td>$500.00</td>
+                  <td>$2,742.00</td>
+                  <td>960002</td>
+                  <td>7 dic. 2020</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="view-settings" class="hidden">
+          <div class="settings-card">
+            <h3 style="margin-bottom:1.25rem">Cambiar contraseña</h3>
+            <div class="form-group has-label">
+              <label>Contraseña actual</label>
+              <span class="input-icon">🔒</span>
+              <input type="password" class="input" id="curr-pass" value="Passw0rd" />
+            </div>
+            <div class="form-group has-label">
+              <label>Nueva contraseña</label>
+              <span class="input-icon">🔒</span>
+              <input type="password" class="input" id="new-pass" />
+            </div>
+            <div class="form-group has-label">
+              <label>Confirmar nueva contraseña</label>
+              <span class="input-icon">🔒</span>
+              <input type="password" class="input" id="new-pass2" />
+            </div>
+            <button class="btn btn-primary btn-block" onclick="changePassword()">CAMBIAR</button>
+            <button class="btn btn-outline btn-block mt-2" onclick="navTo('dashboard')">CANCELAR</button>
+          </div>
+
+          <div class="settings-card" style="margin-top:1.5rem">
+            <h3 style="margin-bottom:1rem">Cambiar teléfono</h3>
+            <div class="form-group has-label">
+              <label>Número actual</label>
+              <span class="input-icon">📱</span>
+              <input type="text" class="input" value="9909978362" style="padding-left:2.5rem" readonly />
+            </div>
+            <button class="btn btn-primary btn-block" onclick="showClaveModal('phone')">CAMBIAR</button>
+          </div>
+
+          <div class="settings-card" style="margin-top:1.5rem">
+            <h3 style="margin-bottom:1rem">Cambiar correo</h3>
+            <div class="form-group has-label">
+              <label>Correo actual</label>
+              <span class="input-icon">✉️</span>
+              <input type="text" class="input" value="correodepruebasinoegarcia@outlook.com" style="padding-left:2.5rem" readonly />
+            </div>
+            <button class="btn btn-primary btn-block" onclick="showClaveModal('email')">CAMBIAR</button>
+          </div>
+        </div>
+
+        <!-- HELP -->
+        <div id="view-help" class="hidden">
+          <h3 style="margin-bottom:1rem">Preguntas frecuentes</h3>
+          <div class="faq-item open">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              Si tengo la sospecha de que alguien conoce mi información, ¿Puedo cambiar mi contraseña?
+              <span>▼</span>
+            </div>
+            <div class="faq-a">
+              Sí, en cualquier momento. Puedes cambiar tu contraseña no solo cuando sospeches que alguien conoce tu información, es recomendable que realices un cambio de contraseña al menos cada tres meses. Para ello, ve a la opción “AJUSTES”, menú “Cambiar Contraseña”, ingresa la contraseña actual y captura en el campo, la nueva contraseña, de preferencia cumpliendo las reglas de construcción de la contraseña. La nueva contraseña será la que deberás utilizar a partir de tu próximo ingreso.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              ¿Qué operaciones puedo realizar en la Banca por Internet de Mifos X?
+              <span>▼</span>
+            </div>
+            <div class="faq-a">
+              Consulta de saldos, consulta de movimientos, transferencias entre cuentas propias y a terceros del mismo banco, entre otras.
+            </div>
+          </div>
+          <div class="faq-item">
+            <div class="faq-q" onclick="toggleFaq(this)">
+              ¿Dónde puedo consultar las comisiones de los servicios?
+              <span>▼</span>
+            </div>
+            <div class="faq-a">
+              En la sección de Ayuda o en el portal institucional de Mifos X.
+            </div>
+          </div>
+          <button class="btn btn-primary mt-4" onclick="showToast('Mensaje de ayuda enviado (simulado)')">Enviar correo de ayuda</button>
+        </div>
+
+        <!-- ABOUT / REQUEST (simple placeholders) -->
+        <div id="view-request" class="hidden">
+          <div class="panel">
+            <h3>Solicitar productos</h3>
+            <p class="mt-2 text-sm" style="color:var(--gray-700)">Esta sección permite solicitar productos adicionales de Mifos X (prototipo).</p>
+          </div>
+        </div>
+        <div id="view-about" class="hidden">
+          <div class="panel">
+            <h3>Nosotros</h3>
+            <p class="mt-2 text-sm" style="color:var(--gray-700)">Mifos X — Plataforma de core banking de código abierto para inclusión financiera. Prototipo de demostración.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+  <!-- Email verification after register -->
+  <div id="modal-email-verify" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Solo un paso más</h3>
+        <button class="modal-close" onclick="closeModal('modal-email-verify')">×</button>
+      </div>
+      <div class="modal-body">
+        <p class="font-semibold mb-2">¡Revisa tu correo!</p>
+        <p class="text-sm" style="color:var(--gray-700)">
+          Para completar el registro, revisa tu correo, te deberá haber llegado un código de activación (si el código no te llegó selecciona la opción de reenviar) que deberás proporcionar a continuación.
+        </p>
+        <div class="form-group mt-4">
+          <label>Código de activación</label>
+          <input type="text" class="input" id="activation-code" placeholder="Ingresa el código" style="padding-left:1rem" value="ABC123" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-email-verify')">CANCELAR</button>
+        <button class="btn btn-outline" onclick="showToast('Código reenviado')">REENVIAR</button>
+        <button class="btn btn-primary" onclick="confirmActivation()">ACEPTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clave Dinámica -->
+  <div id="modal-clave" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>CLAVE DINÁMICA</h3>
+        <button class="modal-close" onclick="closeModal('modal-clave')">×</button>
+      </div>
+      <div class="modal-body text-center">
+        <div style="font-size:2rem;margin-bottom:0.75rem">🔒</div>
+        <p class="text-sm mb-2" style="color:var(--gray-700)">
+          ESTA OPERACIÓN REQUIERE LA AUTORIZACIÓN DE SU CLAVE DINÁMICA GENERADA EN SU BANCA MÓVIL
+        </p>
+        <p class="text-sm font-medium">INGRESE LA CLAVE DINÁMICA ASOCIADA A SU BANCA MÓVIL</p>
+        <div class="clave-input">
+          <input type="text" maxlength="1" oninput="moveClave(this,0)" />
+          <input type="text" maxlength="1" oninput="moveClave(this,1)" />
+          <input type="text" maxlength="1" oninput="moveClave(this,2)" />
+          <input type="text" maxlength="1" oninput="moveClave(this,3)" />
+          <input type="text" maxlength="1" oninput="moveClave(this,4)" />
+          <input type="text" maxlength="1" oninput="moveClave(this,5)" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-clave')">CANCELAR</button>
+        <button class="btn btn-primary" onclick="confirmClave()">ACEPTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer success -->
+  <div id="modal-success" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header" style="background:var(--green-primary)">
+        <h3>TRANSFERENCIA EXITOSA</h3>
+        <button class="modal-close" onclick="closeModal('modal-success')">×</button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="success-icon">✓</div>
+        <p class="text-sm" style="color:var(--gray-500)">07/12/2020 12:48:54 p. m.</p>
+        <p style="font-size:1.75rem;font-weight:700;color:var(--green-dark);margin:0.5rem 0">$500.00</p>
+        <p class="text-xs mb-4" style="color:var(--gray-500)">Esta transferencia no genera comisión</p>
+        <div style="text-align:left;font-size:0.85rem;background:#F5F5F5;padding:1rem;border-radius:6px">
+          <p><strong>Cuenta Origen:</strong> ******0117</p>
+          <p><strong>Nombre del Beneficiario:</strong> NOE LOPEZ</p>
+          <p><strong>Cuenta Destino:</strong> ******3062</p>
+          <p><strong>Concepto de operación:</strong> PRESTAMO</p>
+          <p><strong>Referencia de operación:</strong> 1234</p>
+          <p><strong>Número de movimiento:</strong> 960002</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-block" onclick="closeModal('modal-success'); navTo('movements')">ACEPTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add beneficiary -->
+  <div id="modal-add-benef" class="modal-overlay hidden">
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <h3>Agregar beneficiario</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-benef')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group has-label">
+          <label>Cuenta / CLABE</label>
+          <input type="text" class="input" id="new-clabe" style="padding-left:1rem" placeholder="18 dígitos" />
+        </div>
+        <div class="form-group has-label">
+          <label>Nombre del beneficiario</label>
+          <input type="text" class="input" id="new-name" style="padding-left:1rem" />
+        </div>
+        <div class="form-group has-label">
+          <label>Alias</label>
+          <input type="text" class="input" id="new-alias" style="padding-left:1rem" />
+        </div>
+        <div class="form-group has-label">
+          <label>Banco / Institución</label>
+          <input type="text" class="input" value="MIFOS X" style="padding-left:1rem" readonly />
+        </div>
+        <div class="form-group has-label">
+          <label>Límite de transferencia</label>
+          <input type="number" class="input" id="new-limit" value="15000" style="padding-left:1rem" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-add-benef')">CANCELAR</button>
+        <button class="btn btn-primary" onclick="saveBenef()">GUARDAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password changed success -->
+  <div id="modal-pass-ok" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-body text-center" style="padding:2rem">
+        <div class="success-icon">✓</div>
+        <h3 style="margin-bottom:0.5rem">Cambio exitoso</h3>
+        <p class="text-sm" style="color:var(--gray-700)">Su contraseña ha sido modificada correctamente</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-block" onclick="closeModal('modal-pass-ok')">ACEPTAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="loading-overlay hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <script>
+    // ========== STATE ==========
+    let currentClaveAction = null; // 'transfer' | 'phone' | 'email'
+    let selectedBenefName = 'NOE LOPEZ';
+    let selectedBenefAccount = '83679983062';
+
+    // ========== NAVIGATION ==========
+    function goTo(page) {
+      document.querySelectorAll('#auth-section > div').forEach(el => el.classList.add('hidden'));
+      document.getElementById('page-' + page).classList.remove('hidden');
+    }
+
+    function navTo(view) {
+      document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById('view-' + view).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const btn = document.querySelector(`.nav-item[data-page="${view}"]`);
+      if (btn) btn.classList.add('active');
+
+      const titles = {
+        dashboard: 'INICIO',
+        transfer: 'TRANSFERIR',
+        movements: 'MOVIMIENTOS',
+        settings: 'AJUSTES',
+        help: 'AYUDA',
+        request: 'SOLICITAR',
+        about: 'NOSOTROS'
+      };
+      document.getElementById('page-title').textContent = titles[view] || view.toUpperCase();
+    }
+
+    function logout() {
+      document.getElementById('app-section').classList.add('hidden');
+      document.getElementById('auth-section').classList.remove('hidden');
+      goTo('landing');
+      showToast('Sesión cerrada correctamente');
+    }
+
+    // ========== AUTH ==========
+    function submitRegister() {
+      const terms = document.getElementById('reg-terms').checked;
+      if (!terms) {
+        showToast('Debes aceptar los términos y condiciones');
+        return;
+      }
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        document.getElementById('modal-email-verify').classList.remove('hidden');
+      }, 800);
+    }
+
+    function confirmActivation() {
+      closeModal('modal-email-verify');
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        goTo('login');
+        showToast('Registro completado. Ahora puedes iniciar sesión.');
+      }, 600);
+    }
+
+    function doLogin() {
+      const pass = document.getElementById('login-pass').value;
+      if (!pass || pass.length < 6) {
+        showToast('La contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
+        navTo('dashboard');
+        showToast('¡Bienvenido, Noe Lopez Guzman!');
+      }, 900);
+    }
+
+    // ========== TRANSFER ==========
+    function selectOrigin(el) {
+      document.querySelectorAll('.account-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function selectBenef(el, name, account) {
+      document.querySelectorAll('.beneficiary-item').forEach(b => b.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedBenefName = name;
+      selectedBenefAccount = account;
+      document.getElementById('selected-benef').textContent = `${name} (${account})`;
+    }
+
+    function startTransfer() {
+      const monto = document.getElementById('t-monto').value;
+      if (!monto || parseFloat(monto) <= 0) {
+        showToast('Ingresa un monto válido');
+        return;
+      }
+      currentClaveAction = 'transfer';
+      showClaveModal();
+    }
+
+    function showClaveModal(action) {
+      if (action) currentClaveAction = action;
+      // Clear inputs
+      document.querySelectorAll('.clave-input input').forEach(i => i.value = '');
+      document.getElementById('modal-clave').classList.remove('hidden');
+      document.querySelector('.clave-input input').focus();
+    }
+
+    function moveClave(input, idx) {
+      if (input.value && idx < 5) {
+        document.querySelectorAll('.clave-input input')[idx + 1].focus();
+      }
+    }
+
+    function confirmClave() {
+      const inputs = document.querySelectorAll('.clave-input input');
+      let code = '';
+      inputs.forEach(i => code += i.value);
+      if (code.length < 6) {
+        showToast('Ingresa la clave dinámica completa (6 dígitos)');
+        return;
+      }
+      closeModal('modal-clave');
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        if (currentClaveAction === 'transfer') {
+          document.getElementById('modal-success').classList.remove('hidden');
+          // Add to movements
+          const tbody = document.getElementById('movements-body');
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><span class="badge badge-out">Transferencia realizada</span></td>
+            <td>$${parseFloat(document.getElementById('t-monto').value).toFixed(2)}</td>
+            <td>$2,742.00</td>
+            <td>96000${Math.floor(Math.random()*9)+1}</td>
+            <td>${new Date().toLocaleDateString('es-MX')}</td>
+          `;
+          tbody.insertBefore(row, tbody.firstChild);
+        } else if (currentClaveAction === 'phone' || currentClaveAction === 'email') {
+          showToast(currentClaveAction === 'phone' ? 'Teléfono actualizado (simulado)' : 'Correo actualizado. Revisa tu bandeja (simulado)');
+        }
+      }, 1000);
+    }
+
+    function openAddBenef() {
+      document.getElementById('modal-add-benef').classList.remove('hidden');
+    }
+
+    function saveBenef() {
+      const name = document.getElementById('new-name').value || 'Nuevo beneficiario';
+      const clabe = document.getElementById('new-clabe').value || '000000000000000000';
+      closeModal('modal-add-benef');
+      showToast('Beneficiario guardado (simulado)');
+      // Optionally add to list
+      const list = document.getElementById('beneficiaries');
+      const div = document.createElement('div');
+      div.className = 'beneficiary-item';
+      div.onclick = function() { selectBenef(this, name, clabe); };
+      div.innerHTML = `<div><div class="name">${name}</div><div class="bank">MIFOS X · ${clabe}</div></div>`;
+      list.appendChild(div);
+    }
+
+    // ========== SETTINGS ==========
+    function changePassword() {
+      const n1 = document.getElementById('new-pass').value;
+      const n2 = document.getElementById('new-pass2').value;
+      if (!n1 || n1.length < 8) {
+        showToast('La nueva contraseña debe tener al menos 8 caracteres');
+        return;
+      }
+      if (n1 !== n2) {
+        showToast('Las contraseñas no coinciden');
+        return;
+      }
+      showLoading();
+      setTimeout(() => {
+        hideLoading();
+        document.getElementById('modal-pass-ok').classList.remove('hidden');
+      }, 700);
+    }
+
+    // ========== HELPERS ==========
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function showLoading() {
+      document.getElementById('loading').classList.remove('hidden');
+    }
+    function hideLoading() {
+      document.getElementById('loading').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const existing = document.querySelector('.toast');
+      if (existing) existing.remove();
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3200);
+    }
+
+    function togglePass(id) {
+      const el = document.getElementById(id);
+      el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
+    function toggleFaq(el) {
+      el.parentElement.classList.toggle('open');
+    }
+
+    // Start at landing
+    goTo('landing');
+  </script>
+</body>
+</html>
