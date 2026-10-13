@@ -34,7 +34,7 @@ jobs:
         run: npm ci
 
       - name: Run build
-        run : npm npm run build || npm run build:dev
+        run : npm npm run build
 
       - name: Deploy to github pages
         if: ${{ github.event_name == 'push' }}
@@ -42,7 +42,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: dist/online-banking
+          FOLDER: out
           #without preserve it only builds if you have untracked files
           PRESERVE: true
           # github user name and email shows up in the logs, 
