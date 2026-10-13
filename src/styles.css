@@ -1,6 +1,50 @@
-/* You can add global styles to this file, and also import other style files */
-@import '~@angular/material/prebuilt-themes/deeppurple-amber.css';
-body{
-  margin: 0;
-  padding: 0;
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #001933;
+  --color-ink-soft: #0c2744;
+  --color-brand: #db1d1f;
+  --color-brand-deep: #b01416;
+  --color-paper: #f3f5f7;
+  --color-card: #ffffff;
+  --color-muted: #5c6b7a;
+  --color-line: #e3e7ec;
+  --color-on-ink: #ffffff;
+  --color-on-brand: #ffffff;
+  --font-sans: "Outfit", "Century Gothic", "Trebuchet MS", sans-serif;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    line-height: 1.5;
+    font-feature-settings: "ss01" on;
+  }
+
+  ::selection {
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

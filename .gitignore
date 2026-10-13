@@ -30,7 +30,10 @@ speed-measure-plugin.json
 !.vscode/launch.json
 !.vscode/extensions.json
 .history/*
-
+.node_modules.lock
+.grok/
+.dev-server.log
+.vercel/
 # misc
 /.sass-cache
 /connect.lock
