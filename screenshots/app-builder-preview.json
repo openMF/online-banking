@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Banca Web Mifos",
+      "hasCanvas": false,
+      "bodyTextLen": 774,
+      "bodyTextHash": "6b7faa0f58b1f357c5deb87695716371160a84f05b15986e016f5c7423f3bc76",
+      "bodyTextPrefix": "MIFOS Banca Web Crédito · Ahorro · Inversión CANAL ELECTRÓNI",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Banca Web Mifos",
+      "hasCanvas": false,
+      "bodyTextLen": 331,
+      "bodyTextHash": "d856812a3e723fd560741fc313cf60bd16f8769d0f74ad1b44b46a8ec414c013",
+      "bodyTextPrefix": "MIFOS Banca Web Personas Empresas Número de cliente Identifi",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
