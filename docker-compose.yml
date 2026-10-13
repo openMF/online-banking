@@ -1,6 +1,7 @@
-# Mifos Online Banking — Nginx-based static demo
+# Mifos Online Banking — Nginx static demo + Self Service Plugin config
 #
 # Usage:
+#   cp .env.example .env   # edit BASE_URL / ENDPOINT / API_KEY / TENANT
 #   docker compose up --build -d
 #   open http://localhost:8080
 #
@@ -12,10 +13,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_SELF_SERVICE_BASE_URL: ${SELF_SERVICE_BASE_URL:-https://demo.mifos.community}
+        VITE_SELF_SERVICE_ENDPOINT: ${SELF_SERVICE_ENDPOINT:-/fineract-provider/api}
+        VITE_SELF_SERVICE_API_KEY: ${SELF_SERVICE_API_KEY:-}
+        VITE_SELF_SERVICE_TENANT_ID: ${SELF_SERVICE_TENANT_ID:-default}
     image: openmf/online-banking:local
     container_name: mifos-online-banking
     ports:
       - "8080:80"
+    environment:
+      SELF_SERVICE_BASE_URL: ${SELF_SERVICE_BASE_URL:-https://demo.mifos.community}
+      SELF_SERVICE_ENDPOINT: ${SELF_SERVICE_ENDPOINT:-/fineract-provider/api}
+      SELF_SERVICE_API_KEY: ${SELF_SERVICE_API_KEY:-}
+      SELF_SERVICE_TENANT_ID: ${SELF_SERVICE_TENANT_ID:-default}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
