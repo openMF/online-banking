@@ -19,16 +19,16 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v6
 
-      - name: Use Node.js 14
-        uses: actions/setup-node@v1
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
         with:
           # no support for lts as of now with github actions.
           # issue link : https://github.com/actions/setup-node/issues/26
-          node-version: '14'
-      - name: Angular CLI install
-        run : npm install -g --silent @angular/cli@9.1.7
+          node-version: '24.16.0'
+      - name: Remove node_modules
+        run: rm -rf node_modules
 
       - name: Install Dependencies
         run: npm ci
