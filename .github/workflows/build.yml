@@ -42,7 +42,7 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
-          FOLDER: out
+          FOLDER: .vercel/output/functions/__server.func/
           #without preserve it only builds if you have untracked files
           PRESERVE: true
           # github user name and email shows up in the logs, 
