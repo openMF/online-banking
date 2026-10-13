@@ -5,6 +5,7 @@ import { useBanca } from "@/lib/banca/store";
 import { OtpProvider } from "@/components/banca/otp";
 import { AppShell } from "@/components/banca/private";
 import { PublicScreens } from "@/components/banca/public";
+import { t } from "@/i18n";
 
 export function BancaApp() {
   useEffect(() => {
@@ -31,12 +32,12 @@ function Gate() {
     const left = expires - Date.now();
     if (left <= 0) {
       useBanca.getState().endSession("inactividad");
-      toast("Cerramos la sesión por 5 minutos sin actividad.");
+      toast(t("session.inactivity"));
       return;
     }
     const id = window.setTimeout(() => {
       useBanca.getState().endSession("inactividad");
-      toast("Cerramos la sesión por 5 minutos sin actividad.");
+      toast(t("session.inactivity"));
     }, left);
     return () => window.clearTimeout(id);
   }, [sessionUserId, expires]);

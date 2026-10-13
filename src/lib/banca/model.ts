@@ -1,5 +1,6 @@
 import { format, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
+import { t, getLocale } from "@/i18n";
 
 export const SESSION_MS = 5 * 60 * 1000;
 export const WARN_MS = 60 * 1000;
@@ -185,7 +186,8 @@ export function formatMoney(n: number) {
 }
 
 export function formatWhen(iso: string) {
-  return format(parseISO(iso), "d MMM yyyy, h:mm a", { locale: es });
+  const locale = getLocale() === "en-US" ? enUS : es;
+  return format(parseISO(iso), "d MMM yyyy, h:mm a", { locale });
 }
 
 export function maskAccount(number: string) {
@@ -227,12 +229,12 @@ export function otpValid(input: string, now = Date.now()) {
 
 export function passwordIssues(password: string, clientNumber: string) {
   const issues: string[] = [];
-  if (password.length < 8) issues.push("mínimo 8 caracteres");
-  if (!/[a-z]/.test(password)) issues.push("una minúscula");
-  if (!/[A-Z]/.test(password)) issues.push("una mayúscula");
-  if (!/\d/.test(password)) issues.push("un dígito");
-  if (!/[^A-Za-z0-9]/.test(password)) issues.push("un símbolo");
-  if (clientNumber && password.includes(clientNumber)) issues.push("no puede contener el número de cliente");
+  if (password.length < 8) issues.push(t("password.minLength"));
+  if (!/[a-z]/.test(password)) issues.push(t("password.lowercase"));
+  if (!/[A-Z]/.test(password)) issues.push(t("password.uppercase"));
+  if (!/\d/.test(password)) issues.push(t("password.digit"));
+  if (!/[^A-Za-z0-9]/.test(password)) issues.push(t("password.symbol"));
+  if (clientNumber && password.includes(clientNumber)) issues.push(t("password.noClientNumber"));
   return issues;
 }
 
@@ -240,31 +242,41 @@ export function isBeneficiaryActive(b: Beneficiary, now = Date.now()) {
   return b.activatesAt <= now;
 }
 
-export const NAV: { screen: Screen; label: string; empresasOnly?: boolean }[] = [
-  { screen: "dashboard", label: "Inicio" },
-  { screen: "transfer", label: "Transferencias" },
-  { screen: "movements", label: "Movimientos" },
-  { screen: "approvals", label: "Autorizaciones", empresasOnly: true },
-  { screen: "request", label: "Solicitar" },
-  { screen: "settings", label: "Ajustes" },
-  { screen: "audit", label: "Bitácora" },
-  { screen: "notices", label: "Avisos" },
-  { screen: "about", label: "Nosotros" },
-  { screen: "help", label: "Ayuda" },
-];
+export function getNav(): { screen: Screen; label: string; empresasOnly?: boolean }[] {
+  return [
+    { screen: "dashboard", label: t("nav.dashboard") },
+    { screen: "transfer", label: t("nav.transfer") },
+    { screen: "movements", label: t("nav.movements") },
+    { screen: "approvals", label: t("nav.approvals"), empresasOnly: true },
+    { screen: "request", label: t("nav.request") },
+    { screen: "settings", label: t("nav.settings") },
+    { screen: "audit", label: t("nav.audit") },
+    { screen: "notices", label: t("nav.notices") },
+    { screen: "about", label: t("nav.about") },
+    { screen: "help", label: t("nav.help") },
+  ];
+}
 
+/** @deprecated Prefer getNav() so labels respect the active locale. */
+export const NAV = getNav();
+
+export function getScreenTitle(screen: Screen): string {
+  return t(`screens.${screen}` as const);
+}
+
+/** @deprecated Prefer getScreenTitle() so titles respect the active locale. */
 export const SCREEN_TITLE: Record<Screen, string> = {
-  landing: "Banca Web",
-  login: "Iniciar sesión",
-  register: "Contratar Banca Web",
-  dashboard: "Inicio",
-  transfer: "Transferir",
-  movements: "Movimientos",
-  request: "Solicitar",
-  settings: "Ajustes",
-  audit: "Bitácora",
-  notices: "Avisos",
-  about: "Nosotros",
-  help: "Ayuda",
-  approvals: "Autorizaciones",
+  landing: t("screens.landing"),
+  login: t("screens.login"),
+  register: t("screens.register"),
+  dashboard: t("screens.dashboard"),
+  transfer: t("screens.transfer"),
+  movements: t("screens.movements"),
+  request: t("screens.request"),
+  settings: t("screens.settings"),
+  audit: t("screens.audit"),
+  notices: t("screens.notices"),
+  about: t("screens.about"),
+  help: t("screens.help"),
+  approvals: t("screens.approvals"),
 };
