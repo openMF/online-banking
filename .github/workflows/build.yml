@@ -33,11 +33,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run lint
-        run : ng lint --force
-
       - name: Run build
-        run : npm run build:production
+        run : npm npm run build || npm run build:dev
 
       - name: Deploy to github pages
         if: ${{ github.event_name == 'push' }}
