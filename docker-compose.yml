@@ -1,0 +1,25 @@
+# Mifos Online Banking — Nginx-based static demo
+#
+# Usage:
+#   docker compose up --build -d
+#   open http://localhost:8080
+#
+# Stop:
+#   docker compose down
+
+services:
+  online-banking:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openmf/online-banking:local
+    container_name: mifos-online-banking
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s

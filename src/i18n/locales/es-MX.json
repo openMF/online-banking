@@ -1,0 +1,120 @@
+{
+  "app": {
+    "name": "MIFOS",
+    "tagline": "Banca Web",
+    "subtitle": "Crédito · Ahorro · Inversión",
+    "channel": "CANAL ELECTRÓNICO",
+    "hero": "Su dinero, con los controles de una banca electrónica formal.",
+    "footerLocation": "León, Guanajuato · 477 461 4700",
+    "footerDisclaimer": "Prototipo de demostración. No realiza operaciones reales.",
+    "regulatory": "COMPANY NAME , S.A. DE C.V., S.F.P. Entidad autorizada, regulada y supervisada por la CNBV. Los depósitos están protegidos por el Fondo de Protección hasta por 25,000 UDIS por ahorrador.",
+    "wordmarkAlt": "Mifos. Crédito, ahorro e inversión"
+  },
+  "features": {
+    "balances": "Consulta de saldos y movimientos",
+    "ownTransfers": "Transferencias entre cuentas propias",
+    "thirdParty": "Transferencias a terceros Mifos",
+    "receipts": "Comprobante, límites y bitácora"
+  },
+  "landing": {
+    "clientNumber": "Número de cliente",
+    "clientHint": "Identificador único de usuario, de 6 a 12 dígitos.",
+    "continue": "Continuar",
+    "register": "Registrarse",
+    "demoPersonas": "Demo personas",
+    "demoEmpresas": "Demo empresas",
+    "demoPassword": "Contraseña de demostración: {{password}}"
+  },
+  "login": {
+    "clientFallback": "Cliente",
+    "passwordPrompt": "Si las iniciales son correctas, ingrese su contraseña. Si no las reconoce, cancele: podría no estar en el sitio de Mifos.",
+    "password": "Contraseña",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "submit": "Iniciar sesión",
+    "cancel": "Cancelar",
+    "factorNote": "Factor categoría 2. Después de 3 errores el acceso se bloquea 10 minutos.",
+    "welcome": "Bienvenido. Sesión segura iniciada."
+  },
+  "register": {
+    "title": "Contratar Banca Web",
+    "acceptTerms": "Debe aceptar los términos del servicio y el aviso de privacidad.",
+    "clientDigits": "El número de cliente debe tener entre 6 y 12 dígitos. Se obtiene en sucursal.",
+    "passwordNeeds": "La contraseña necesita {{issues}}.",
+    "passwordMismatch": "La confirmación no coincide.",
+    "phoneDigits": "Capture un celular de 10 dígitos. Ahí enviaremos avisos de operaciones.",
+    "activationCode": "Código de activación",
+    "terms": "Términos del servicio",
+    "privacy": "Aviso de privacidad",
+    "termsLink": "términos de Banca Web",
+    "privacyLink": "aviso de privacidad",
+    "privacyBody": "Aviso de privacidad: los datos se usan para identificarle, autenticarle, operar el canal y enviarle alertas."
+  },
+  "nav": {
+    "dashboard": "Inicio",
+    "transfer": "Transferencias",
+    "movements": "Movimientos",
+    "approvals": "Autorizaciones",
+    "request": "Solicitar",
+    "settings": "Ajustes",
+    "audit": "Bitácora",
+    "notices": "Avisos",
+    "about": "Nosotros",
+    "help": "Ayuda"
+  },
+  "screens": {
+    "landing": "Banca Web",
+    "login": "Iniciar sesión",
+    "register": "Contratar Banca Web",
+    "dashboard": "Inicio",
+    "transfer": "Transferir",
+    "movements": "Movimientos",
+    "request": "Solicitar",
+    "settings": "Ajustes",
+    "audit": "Bitácora",
+    "notices": "Avisos",
+    "about": "Nosotros",
+    "help": "Ayuda",
+    "approvals": "Autorizaciones"
+  },
+  "session": {
+    "closed": "Sesión cerrada.",
+    "inactivity": "Cerramos la sesión por 5 minutos sin actividad.",
+    "expiring": "La sesión está por cerrarse",
+    "continue": "Continuar",
+    "hello": "Hola, {{name}}",
+    "lastLogin": "Último ingreso: {{when}} · Banca Web",
+    "remaining": "Sesión {{time}}"
+  },
+  "dashboard": {
+    "products": "Productos contratados",
+    "creditAccounts": "Cuentas de crédito",
+    "businessAccounts": "Cuentas empresariales",
+    "savingsAccounts": "Cuentas de captación",
+    "creditSummary": "Resumen de crédito",
+    "savingsSummary": "Resumen de captación",
+    "transfer": "Transferir"
+  },
+  "password": {
+    "minLength": "mínimo 8 caracteres",
+    "lowercase": "una minúscula",
+    "uppercase": "una mayúscula",
+    "digit": "un dígito",
+    "symbol": "un símbolo",
+    "noClientNumber": "no puede contener el número de cliente"
+  },
+  "common": {
+    "logout": "Cerrar sesión",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "back": "Regresar",
+    "loading": "Cargando…",
+    "error": "Error",
+    "success": "Éxito"
+  },
+  "segment": {
+    "personas": "Personas",
+    "empresas": "Empresas"
+  }
+}

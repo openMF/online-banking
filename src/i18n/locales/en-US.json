@@ -1,0 +1,120 @@
+{
+  "app": {
+    "name": "MIFOS",
+    "tagline": "Online Banking",
+    "subtitle": "Credit · Savings · Investment",
+    "channel": "ELECTRONIC CHANNEL",
+    "hero": "Your money, with the controls of formal electronic banking.",
+    "footerLocation": "León, Guanajuato · 477 461 4700",
+    "footerDisclaimer": "Demonstration prototype. Does not perform real operations.",
+    "regulatory": "COMPANY NAME, S.A. DE C.V., S.F.P. Entity authorized, regulated and supervised by the CNBV. Deposits are protected by the Protection Fund up to 25,000 UDIS per saver.",
+    "wordmarkAlt": "Mifos. Credit, savings and investment"
+  },
+  "features": {
+    "balances": "Balance and transaction inquiries",
+    "ownTransfers": "Transfers between own accounts",
+    "thirdParty": "Transfers to Mifos third parties",
+    "receipts": "Receipts, limits and audit log"
+  },
+  "landing": {
+    "clientNumber": "Client number",
+    "clientHint": "Unique user identifier, 6 to 12 digits.",
+    "continue": "Continue",
+    "register": "Register",
+    "demoPersonas": "Demo personal",
+    "demoEmpresas": "Demo business",
+    "demoPassword": "Demo password: {{password}}"
+  },
+  "login": {
+    "clientFallback": "Client",
+    "passwordPrompt": "If the initials are correct, enter your password. If you do not recognize them, cancel: you may not be on the Mifos site.",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Sign in",
+    "cancel": "Cancel",
+    "factorNote": "Category 2 factor. After 3 errors access is locked for 10 minutes.",
+    "welcome": "Welcome. Secure session started."
+  },
+  "register": {
+    "title": "Enroll in Online Banking",
+    "acceptTerms": "You must accept the terms of service and privacy notice.",
+    "clientDigits": "The client number must have between 6 and 12 digits. Obtained at a branch.",
+    "passwordNeeds": "The password needs {{issues}}.",
+    "passwordMismatch": "Confirmation does not match.",
+    "phoneDigits": "Enter a 10-digit mobile number. We will send operation alerts there.",
+    "activationCode": "Activation code",
+    "terms": "Terms of service",
+    "privacy": "Privacy notice",
+    "termsLink": "Online Banking terms",
+    "privacyLink": "privacy notice",
+    "privacyBody": "Privacy notice: data is used to identify you, authenticate you, operate the channel and send you alerts."
+  },
+  "nav": {
+    "dashboard": "Home",
+    "transfer": "Transfers",
+    "movements": "Transactions",
+    "approvals": "Approvals",
+    "request": "Request",
+    "settings": "Settings",
+    "audit": "Audit log",
+    "notices": "Notices",
+    "about": "About us",
+    "help": "Help"
+  },
+  "screens": {
+    "landing": "Online Banking",
+    "login": "Sign in",
+    "register": "Enroll in Online Banking",
+    "dashboard": "Home",
+    "transfer": "Transfer",
+    "movements": "Transactions",
+    "request": "Request",
+    "settings": "Settings",
+    "audit": "Audit log",
+    "notices": "Notices",
+    "about": "About us",
+    "help": "Help",
+    "approvals": "Approvals"
+  },
+  "session": {
+    "closed": "Session closed.",
+    "inactivity": "We closed the session due to 5 minutes of inactivity.",
+    "expiring": "The session is about to close",
+    "continue": "Continue",
+    "hello": "Hello, {{name}}",
+    "lastLogin": "Last login: {{when}} · Online Banking",
+    "remaining": "Session {{time}}"
+  },
+  "dashboard": {
+    "products": "Contracted products",
+    "creditAccounts": "Credit accounts",
+    "businessAccounts": "Business accounts",
+    "savingsAccounts": "Deposit accounts",
+    "creditSummary": "Credit summary",
+    "savingsSummary": "Deposit summary",
+    "transfer": "Transfer"
+  },
+  "password": {
+    "minLength": "minimum 8 characters",
+    "lowercase": "a lowercase letter",
+    "uppercase": "an uppercase letter",
+    "digit": "a digit",
+    "symbol": "a symbol",
+    "noClientNumber": "cannot contain the client number"
+  },
+  "common": {
+    "logout": "Sign out",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "back": "Back",
+    "loading": "Loading…",
+    "error": "Error",
+    "success": "Success"
+  },
+  "segment": {
+    "personas": "Personal",
+    "empresas": "Business"
+  }
+}

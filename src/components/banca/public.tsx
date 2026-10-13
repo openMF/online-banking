@@ -10,16 +10,22 @@ import {
 import { useBanca, usePendingUser } from "@/lib/banca/store";
 import { Button, Field, inputClass, Mark, Modal } from "@/components/banca/ui";
 import { toast } from "sonner";
+import { t, setLocale, getLocale, type Locale } from "@/i18n";
 
-const FEATURES = [
-  "Consulta de saldos y movimientos",
-  "Transferencias entre cuentas propias",
-  "Transferencias a terceros Mifos",
-  "Comprobante, límites y bitácora",
-];
+const FEATURE_KEYS = [
+  "features.balances",
+  "features.ownTransfers",
+  "features.thirdParty",
+  "features.receipts",
+] as const;
 
 export function PublicScreens() {
   const screen = useBanca((state) => state.screen);
+  const [, force] = useState(0);
+  function switchLocale(next: Locale) {
+    setLocale(next);
+    force((n) => n + 1);
+  }
   return (
     <div className="flex min-h-screen flex-col bg-ink">
       <div className="h-1 bg-brand" />
@@ -27,38 +33,55 @@ export function PublicScreens() {
         <div className="flex items-center gap-3">
           <Mark className="size-10" />
           <div>
-            <p className="text-sm font-bold tracking-wide">MIFOS</p>
-            <p className="text-xs text-on-ink/70">Banca Web</p>
+            <p className="text-sm font-bold tracking-wide">{t("app.name")}</p>
+            <p className="text-xs text-on-ink/70">{t("app.tagline")}</p>
           </div>
         </div>
-        <p className="hidden text-xs text-on-ink/70 sm:block">Crédito · Ahorro · Inversión</p>
+        <div className="flex items-center gap-3">
+          <p className="hidden text-xs text-on-ink/70 sm:block">{t("app.subtitle")}</p>
+          <div className="flex gap-1 text-xs">
+            <button
+              type="button"
+              className={`rounded px-2 py-1 ${getLocale() === "es-MX" ? "bg-brand text-on-brand" : "text-on-ink/70 hover:text-on-ink"}`}
+              onClick={() => switchLocale("es-MX")}
+            >
+              ES
+            </button>
+            <button
+              type="button"
+              className={`rounded px-2 py-1 ${getLocale() === "en-US" ? "bg-brand text-on-brand" : "text-on-ink/70 hover:text-on-ink"}`}
+              onClick={() => switchLocale("en-US")}
+            >
+              EN
+            </button>
+          </div>
+        </div>
       </header>
       <main className="flex flex-1 items-center justify-center px-4 py-6 sm:px-8">
         <div className="grid w-full max-w-5xl items-center gap-8 lg:grid-cols-[1fr_420px]">
           <div className="hidden text-on-ink lg:block">
-            <p className="text-xs font-semibold tracking-widest text-brand">CANAL ELECTRÓNICO</p>
+            <p className="text-xs font-semibold tracking-widest text-brand">{t("app.channel")}</p>
             <h1 className="mt-3 max-w-md text-4xl font-semibold leading-tight">
-              Su dinero, con los controles de una banca electrónica formal.
+              {t("app.hero")}
             </h1>
             <ul className="mt-8 space-y-3 text-sm text-on-ink/85">
-              {FEATURES.map((item) => (
-                <li key={item} className="flex items-center gap-3">
+              {FEATURE_KEYS.map((key) => (
+                <li key={key} className="flex items-center gap-3">
                   <span className="size-1.5 rounded-full bg-brand" />
-                  {item}
+                  {t(key)}
                 </li>
               ))}
             </ul>
             <p className="mt-10 max-w-sm text-xs leading-relaxed text-on-ink/60">
-              COMPANY NAME , S.A. DE C.V., S.F.P. Entidad autorizada, regulada y supervisada por la CNBV.
-              Los depósitos están protegidos por el Fondo de Protección hasta por 25,000 UDIS por ahorrador.
+              {t("app.regulatory")}
             </p>
           </div>
           {screen === "register" ? <RegisterCard /> : screen === "login" ? <LoginCard /> : <LandingCard />}
         </div>
       </main>
       <footer className="flex flex-col gap-2 px-4 py-4 text-xs text-on-ink/65 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <p>León, Guanajuato · 477 461 4700</p>
-        <p>Prototipo de demostración. No realiza operaciones reales.</p>
+        <p>{t("app.footerLocation")}</p>
+        <p>{t("app.footerDisclaimer")}</p>
       </footer>
     </div>
   );
@@ -87,7 +110,7 @@ function LandingCard() {
 
   return (
     <form action="javascript:void(0)" onSubmit={submit} className="rounded-lg bg-card p-6 shadow-xl">
-      <img src={wordmark} alt="Mifos. Crédito, ahorro e inversión" className="mx-auto mb-5 h-16 w-auto" />
+      <img src={wordmark} alt={t("app.wordmarkAlt")} className="mx-auto mb-5 h-16 w-auto" />
       <SegmentSwitch
         value={segment}
         onChange={(next) => {
@@ -97,7 +120,7 @@ function LandingCard() {
         }}
       />
       <div className="mt-5">
-        <Field label="Número de cliente" error={error} hint="Identificador único de usuario, de 6 a 12 dígitos.">
+        <Field label={t("landing.clientNumber")} error={error} hint={t("landing.clientHint")}>
           <span className="relative block">
             <UserRound className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
             <input
@@ -114,7 +137,7 @@ function LandingCard() {
         </Field>
       </div>
       <Button type="submit" className="mt-4 w-full">
-        Continuar
+        {t("landing.continue")}
       </Button>
       <Button
         variant="ink"
@@ -124,7 +147,7 @@ function LandingCard() {
           go("register");
         }}
       >
-        Registrarse
+        {t("landing.register")}
       </Button>
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
         <button
@@ -132,7 +155,7 @@ function LandingCard() {
           onClick={() => demo("personas", "344988355")}
           className="rounded-md border border-line px-3 py-2 text-left hover:border-brand"
         >
-          <span className="block text-xs text-muted">Demo personas</span>
+          <span className="block text-xs text-muted">{t("landing.demoPersonas")}</span>
           <span className="text-sm font-semibold">Noé López Guzmán</span>
         </button>
         <button
@@ -140,11 +163,11 @@ function LandingCard() {
           onClick={() => demo("empresas", "880214001")}
           className="rounded-md border border-line px-3 py-2 text-left hover:border-brand"
         >
-          <span className="block text-xs text-muted">Demo empresas</span>
+          <span className="block text-xs text-muted">{t("landing.demoEmpresas")}</span>
           <span className="text-sm font-semibold">Taller Industrial del Bajío</span>
         </button>
       </div>
-      <p className="mt-4 text-center text-xs text-muted">Contraseña de demostración: {DEMO_PASSWORD}</p>
+      <p className="mt-4 text-center text-xs text-muted">{t("landing.demoPassword", { password: DEMO_PASSWORD })}</p>
     </form>
   );
 }
@@ -161,7 +184,7 @@ function LoginCard() {
     event.preventDefault();
     const result = login(password);
     if (!result.ok) setError(result.error);
-    else toast.success(`Bienvenido. Sesión segura iniciada.`);
+    else toast.success(t("login.welcome"));
   }
 
   return (
@@ -169,13 +192,12 @@ function LoginCard() {
       <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-paper text-muted">
         {user?.segment === "empresas" ? <Landmark className="size-6" /> : <UserRound className="size-6" />}
       </div>
-      <h2 className="text-center text-lg font-semibold">{user?.loginHint ?? "Cliente"}</h2>
+      <h2 className="text-center text-lg font-semibold">{user?.loginHint ?? t("login.clientFallback")}</h2>
       <p className="mt-2 text-center text-sm text-muted">
-        Si las iniciales son correctas, ingrese su contraseña. Si no las reconoce, cancele: podría no estar en el
-        sitio de Mifos.
+        {t("login.passwordPrompt")}
       </p>
       <div className="mt-5">
-        <Field label="Contraseña" error={error}>
+        <Field label={t("login.password")} error={error}>
           <span className="relative block">
             <LockKeyhole className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" />
             <input
@@ -191,7 +213,7 @@ function LoginCard() {
             <button
               type="button"
               className="absolute top-1/2 right-3 -translate-y-1/2 text-muted"
-              aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
+              aria-label={show ? t("login.hidePassword") : t("login.showPassword")}
               onClick={() => setShow((value) => !value)}
             >
               {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -200,13 +222,13 @@ function LoginCard() {
         </Field>
       </div>
       <Button type="submit" className="mt-4 w-full">
-        Iniciar sesión
+        {t("login.submit")}
       </Button>
       <Button variant="ink" className="mt-2 w-full" onClick={() => go("landing")}>
-        Cancelar
+        {t("login.cancel")}
       </Button>
       <p className="mt-4 text-center text-xs text-muted">
-        Factor categoría 2. Después de 3 errores el acceso se bloquea 10 minutos.
+        {t("login.factorNote")}
       </p>
     </form>
   );
@@ -244,25 +266,25 @@ function RegisterCard() {
   function submit(event: FormEvent) {
     event.preventDefault();
     if (!accepted) {
-      setError("Debe aceptar los términos del servicio y el aviso de privacidad.");
+      setError(t("register.acceptTerms"));
       return;
     }
     const client = form.client.replace(/\D/g, "");
     if (!/^\d{6,12}$/.test(client)) {
-      setError("El número de cliente debe tener entre 6 y 12 dígitos. Se obtiene en sucursal.");
+      setError(t("register.clientDigits"));
       return;
     }
     const issues = passwordIssues(form.password, client);
     if (issues.length) {
-      setError(`La contraseña necesita ${issues.join(", ")}.`);
+      setError(t("register.passwordNeeds", { issues: issues.join(", ") }));
       return;
     }
     if (form.password !== form.confirm) {
-      setError("La confirmación no coincide.");
+      setError(t("register.passwordMismatch"));
       return;
     }
     if (!/^\d{10}$/.test(form.phone.replace(/\D/g, ""))) {
-      setError("Capture un celular de 10 dígitos. Ahí enviaremos avisos de operaciones.");
+      setError(t("register.phoneDigits"));
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
@@ -426,7 +448,7 @@ function RegisterCard() {
             <strong className="text-ink">{DEMO_ACTIVATION_CODE}</strong>.
           </p>
           <div className="mt-4">
-            <Field label="Código de activación" error={error && activation ? error : undefined}>
+            <Field label={t("register.activationCode")} error={error && activation ? error : undefined}>
               <input className={inputClass} value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} />
             </Field>
           </div>
@@ -441,8 +463,8 @@ function SegmentSwitch({ value, onChange }: { value: Segment; onChange: (value: 
     <div className="grid grid-cols-2 rounded-md bg-paper p-1 text-sm font-semibold">
       {(
         [
-          ["personas", "Personas"],
-          ["empresas", "Empresas"],
+          ["personas", t("segment.personas")],
+          ["empresas", t("segment.empresas")],
         ] as const
       ).map(([id, label]) => (
         <button

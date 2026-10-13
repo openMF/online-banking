@@ -22,12 +22,12 @@ import {
   dailyUsedNow,
   formatMoney,
   formatWhen,
+  getNav,
+  getScreenTitle,
   isBeneficiaryActive,
   maskAccount,
-  NAV,
   passwordIssues,
   REAL_ACTIVATION_LABEL,
-  SCREEN_TITLE,
   SECOND_SIGN_AT,
   type Receipt,
   type Screen,
@@ -36,6 +36,7 @@ import { useBanca, useSessionUser } from "@/lib/banca/store";
 import { useAskOtp } from "@/components/banca/otp";
 import { TermsBody } from "@/components/banca/public";
 import { Button, Field, inputClass, Mark, Modal, Panel } from "@/components/banca/ui";
+import { t } from "@/i18n";
 
 const ICONS: Record<string, typeof Home> = {
   dashboard: Home,
@@ -82,7 +83,7 @@ export function AppShell() {
   if (!user) return null;
   const unread = user.notices.filter((notice) => !notice.read).length;
   const pendingCount = user.pending.filter((item) => item.status === "pendiente_segunda_firma").length;
-  const items = NAV.filter((item) => !item.empresasOnly || user.segment === "empresas");
+  const items = getNav().filter((item) => !item.empresasOnly || user.segment === "empresas");
 
   function navigate(next: Screen) {
     go(next);
@@ -105,7 +106,7 @@ export function AppShell() {
             onNavigate={navigate}
             onLogout={() => {
               endSession("voluntario");
-              toast("Sesión cerrada.");
+              toast(t("session.closed"));
             }}
           />
         </aside>
@@ -115,7 +116,7 @@ export function AppShell() {
               <button type="button" className="rounded-md p-2 md:hidden" aria-label="Abrir menú" onClick={() => setOpen(true)}>
                 <Menu className="size-5" />
               </button>
-              <h1 className="text-sm font-semibold tracking-wide">{SCREEN_TITLE[screen]}</h1>
+              <h1 className="text-sm font-semibold tracking-wide">{getScreenTitle(screen)}</h1>
             </div>
             <p className="num text-xs text-on-ink/75">Sesión {formatClock(remaining)}</p>
           </header>
@@ -159,9 +160,9 @@ export function AppShell() {
       ) : null}
       {warn ? (
         <Modal
-          title="La sesión está por cerrarse"
+          title={t("session.expiring")}
           onClose={() => touch()}
-          footer={<Button onClick={() => touch()}>Continuar</Button>}
+          footer={<Button onClick={() => touch()}>{t("session.continue")}</Button>}
         >
           <p className="text-sm text-muted">
             Por inactividad, Banca Web se cerrará en {formatClock(remaining)}. Elija continuar si sigue en el canal.
@@ -184,7 +185,7 @@ function SidebarBody({
 }: {
   name: string;
   role: string;
-  items: typeof NAV;
+  items: ReturnType<typeof getNav>;
   screen: Screen;
   unread: number;
   pendingCount: number;
@@ -197,11 +198,11 @@ function SidebarBody({
         <div className="flex items-center gap-2">
           <Mark className="size-9" />
           <div>
-            <p className="text-sm font-bold">MIFOS</p>
-            <p className="text-xs text-on-ink/65">Banca Web</p>
+            <p className="text-sm font-bold">{t("app.name")}</p>
+            <p className="text-xs text-on-ink/65">{t("app.tagline")}</p>
           </div>
         </div>
-        <p className="mt-4 text-sm font-medium leading-snug">Hola, {name}</p>
+        <p className="mt-4 text-sm font-medium leading-snug">{t("session.hello", { name })}</p>
         <p className="mt-1 text-xs text-on-ink/65">{role}</p>
       </div>
       <nav className="flex-1 overflow-auto py-2">
@@ -253,18 +254,18 @@ function Dashboard() {
   const recent = user.movements.slice(0, 4);
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted">Último ingreso: {formatWhen(user.previousLogin)} · Banca Web</p>
+      <p className="text-sm text-muted">{t("session.lastLogin", { when: formatWhen(user.previousLogin) })}</p>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Productos contratados" value={String(user.accounts.length)} />
-        <Stat label="Cuentas de crédito" value="0" />
-        <Stat label={user.segment === "empresas" ? "Cuentas empresariales" : "Cuentas de captación"} value={String(user.accounts.length)} />
+        <Stat label={t("dashboard.products")} value={String(user.accounts.length)} />
+        <Stat label={t("dashboard.creditAccounts")} value="0" />
+        <Stat label={user.segment === "empresas" ? t("dashboard.businessAccounts") : t("dashboard.savingsAccounts")} value={String(user.accounts.length)} />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Stat label="Resumen de crédito" value={formatMoney(0)} />
-        <Stat label="Resumen de captación" value={formatMoney(balance)} />
+        <Stat label={t("dashboard.creditSummary")} value={formatMoney(0)} />
+        <Stat label={t("dashboard.savingsSummary")} value={formatMoney(balance)} />
       </div>
       <div className="grid gap-3 lg:grid-cols-[1.3fr_0.7fr]">
-        <Panel title="Cuentas" action={<Button size="sm" variant="ghost" onClick={() => go("transfer")}>Transferir</Button>}>
+        <Panel title="Cuentas" action={<Button size="sm" variant="ghost" onClick={() => go("transfer")}>{t("dashboard.transfer")}</Button>}>
           <div className="space-y-3">
             {user.accounts.map((account) => (
               <div key={account.id} className="flex items-center justify-between gap-3 border-b border-line pb-3 last:border-0 last:pb-0">
