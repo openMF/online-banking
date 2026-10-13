@@ -16,6 +16,20 @@ RUN npm ci --no-audit --no-fund
 # Application sources
 COPY . .
 
+# Self Service Plugin connection (baked into client via Vite)
+ARG VITE_SELF_SERVICE_BASE_URL=https://demo.mifos.community
+ARG VITE_SELF_SERVICE_ENDPOINT=/fineract-provider/api
+ARG VITE_SELF_SERVICE_API_KEY=
+ARG VITE_SELF_SERVICE_TENANT_ID=default
+ENV VITE_SELF_SERVICE_BASE_URL=$VITE_SELF_SERVICE_BASE_URL \
+    VITE_SELF_SERVICE_ENDPOINT=$VITE_SELF_SERVICE_ENDPOINT \
+    VITE_SELF_SERVICE_API_KEY=$VITE_SELF_SERVICE_API_KEY \
+    VITE_SELF_SERVICE_TENANT_ID=$VITE_SELF_SERVICE_TENANT_ID \
+    SELF_SERVICE_BASE_URL=$VITE_SELF_SERVICE_BASE_URL \
+    SELF_SERVICE_ENDPOINT=$VITE_SELF_SERVICE_ENDPOINT \
+    SELF_SERVICE_API_KEY=$VITE_SELF_SERVICE_API_KEY \
+    SELF_SERVICE_TENANT_ID=$VITE_SELF_SERVICE_TENANT_ID
+
 # Production build. The project uses Vite + TanStack Start; client assets land
 # under dist/ (or .output/public depending on Nitro preset). We normalize below.
 ENV NODE_ENV=production

@@ -121,6 +121,72 @@ src/
 | `npm run lint`    | ESLint                               |
 | `npm test`        | Unit tests                           |
 
+## Self Service Plugin integration
+
+This app is wired to the [openMF/selfservice-plugin](https://github.com/openMF/selfservice-plugin) REST API (`/v1/self/*`).
+
+### Environment variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SELF_SERVICE_BASE_URL` | Fineract origin (no trailing slash) | `https://demo.mifos.community` |
+| `SELF_SERVICE_ENDPOINT` | Path prefix before `/v1/self` | `/fineract-provider/api` |
+| `SELF_SERVICE_API_KEY` | Optional `X-API-Key` header | *(empty)* |
+| `SELF_SERVICE_TENANT_ID` | `Fineract-Platform-TenantId` | `default` |
+
+Use the same values with the `VITE_` prefix for client-side (browser) builds. See [`.env.example`](./.env.example).
+
+```bash
+cp .env.example .env
+# edit SELF_SERVICE_* and VITE_SELF_SERVICE_*
+npm run dev
+```
+
+Resolved base for all calls:
+
+```
+{SELF_SERVICE_BASE_URL}{SELF_SERVICE_ENDPOINT}/v1/self/...
+```
+
+### API client
+
+```ts
+import {
+  authenticate,
+  listSavingsAccounts,
+  createTransfer,
+  listBeneficiaries,
+  getSelfServiceConfig,
+} from "@/lib/selfservice";
+
+await authenticate("mifos", "password");
+const savings = await listSavingsAccounts();
+console.log(getSelfServiceConfig().selfRoot);
+```
+
+Implemented endpoint groups (all paths under `/v1/self`):
+
+| Group | Paths |
+|-------|--------|
+| Auth | `/authentication`, `/authentication/token`, `/authentication/logout` |
+| Registration | `/registration`, `/registration/user`, `/registration/user/confirm`, `/registration/client-user`, `/registration/identifiers` |
+| Password | `/password/request`, `/password/renew` |
+| User | `/user`, `/userdetails` |
+| Clients | `/clients`, `/clients/{id}/accounts`, charges, transactions, images |
+| Savings | `/savingsaccounts`, template, charges, transactions |
+| Loans | `/loans`, template, charges, guarantors; `/loans/simulate` |
+| Shares | `/shareaccounts` |
+| Transfers | `/accounttransfers` (prepare, quote, confirm, otp, details) |
+| Beneficiaries | `/beneficiaries/tpt` |
+| Products | `/loanproducts`, `/savingsproducts`, `/products/share` |
+| Reports | `/runreports` |
+| Surveys | `/surveys`, `/surveys/scorecards` |
+| Offices | `/offices` (+ details, services, geolocation, address) |
+| Pockets | `/pockets` |
+| Other | `/paymentlink`, `/remittance`, `/transfer-fees`, `/sinpe/enrollment`, `/onboarding/steps` |
+
+Module location: `src/lib/selfservice/` (`config.ts`, `client.ts`, `api.ts`).
+
 ## Docker (Nginx)
 
 The image is a **multi-stage** build: Node compiles the app, then **Nginx** serves the static client on port 80.
