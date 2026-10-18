@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------------------
 # Stage 1 — build
 # -----------------------------------------------------------------------------
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -50,7 +50,7 @@ RUN mkdir -p /out \
 # -----------------------------------------------------------------------------
 # Stage 2 — Nginx
 # -----------------------------------------------------------------------------
-FROM nginx:1.27-alpine
+FROM nginx:1.31.7-alpine
 
 LABEL org.opencontainers.image.title="Mifos Online Banking"
 LABEL org.opencontainers.image.description="Demo electronic banking channel (Nginx static)"
