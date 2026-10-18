@@ -34,25 +34,20 @@ function createHistory(opts) {
 		if (opts.notifyOnIndexChange ?? true) notify(action);
 		else location = opts.getLocation();
 	};
-	const tryNavigation = async ({ task, navigateOpts, ...actionInfo }) => {
-		if (navigateOpts?.ignoreBlocker ?? false) {
-			task();
-			return;
-		}
-		const blockers = opts.getBlockers?.() ?? [];
-		const isPushOrReplace = actionInfo.type === "PUSH" || actionInfo.type === "REPLACE";
-		if (typeof document !== "undefined" && blockers.length && isPushOrReplace) for (const blocker of blockers) {
-			const nextLocation = parseHref(actionInfo.path, actionInfo.state);
+	const tryNavigation = async (args) => {
+		const blockers = args.navigateOpts?.ignoreBlocker ? void 0 : opts.getBlockers?.();
+		if (typeof document !== "undefined" && blockers?.length && (args.type === "PUSH" || args.type === "REPLACE")) for (const blocker of blockers) {
+			const nextLocation = parseHref(args.path, args.state);
 			if (await blocker.blockerFn({
 				currentLocation: location,
 				nextLocation,
-				action: actionInfo.type
+				action: args.type
 			})) {
 				opts.onBlocked?.();
 				return;
 			}
 		}
-		task();
+		args.task();
 	};
 	return {
 		get location() {
@@ -306,7 +301,7 @@ function createBrowserHistory(opts) {
 			}
 			win.history.go(n);
 		},
-		createHref: (href) => createHref(href),
+		createHref,
 		flush,
 		destroy: () => {
 			win.history.pushState = originalPushState;
@@ -395,14 +390,14 @@ function parseHref(href, state) {
 	}
 	return {
 		href: sanitizedHref,
-		pathname: sanitizedHref.substring(0, hashIndex > 0 ? searchIndex > 0 ? Math.min(hashIndex, searchIndex) : hashIndex : searchIndex > 0 ? searchIndex : sanitizedHref.length),
-		hash: hashIndex > -1 ? sanitizedHref.substring(hashIndex) : "",
+		pathname: sanitizedHref.slice(0, hashIndex > -1 ? searchIndex > -1 ? Math.min(hashIndex, searchIndex) : hashIndex : searchIndex > -1 ? searchIndex : sanitizedHref.length),
+		hash: hashIndex > -1 ? sanitizedHref.slice(hashIndex) : "",
 		search: searchIndex > -1 ? sanitizedHref.slice(searchIndex, hashIndex === -1 ? void 0 : hashIndex) : "",
 		state
 	};
 }
 function createRandomKey() {
-	return (Math.random() + 1).toString(36).substring(7);
+	return (Math.random() + 1).toString(36).slice(7);
 }
 //#endregion
 export { parseHref as i, createServerHistory as n, normalizeProtocolRelative as r, createBrowserHistory as t };

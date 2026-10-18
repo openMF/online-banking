@@ -1,18 +1,3 @@
-//#region node_modules/date-fns/constants.js
-/**
-* @constant
-* @name daysInYear
-* @summary Days in 1 year.
-*
-* @description
-* How many days in a year.
-*
-* One years equals 365.2425 days according to the formula:
-*
-* > Leap year occurs every 4 years, except for years that are divisible by 100 and not divisible by 400.
-* > 1 mean year = (365+1/4-1/100+1/400) days = 365.2425 days
-*/
-var daysInYear = 365.2425;
 -(Math.pow(10, 8) * 24 * 60 * 60 * 1e3);
 /**
 * @constant
@@ -38,14 +23,6 @@ var millisecondsInMinute = 6e4;
 * @summary Milliseconds in 1 hour
 */
 var millisecondsInHour = 36e5;
-/**
-* @constant
-* @name secondsInDay
-* @summary Seconds in 1 day.
-*/
-var secondsInDay = 86400;
-secondsInDay * 7;
-secondsInDay * daysInYear / 12 * 3;
 /**
 * @constant
 * @name constructFromSymbol
