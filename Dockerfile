@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Install dependencies first (better layer caching)
 COPY package.json package-lock.json ./
-RUN npm ci 
+RUN npm ci --prefer-offline --no-audit --no-fund
 
 # Application sources
 COPY . .
