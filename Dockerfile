@@ -31,13 +31,14 @@ ENV VITE_SELF_SERVICE_BASE_URL=$VITE_SELF_SERVICE_BASE_URL \
     SELF_SERVICE_TENANT_ID=$VITE_SELF_SERVICE_TENANT_ID
 
 # Production build. The project uses Vite + TanStack Start; client assets land
-# under dist/ (or .output/public depending on Nitro preset). We normalize below.
+# under .vercel/output/static (Nitro vercel preset) or classic dist/ paths.
 ENV NODE_ENV=production
 RUN npm run build || npm run build:dev
 
 # Collect static files into /out for the Nginx stage
 RUN mkdir -p /out \
-  && if [ -d dist/client ]; then cp -a dist/client/. /out/; \
+  && if [ -d .vercel/output/static ]; then cp -a .vercel/output/static/. /out/; \
+     elif [ -d dist/client ]; then cp -a dist/client/. /out/; \
      elif [ -d dist ]; then cp -a dist/. /out/; \
      elif [ -d .output/public ]; then cp -a .output/public/. /out/; \
      elif [ -d build/client ]; then cp -a build/client/. /out/; \
