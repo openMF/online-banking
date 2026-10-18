@@ -1,13 +1,3 @@
-# Mifos Online Banking — Nginx static demo + Self Service Plugin config
-#
-# Usage:
-#   cp .env.example .env   # edit BASE_URL / ENDPOINT / API_KEY / TENANT
-#   docker compose up --build -d
-#   open http://localhost:8080
-#
-# Stop:
-#   docker compose down
-
 services:
   online-banking:
     build:
@@ -29,8 +19,10 @@ services:
       SELF_SERVICE_TENANT_ID: ${SELF_SERVICE_TENANT_ID:-default}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      # Updated: Check root path "/" instead of "/health"
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s
+      start_period: 15s # Increased for Node.js SSR startup
+      

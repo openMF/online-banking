@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage build: Node builds the app, Nginx serves static assets.
-# Suitable for the client-side banking UI demonstration.
+# Multi-stage build: Node builds the SSR app, Node serves it.
 
 # -----------------------------------------------------------------------------
 # Stage 1 — build
@@ -9,14 +8,14 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies first (better layer caching)
+# Prevent Playwright from downloading browser binaries on Alpine (musl incompatibility)
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
 COPY package.json package-lock.json ./
 RUN npm ci --prefer-offline --no-audit --no-fund
 
-# Application sources
 COPY . .
 
-# Self Service Plugin connection (baked into client via Vite)
 ARG VITE_SELF_SERVICE_BASE_URL=https://demo.mifos.community
 ARG VITE_SELF_SERVICE_ENDPOINT=/fineract-provider/api
 ARG VITE_SELF_SERVICE_API_KEY=
@@ -28,47 +27,38 @@ ENV VITE_SELF_SERVICE_BASE_URL=$VITE_SELF_SERVICE_BASE_URL \
     SELF_SERVICE_BASE_URL=$VITE_SELF_SERVICE_BASE_URL \
     SELF_SERVICE_ENDPOINT=$VITE_SELF_SERVICE_ENDPOINT \
     SELF_SERVICE_API_KEY=$VITE_SELF_SERVICE_API_KEY \
-    SELF_SERVICE_TENANT_ID=$VITE_SELF_SERVICE_TENANT_ID
+    SELF_SERVICE_TENANT_ID=$VITE_SELF_SERVICE_TENANT_ID \
+    NITRO_PRESET=node
 
-# Production build. The project uses Vite + TanStack Start; client assets land
-# under .vercel/output/static (Nitro vercel preset) or classic dist/ paths.
+# [FIX] Patch vite.config.ts to use the 'node' preset instead of 'vercel'.
+# This ensures TanStack Start outputs a standalone Node.js server to .output/
+# instead of Vercel serverless functions to .vercel/output/.
+RUN sed -i 's/preset: "vercel",/preset: "node",/g' vite.config.ts && \
+    sed -i 's/server: {/server: {\n        preset: "node",/g' vite.config.ts
+
 ENV NODE_ENV=production
+# Run the build
 RUN npm run build || npm run build:dev
 
-# Collect static files into /out for the Nginx stage
-RUN mkdir -p /out \
-  && if [ -d .vercel/output/static ]; then cp -a .vercel/output/static/. /out/; \
-     elif [ -d dist/client ]; then cp -a dist/client/. /out/; \
-     elif [ -d dist ]; then cp -a dist/. /out/; \
-     elif [ -d .output/public ]; then cp -a .output/public/. /out/; \
-     elif [ -d build/client ]; then cp -a build/client/. /out/; \
-     elif [ -d build ]; then cp -a build/. /out/; \
-     else echo "No static build output found" && ls -la && exit 1; fi \
-  && if [ ! -f /out/index.html ]; then \
-       find /out -name "index.html" -type f | head -1 | xargs -I{} cp {} /out/index.html || true; \
-     fi
-
 # -----------------------------------------------------------------------------
-# Stage 2 — Nginx
+# Stage 2 — Node.js Runtime
 # -----------------------------------------------------------------------------
-FROM nginx:1.31.7-alpine
+FROM node:24-alpine
 
-LABEL org.opencontainers.image.title="Mifos Online Banking"
-LABEL org.opencontainers.image.description="Demo electronic banking channel (Nginx static)"
-LABEL org.opencontainers.image.source="https://github.com/openMF/online-banking"
+WORKDIR /app
 
-# Remove default site and install our config
-RUN rm -f /etc/nginx/conf.d/default.conf
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy the compiled Nitro node server output
+COPY --from=builder /app/.output ./.output
+COPY --from=builder /app/package.json ./package.json
 
-# Static site from builder
-COPY --from=builder /out /usr/share/nginx/html
-
-# Non-root friendly: nginx master still needs root to bind :80 in stock image;
-# containers typically run as root for the master process. Expose 80.
+# Configure Nitro to listen on port 80
+ENV PORT=80
+ENV HOST=0.0.0.0
 EXPOSE 80
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/health || exit 1
+# Healthcheck using wget (available in alpine)
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:80/ || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+# Start the Nitro server
+CMD ["node", ".output/server/index.mjs"]
