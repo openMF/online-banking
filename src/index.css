@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "./styles/base.css";
+@import "./styles/landing.css";
+@import "./styles/preview.css";
+@import "./styles/access.css";
+@import "./styles/banking.css";
+@import "./styles/responsive.css";
