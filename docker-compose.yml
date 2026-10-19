@@ -9,28 +9,15 @@
 #   docker compose down
 
 services:
-  online-banking:
+  web:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        VITE_SELF_SERVICE_BASE_URL: ${SELF_SERVICE_BASE_URL:-https://demo.mifos.community}
-        VITE_SELF_SERVICE_ENDPOINT: ${SELF_SERVICE_ENDPOINT:-/fineract-provider/api}
-        VITE_SELF_SERVICE_API_KEY: ${SELF_SERVICE_API_KEY:-}
-        VITE_SELF_SERVICE_TENANT_ID: ${SELF_SERVICE_TENANT_ID:-default}
-    image: openmf/online-banking:local
-    container_name: mifos-online-banking
+    image: banking-landing-page:latest
+    container_name: banking-landing-page
     ports:
       - "8080:80"
-    environment:
-      SELF_SERVICE_BASE_URL: ${SELF_SERVICE_BASE_URL:-https://demo.mifos.community}
-      SELF_SERVICE_ENDPOINT: ${SELF_SERVICE_ENDPOINT:-/fineract-provider/api}
-      SELF_SERVICE_API_KEY: ${SELF_SERVICE_API_KEY:-}
-      SELF_SERVICE_TENANT_ID: ${SELF_SERVICE_TENANT_ID:-default}
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 10s
+    # Optional: environment variables if needed later
+    # environment:
+    #   - NODE_ENV=production
