@@ -1,0 +1,438 @@
+import { expect, test, type Page } from "@playwright/test";
+
+async function openDemo(page: Page) {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Conoce tu banca", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Hola, Mariana.", exact: true }),
+  ).toBeVisible();
+}
+
+async function prepareTransfer(
+  page: Page,
+  amount: string,
+  concept: string,
+  own = false,
+) {
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Transferir", exact: true }).click();
+  if (own)
+    await dialog.getByRole("button", { name: "Entre mis cuentas" }).click();
+  await dialog.getByRole("spinbutton", { name: /Importe/ }).fill(amount);
+  await dialog.getByLabel("Concepto", { exact: true }).fill(concept);
+  await dialog.getByRole("button", { name: "Revisar transferencia" }).click();
+  await expect(
+    dialog.getByText("Todo claro antes de continuar."),
+  ).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Continuar a verificación" })
+    .click();
+  await dialog.getByLabel("Código de verificación demo").fill("123456");
+}
+
+test("landing navigation, product simulators, FAQ, and stories work", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page).toHaveTitle(/MIFOS/);
+  await expect(page.locator("h1")).toContainText("MIFOS.");
+  await page.getByRole("button", { name: "Soluciones", exact: true }).click();
+  await page
+    .locator("#solutions-menu")
+    .getByRole("button", { name: /Ahorro e inversión/ })
+    .click();
+  await expect(page.getByText("Tu próximo logro empieza hoy.")).toBeVisible();
+  const result = page.locator(".calculator-result strong");
+  const previous = await result.textContent();
+  await page.getByRole("button", { name: "365 días" }).click();
+  await expect(result).not.toHaveText(previous!);
+  await page.getByRole("button", { name: "Mi crédito", exact: true }).click();
+  await expect(page.getByText("Dale forma a ese gran proyecto.")).toBeVisible();
+  await page.getByRole("button", { name: "36 meses" }).click();
+  await expect(page.getByRole("button", { name: "36 meses" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.getByRole("button", { name: "Siguiente historia" }).click();
+  await expect(page.locator(".story-content blockquote")).toContainText(
+    "Tener todo claro",
+  );
+  const faq = page.getByRole("button", {
+    name: "¿Esta experiencia opera con dinero real?",
+  });
+  await faq.click();
+  await expect(faq).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator("#faq-answer-5")).toContainText(
+    "No está conectado",
+  );
+  await faq.click();
+  await expect(page.locator("#faq-answer-5")).toBeHidden();
+});
+
+test("demo login validates credentials and supports password visibility", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Banca en línea", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Número de cliente demo").fill("111111111");
+  await dialog
+    .getByLabel("Contraseña de prueba", { exact: true })
+    .fill("incorrecta");
+  await dialog.getByRole("button", { name: "Mostrar contraseña" }).click();
+  await expect(
+    dialog.getByLabel("Contraseña de prueba", { exact: true }),
+  ).toHaveAttribute("type", "text");
+  await dialog.getByRole("button", { name: "Entrar a mi banca" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("no coinciden");
+  await dialog
+    .getByRole("button", { name: "Completar con datos demo" })
+    .click();
+  await dialog.getByRole("button", { name: "Entrar a mi banca" }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Hola, Mariana." }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Cerrar sesión demo" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText("Sesión demo cerrada");
+});
+
+test("personal transfers verify OTP, update balances, and export CSV", async ({
+  page,
+}) => {
+  await openDemo(page);
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "$215,680.50",
+  );
+  await dialog
+    .getByRole("button", { name: "Ocultar saldos", exact: true })
+    .click();
+  await expect(dialog.locator(".total-balance>strong")).not.toContainText(
+    "215",
+  );
+  await dialog
+    .getByRole("button", { name: "Mostrar saldos", exact: true })
+    .click();
+  await prepareTransfer(page, "1250.50", "Prueba personal");
+  await dialog.getByLabel("Código de verificación demo").fill("000000");
+  await dialog
+    .getByRole("button", { name: "Confirmar transferencia demo" })
+    .click();
+  await expect(dialog.getByRole("alert")).toContainText("no coincide");
+  await dialog.getByLabel("Código de verificación demo").fill("123456");
+  await dialog
+    .getByRole("button", { name: "Confirmar transferencia demo" })
+    .click();
+  await expect(
+    dialog.getByRole("heading", { name: "Transferencia simulada." }),
+  ).toBeVisible();
+  const receiptDownload = page.waitForEvent("download");
+  await dialog
+    .getByRole("button", { name: "Descargar comprobante demo" })
+    .click();
+  expect((await receiptDownload).suggestedFilename()).toMatch(
+    /mifos-demo-.*\.txt/,
+  );
+  await dialog.getByRole("button", { name: "Ver mis movimientos" }).click();
+  await dialog.getByRole("searchbox").fill("Prueba personal");
+  await expect(dialog.locator(".transaction-list>li")).toHaveCount(1);
+  await expect(dialog.locator(".transaction-amount")).toHaveText("-$1,250.50");
+  const download = page.waitForEvent("download");
+  await dialog.getByRole("button", { name: "CSV", exact: true }).click();
+  expect((await download).suggestedFilename()).toBe(
+    "mifos-movimientos-demo.csv",
+  );
+  await dialog.getByRole("button", { name: "Mi resumen" }).click();
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "$214,430.00",
+  );
+  await prepareTransfer(page, "500", "Entre mis cuentas", true);
+  await dialog
+    .getByRole("button", { name: "Confirmar transferencia demo" })
+    .click();
+  await expect(
+    dialog.getByRole("heading", { name: "Transferencia simulada." }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Mi resumen" }).click();
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "$214,430.00",
+  );
+  await expect(dialog.locator(".account-choice").nth(1)).toContainText(
+    "$87,730.50",
+  );
+});
+
+test("business transfers require a second approval and preserve balances until approved", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .locator(".header-segments")
+    .getByRole("button", { name: "Empresas" })
+    .click();
+  await expect(page.locator("h1")).toContainText("Tu negocio,");
+  await page
+    .getByRole("button", { name: "Conoce tu banca", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("heading", { name: "Hola, Estudio Norte." }),
+  ).toBeVisible();
+  await prepareTransfer(page, "2000", "Pago a proveedor");
+  await dialog.getByRole("button", { name: "Enviar a segunda firma" }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Lista para una segunda firma." }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Mi resumen" }).click();
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "$712,800.00",
+  );
+  await dialog.getByRole("button", { name: /Aprobaciones/ }).click();
+  await dialog.getByRole("button", { name: "Simular segunda firma" }).click();
+  await dialog.getByLabel("Código de segunda firma demo").fill("654321");
+  await dialog.getByRole("button", { name: "Confirmar segunda firma" }).click();
+  await expect(dialog.getByText("Aprobada", { exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Mi resumen" }).click();
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "$710,800.00",
+  );
+});
+
+test("beneficiaries can be added, validated, and removed", async ({ page }) => {
+  await openDemo(page);
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("button", { name: "Beneficiarios", exact: true })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Agregar beneficiario", exact: true })
+    .click();
+  await dialog
+    .getByLabel("Nombre del beneficiario de prueba")
+    .fill("Ana Prueba");
+  await dialog
+    .getByLabel("Cuenta de prueba (18 dígitos)")
+    .fill("000000000000000001");
+  await dialog.getByRole("button", { name: "Guardar beneficiario" }).click();
+  await expect(dialog.getByText("Ana Prueba", { exact: true })).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Agregar beneficiario", exact: true })
+    .click();
+  await dialog
+    .getByLabel("Nombre del beneficiario de prueba")
+    .fill("Duplicado");
+  await dialog
+    .getByLabel("Cuenta de prueba (18 dígitos)")
+    .fill("000000000000000001");
+  await dialog.getByRole("button", { name: "Guardar beneficiario" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("ya está");
+  await dialog.getByRole("button", { name: "Cancelar", exact: true }).click();
+  await dialog.getByRole("button", { name: "Eliminar a Ana Prueba" }).click();
+  await dialog.getByRole("button", { name: "Sí", exact: true }).click();
+  await expect(dialog.getByText("Ana Prueba", { exact: true })).toHaveCount(0);
+});
+
+test("onboarding is complete, local, and explicitly a demo", async ({
+  page,
+}) => {
+  const posts: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST") posts.push(request.url());
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Comienza tu futuro" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Continuar", exact: true }).click();
+  await dialog.getByLabel("Tu nombre de prueba").fill("Persona Demo");
+  await dialog
+    .getByLabel("Correo electrónico de prueba")
+    .fill("demo@example.com");
+  await dialog.getByRole("checkbox").check();
+  await dialog
+    .getByRole("button", { name: "Crear mi experiencia demo" })
+    .click();
+  await expect(
+    dialog.getByRole("heading", { name: /Tu futuro se ve bien/ }),
+  ).toContainText("Persona Demo");
+  await dialog.getByRole("button", { name: "Explorar mi banca demo" }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Hola, Mariana." }),
+  ).toBeVisible();
+  expect(posts).toEqual([]);
+});
+
+test("contact prepares a message without pretending to send it", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Cotizar mi crédito", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("textbox").fill("Quisiera conocer los requisitos.");
+  await dialog.getByRole("button", { name: "Preparar mi consulta" }).click();
+  await expect(dialog.getByText("Tu consulta está lista.")).toBeVisible();
+  await expect(dialog.locator(".selectable-message")).toContainText("crédito");
+  await expect(
+    dialog.getByText(/No se ha enviado ningún mensaje/),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Cotizar mi crédito", exact: true }),
+  ).toBeFocused();
+});
+
+test("mobile navigation and banking are usable without horizontal overflow", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Abrir menú" })).toBeVisible();
+  await page.getByRole("button", { name: "Abrir menú" }).click();
+  await page
+    .locator("#mobile-navigation")
+    .getByRole("button", { name: "Empresas", exact: true })
+    .click();
+  await page
+    .locator("#mobile-navigation")
+    .getByRole("button", { name: "Cuenta MIFOS", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Abrir menú" }),
+  ).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(".mini-greeting h4")).toContainText(
+    "Estudio Norte",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBeTruthy();
+  await page.getByRole("button", { name: "Explora la banca digital" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByRole("heading", { name: "Hola, Estudio Norte." }),
+  ).toBeVisible();
+  const widths = await page.getByRole("dialog").evaluate((element) => ({
+    content: element.scrollWidth,
+    viewport: element.clientWidth,
+  }));
+  expect(widths.content).toBeLessThanOrEqual(widths.viewport + 1);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("transfer limits prevent invalid amounts before review", async ({
+  page,
+}) => {
+  await openDemo(page);
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Transferir", exact: true }).click();
+  const amount = dialog.getByRole("spinbutton", { name: /Importe/ });
+  await amount.fill("60000");
+  await dialog.getByLabel("Concepto", { exact: true }).fill("Fuera de límite");
+  await dialog.getByRole("button", { name: "Revisar transferencia" }).click();
+  expect(
+    await amount.evaluate(
+      (element: HTMLInputElement) => element.validity.rangeOverflow,
+    ),
+  ).toBeTruthy();
+  await amount.fill("0");
+  await dialog.getByRole("button", { name: "Revisar transferencia" }).click();
+  expect(
+    await amount.evaluate(
+      (element: HTMLInputElement) => element.validity.rangeUnderflow,
+    ),
+  ).toBeTruthy();
+  await expect(
+    dialog.getByRole("heading", { name: "¿A dónde vamos hoy?" }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "Mi resumen" }).click();
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "$215,680.50",
+  );
+});
+
+test("keyboard focus stays in dialogs and session inactivity resets on input", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await openDemo(page);
+  for (let index = 0; index < 20; index++) {
+    await page.keyboard.press("Tab");
+    expect(
+      await page.evaluate(() =>
+        Boolean(document.activeElement?.closest("dialog[open]")),
+      ),
+    ).toBeTruthy();
+  }
+  await page.clock.fastForward(9 * 60 * 1000);
+  await page.keyboard.press("Tab");
+  await page.clock.fastForward(2 * 60 * 1000);
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.clock.fastForward(9 * 60 * 1000);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(
+    "10 minutos de inactividad",
+  );
+});
+
+test("English and Mexican Spanish switch consistently and persist", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("lang", "es-MX");
+  await expect(page.locator("h1")).toContainText("Siempre hacia");
+  await page
+    .locator(".header-actions .locale-toggle")
+    .getByRole("button", { name: "EN" })
+    .click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+  await expect(page).toHaveTitle("MIFOS | Always moving forward");
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    "content",
+    /Discover a new digital banking experience/,
+  );
+  await expect(page.locator("h1")).toContainText("Always moving");
+  await expect(
+    page.getByRole("button", { name: "Explore your banking", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+  await page
+    .getByRole("button", { name: "Explore your banking", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("heading", { name: "Hello, Mariana." }),
+  ).toBeVisible();
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "MX$215,680.50",
+  );
+  await dialog
+    .locator(".dialog-locale")
+    .getByRole("button", { name: "ES" })
+    .click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "es-MX");
+  await expect(
+    dialog.getByRole("heading", { name: "Hola, Mariana." }),
+  ).toBeVisible();
+  await expect(dialog.locator(".total-balance>strong")).toContainText(
+    "$215,680.50",
+  );
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __missingI18n?: string[] }).__missingI18n ?? [],
+    ),
+  ).toEqual([]);
+});

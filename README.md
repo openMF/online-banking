@@ -1,224 +1,78 @@
-# Online Banking (Mifos Banca Web)
+# MIFOS Digital Banking Experience
 
-Demonstration prototype of an electronic banking channel for **Mifos**, focused on self-service for personal and business clients. It showcases balances, transfers, approvals (dual signature for companies), audit log, and enrollment flows.
+A complete Spanish-language React and TypeScript experience inspired by MIFOS's identity and the personal/business journeys in [Mifos Online Banking](https://github.com/openMF/online-banking).
 
-This is a **demo only**. It does not connect to real banking systems or move real money.
+## Run
 
-## Features
+- `npm install`
+- `npm run dev`
+- `npm run build`
+- `npm run preview`
 
-- Client number + password login with category-2 style controls
-- Enrollment / activation flow
-- Personal and business (empresas) segments
-- Transfers between own accounts and to Mifos beneficiaries
-- Dual-signature approvals for business users
-- Session timeout and inactivity handling
-- OTP step for sensitive operations
-- Internationalization (**i18n**) for **es-MX** (default) and **en-US**
+The entry point is `src/App.tsx`. The supplied Vite configuration produces a static production build in `dist/`. Deploy the entire directory, including its images and fonts, at the site root.
 
-## Tech stack
+## Included
 
-- React 19 + TypeScript
-- Vite
-- TanStack Router / Query
-- Zustand (persisted session)
-- Tailwind CSS + Radix UI primitives
-- date-fns
-- Lightweight custom i18n (JSON locale files)
+- Responsive Spanish-language landing page with sticky navigation, custom architectural imagery, regulatory information, interactive products, account preview, benefits, illustrative stories, costs and conditions, FAQ, contact tools, and footer.
+- File-based internationalization for Mexican Spanish and English, including interface copy, accessibility labels, validation messages, dates, currency, CSV headers, and demo receipts. Mexican Spanish is the default and the selected locale persists locally.
+- Motion entrances, scroll reveals, product transitions, subtle ambient animation, and hover/tap interactions. System reduced-motion preferences are respected.
+- Accessible native dialogs, keyboard focus handling, form labels, visible focus indicators, and inline validation.
+- Demo login, local two-step onboarding, and an explicitly simulated recovery flow.
+- Personal and business account balances, balance privacy toggle, transaction search and filters, CSV export, and beneficiary management.
+- Transfers between own accounts and to demo beneficiaries, amount limits, balance validation, review, verification, and downloadable demo receipts.
+- Business transfers remain pending until a simulated second signature approves them. Rejected operations do not change balances.
+- Investment and loan calculators with clearly disclosed hypothetical rates, not advertised product terms.
+- All data stays in memory. No analytics, tracking cookies, real financial operations, or form submissions are configured.
 
-## Download the fixed project
+## Demo Access
 
-A complete snapshot of this repository (including i18n, README, CONTRIBUTING, Dockerfile, and docker-compose) is packaged as a zip archive for convenience. After downloading, extract and follow the install or Docker steps below.
+| Segment  | Client Number | Password   |
+| -------- | ------------- | ---------- |
+| Personas | `344988355`   | `Mifos#26` |
+| Empresas | `880214001`   | `Mifos#26` |
 
-> **In this chat / sandbox:** use the download control next to the `online-banking-fixed.zip` attachment (or path under `/home/workdir/artifacts/`).
+First verification code: `123456`. Business second-signature code: `654321`.
 
-## Getting started
+These values are intentionally public test fixtures, not real credentials or security controls. The session expires after ten minutes without pointer or keyboard activity. Closing the demo discards its data.
 
-### Prerequisites
+## Verification
 
-- Node.js 20+
-- npm
+Run a development server on port 5173, then:
 
-### Install
+- `npx tsc --noEmit`
+- `npx playwright install --with-deps chromium`
+- `npx playwright test`
+- `node tests/visual-check.mjs`
+- `npm audit`
 
-```bash
-git clone https://github.com/openMF/online-banking.git
-cd online-banking
-npm install
-```
+The browser suite covers navigation, calculators, FAQs, stories, login validation, transfers, verification failures, balance conservation for own-account transfers, exports, second-signature approval, beneficiary validation, local onboarding, contact preparation, focus restoration, and mobile layout.
 
-### Run development server
+Visual and accessibility reports are written to `artifacts/`. Automated checks supplement, rather than replace, manual accessibility testing.
 
-```bash
-npm run dev
-```
+## Production Integration Boundary
 
-Open [http://localhost:8080](http://localhost:8080) (or the host/port configured by the environment).
+This frontend builds for production hosting, but it is **not an operational banking channel**. No MIFOS or Fineract backend is connected. The browser-side demo password and verification checks must never authorize real operations.
 
-### Demo credentials
+Before launching live banking, implement a reviewed backend integration with server-side identity verification, authentication, HttpOnly secure sessions, authorization, genuine MFA, rate limiting, audit logging, idempotent ledger operations, and independently authenticated business approvers. Handle account balances and transaction validation exclusively on the server. Never place banking API secrets in Vite environment variables exposed to the browser.
 
-| Segment   | Client number | Password  | Notes                          |
-|-----------|---------------|-----------|--------------------------------|
-| Personas  | `344988355`   | `Mifos#26`| Noé López Guzmán               |
-| Empresas  | `880214001`   | `Mifos#26`| Taller Industrial del Bajío    |
+Verify the contracted products, current commissions, rates, GAT/CAT disclosures, regulatory statements, privacy notices, legal rights to brand assets, and operational support arrangements with MIFOS. Complete penetration testing, accessibility review, and financial/compliance approval. Replace illustrative stories with consented, verified testimonials if real endorsements are required.
 
-Activation code for enrollment (demo): see `DEMO_ACTIVATION_CODE` in `src/lib/banca/demo.ts`.
+Contact preparation only creates a local message to copy. It never claims an inquiry was sent. Real inquiries and contracts are directed to MIFOS's verified website and phone number.
 
-## Internationalization (i18n)
+## Files
 
-User-facing strings live under `src/i18n/locales/`:
+- `src/App.tsx`: landing sections and experience orchestration.
+- `src/components/Access.tsx`: access, onboarding, contact, and disclosures.
+- `src/components/Banking.tsx`: functional in-memory banking demo.
+- `src/components/ProductPreview.tsx`: interactive preview and calculators.
+- `src/components/ui.tsx`: brand, reveal, and accessible dialog primitives.
+- `src/lib/demo.ts`: typed fixtures, centavo arithmetic, exports, and receipts.
+- `src/i18n/`: typed locale provider and matching `es-MX.json` / `en-US.json` message catalogs.
+- `src/styles/`: responsive design and component styling.
+- `tests/`: end-to-end, visual, and accessibility checks.
 
-| File            | Locale              |
-|-----------------|---------------------|
-| `es-MX.json`    | Spanish (Mexico) – default |
-| `en-US.json`    | English (United States)    |
+## Assets and Attribution
 
-### Usage
+Custom AI-generated campaign imagery is stored locally in `public/images/`. The Mexico City hero is an illustrative architectural composition, not a photograph of an actual MIFOS location. Manrope is self-hosted and distributed under the SIL Open Font License in `public/fonts/OFL.txt`. Icons use Lucide. Motion uses Motion for React.
 
-```ts
-import { t, setLocale, getLocale } from "@/i18n";
-
-// Simple key
-t("app.hero");
-
-// With interpolation
-t("landing.demoPassword", { password: "Mifos#26" });
-
-// Switch locale at runtime
-setLocale("en-US");
-```
-
-A language switcher (ES / EN) is available on the public screens header for demonstration.
-
-### Adding or changing strings
-
-1. Add the key to both `es-MX.json` and `en-US.json` (keep structures in sync).
-2. Replace hardcoded text in components with `t("your.key")`.
-3. Prefer nested keys grouped by screen or domain (`nav.*`, `login.*`, `dashboard.*`, …).
-
-Navigation labels and screen titles are resolved through `getNav()` and `getScreenTitle()` in `src/lib/banca/model.ts` so they always respect the active locale.
-
-## Project structure (relevant parts)
-
-```
-src/
-  components/banca/     # Public (landing/login/register) and private (app shell) UI
-  i18n/
-    index.ts            # t(), setLocale(), getLocale()
-    locales/
-      es-MX.json
-      en-US.json
-  lib/banca/            # Domain model, demo data, Zustand store
-  routes/               # TanStack Router entry
-```
-
-## Scripts
-
-| Command           | Description                          |
-|-------------------|--------------------------------------|
-| `npm run dev`     | Start Vite dev server                |
-| `npm run build`   | Production build + DB migrate        |
-| `npm run typecheck` | TypeScript check                   |
-| `npm run lint`    | ESLint                               |
-| `npm test`        | Unit tests                           |
-
-## Self Service Plugin integration
-
-This app is wired to the [openMF/selfservice-plugin](https://github.com/openMF/selfservice-plugin) REST API (`/v1/self/*`).
-
-### Environment variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SELF_SERVICE_BASE_URL` | Fineract origin (no trailing slash) | `https://demo.mifos.community` |
-| `SELF_SERVICE_ENDPOINT` | Path prefix before `/v1/self` | `/fineract-provider/api` |
-| `SELF_SERVICE_API_KEY` | Optional `X-API-Key` header | *(empty)* |
-| `SELF_SERVICE_TENANT_ID` | `Fineract-Platform-TenantId` | `default` |
-
-Use the same values with the `VITE_` prefix for client-side (browser) builds. See [`.env.example`](./.env.example).
-
-```bash
-cp .env.example .env
-# edit SELF_SERVICE_* and VITE_SELF_SERVICE_*
-npm run dev
-```
-
-Resolved base for all calls:
-
-```
-{SELF_SERVICE_BASE_URL}{SELF_SERVICE_ENDPOINT}/v1/self/...
-```
-
-### API client
-
-```ts
-import {
-  authenticate,
-  listSavingsAccounts,
-  createTransfer,
-  listBeneficiaries,
-  getSelfServiceConfig,
-} from "@/lib/selfservice";
-
-await authenticate("mifos", "password");
-const savings = await listSavingsAccounts();
-console.log(getSelfServiceConfig().selfRoot);
-```
-
-Implemented endpoint groups (all paths under `/v1/self`):
-
-| Group | Paths |
-|-------|--------|
-| Auth | `/authentication`, `/authentication/token`, `/authentication/logout` |
-| Registration | `/registration`, `/registration/user`, `/registration/user/confirm`, `/registration/client-user`, `/registration/identifiers` |
-| Password | `/password/request`, `/password/renew` |
-| User | `/user`, `/userdetails` |
-| Clients | `/clients`, `/clients/{id}/accounts`, charges, transactions, images |
-| Savings | `/savingsaccounts`, template, charges, transactions |
-| Loans | `/loans`, template, charges, guarantors; `/loans/simulate` |
-| Shares | `/shareaccounts` |
-| Transfers | `/accounttransfers` (prepare, quote, confirm, otp, details) |
-| Beneficiaries | `/beneficiaries/tpt` |
-| Products | `/loanproducts`, `/savingsproducts`, `/products/share` |
-| Reports | `/runreports` |
-| Surveys | `/surveys`, `/surveys/scorecards` |
-| Offices | `/offices` (+ details, services, geolocation, address) |
-| Pockets | `/pockets` |
-| Other | `/paymentlink`, `/remittance`, `/transfer-fees`, `/sinpe/enrollment`, `/onboarding/steps` |
-
-Module location: `src/lib/selfservice/` (`config.ts`, `client.ts`, `api.ts`).
-
-## Docker (Nginx)
-
-The image is a **multi-stage** build: Node compiles the app, then **Nginx** serves the static client on port 80.
-
-```bash
-# Build and run (maps host 8080 → container 80)
-docker compose up --build -d
-
-# Logs
-docker compose logs -f
-
-# Stop
-docker compose down
-```
-
-Open [http://localhost:8080](http://localhost:8080).
-
-| File                 | Role                                      |
-|----------------------|-------------------------------------------|
-| `Dockerfile`         | Multi-stage Node build → Nginx Alpine     |
-| `nginx.conf`         | SPA fallback, gzip, health endpoint       |
-| `docker-compose.yml` | Single service on port 8080               |
-| `.dockerignore`      | Keeps the build context lean              |
-
-Health check: `GET /health` returns `ok`.
-
-See also [CONTRIBUTING.md](./CONTRIBUTING.md) for contribution guidelines.
-
-## License
-
-See repository license (MPL-2.0 where applicable for Mifos Initiative projects).
-
-## Disclaimer
-
-This application is a **prototype for demonstration and educational purposes**. It is not production software, is not authorized for real financial operations, and must not be used to process real customer funds.
+The implementation is original to this project; the linked openMF repository was consulted for demo workflows and test credentials. No claim is made that this demo modifies or deploys the upstream repository, or that it is an officially authorized banking service.
