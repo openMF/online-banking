@@ -129,7 +129,7 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
 
     async verify(challengeId, otp): Promise<StepUpGrant> {
       const challenge = open(challengeId);
-      if (challenge.lockedUntil) {
+      if (challenge.lockedUntil && challenge.lockedUntil > now()) {
         throw new StepUpError("locked", { retryAfterSeconds: secondsUntil(challenge.lockedUntil) });
       }
       if (now() >= challenge.expiresAt) {

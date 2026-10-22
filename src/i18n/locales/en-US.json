@@ -539,6 +539,7 @@
     "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.": "We could not reach the server. Check your connection and try again.",
     "No pudimos completar la verificación. Inténtalo más tarde.": "We could not complete the verification. Try again later.",
     "Ingresa el código que te enviamos para confirmar.": "Enter the code we sent you to confirm.",
-    "MIFOS es el nombre comercial de Company Name, S.A. de C.V., S.F.P. Consulta la información regulatoria y las condiciones vigentes en el sitio oficial. *El Fondo de Protección cubre depósitos elegibles hasta por 25,000 UDIS por persona y por institución, conforme a la legislación aplicable.": "MIFOS is the trade name of Company Name, S.A. de C.V., S.F.P. Review current regulatory information and terms on the official website. *The Protection Fund covers eligible deposits up to 25,000 UDIS per person, per institution, under applicable law."
+    "MIFOS es el nombre comercial de Company Name, S.A. de C.V., S.F.P. Consulta la información regulatoria y las condiciones vigentes en el sitio oficial. *El Fondo de Protección cubre depósitos elegibles hasta por 25,000 UDIS por persona y por institución, conforme a la legislación aplicable.": "MIFOS is the trade name of Company Name, S.A. de C.V., S.F.P. Review current regulatory information and terms on the official website. *The Protection Fund covers eligible deposits up to 25,000 UDIS per person, per institution, under applicable law.",
+    "Las transferencias reales todavía no están conectadas en esta demostración. No se movió dinero.": "Real transfers are not connected in this demo yet. No money was moved."
   }
 }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { SelfServiceError, clearSession, setSession } from "../selfservice";
 import {
   StepUpError,
+  canCompleteTransferLocally,
   createDemoStepUpApi,
   createHttpStepUpApi,
   resetDemoStepUpApi,
@@ -140,6 +141,21 @@ describe("demo adapter (same rules as the server, but public)", () => {
     expect((await rejection(api.createChallenge(input))).code).toBe("locked");
   });
 
+  it("stops reporting a lock-out once it is over", async () => {
+    const { api, advance } = setup();
+    const challenge = await api.createChallenge(input);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await rejection(api.verify(challenge.challengeId, "000000"));
+    }
+    expect((await rejection(api.verify(challenge.challengeId, "123456"))).code).toBe("locked");
+
+    advance(901);
+
+    // the 5-minute code is long gone too: the person is sent to "request a new code", not "locked"
+    expect((await rejection(api.verify(challenge.challengeId, "123456"))).code).toBe("otp.expired");
+    expect((await api.createChallenge(input)).challengeId).toBeGreaterThan(challenge.challengeId);
+  });
+
   it("expires codes", async () => {
     const { api, advance } = setup();
     const challenge = await api.createChallenge(input);
@@ -169,6 +185,13 @@ describe("demo adapter (same rules as the server, but public)", () => {
     expect((await rejection(api.createChallenge({ ...input, channel: "SMS" }))).code).toBe(
       "channel.unavailable",
     );
+  });
+});
+
+describe("canCompleteTransferLocally", () => {
+  it("is true only for the demo adapter", () => {
+    expect(canCompleteTransferLocally(createDemoStepUpApi())).toBe(true);
+    expect(canCompleteTransferLocally(createHttpStepUpApi({ config, session }))).toBe(false);
   });
 });
 

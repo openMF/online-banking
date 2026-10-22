@@ -26,6 +26,15 @@ export function selectStepUpApi(): StepUpApi {
   return demoApi;
 }
 
+/**
+ * Whether a verified step-up may finish the transfer inside this page. Only the demo adapter may:
+ * with the real API the one-time token must be sent with the protected request
+ * (`X-Step-Up-Token`), and this demo has no real accounts to send it for.
+ */
+export function canCompleteTransferLocally(api: StepUpApi): boolean {
+  return api.mode === "demo";
+}
+
 /** Test seam: forget the shared demo state. */
 export function resetDemoStepUpApi(): void {
   demoApi = null;

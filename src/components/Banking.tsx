@@ -47,7 +47,11 @@ import {
   type Transaction,
   type Transfer,
 } from "../lib/demo";
-import { resetDemoStepUpApi, selectStepUpApi } from "../lib/stepup";
+import {
+  canCompleteTransferLocally,
+  resetDemoStepUpApi,
+  selectStepUpApi,
+} from "../lib/stepup";
 
 type TransferDraft = Omit<Transfer, "id" | "date" | "status">;
 
@@ -183,6 +187,14 @@ function TransferPanel({
    * verification itself happens in {@link StepUpPanel}; this component never checks a code.
    */
   function finish() {
+    if (!canCompleteTransferLocally(stepUpApi)) {
+      // The verification was real, but this demo cannot send the protected transfer: do not pretend
+      // that money moved.
+      setError(
+        "Las transferencias reales todavía no están conectadas en esta demostración. No se movió dinero.",
+      );
+      return;
+    }
     const transfer = onComplete({
       from,
       to,
