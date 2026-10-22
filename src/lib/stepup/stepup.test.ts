@@ -174,6 +174,8 @@ describe("demo adapter (same rules as the server, but public)", () => {
 
 describe("selectStepUpApi", () => {
   it("uses the demo without a configured backend, even with a session", () => {
+    // A developer's .env.local may configure a backend; this test is about "none configured".
+    vi.stubEnv("VITE_SELF_SERVICE_BASE_URL", "");
     setSession(session);
     expect(selectStepUpApi().mode).toBe("demo");
   });
