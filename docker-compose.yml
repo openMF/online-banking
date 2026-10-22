@@ -1,8 +1,8 @@
 # Mifos Online Banking — Nginx static demo + Self Service Plugin config
 #
 # Usage:
-#   cp .env.example .env   # edit BASE_URL / ENDPOINT / API_KEY / TENANT
-#   docker compose up --build -d
+#   docker compose up --build -d  # standalone demo, no .env required
+#   To configure a future API integration, set both variables from .env.example.
 #   open http://localhost:8080
 #
 # Stop:
@@ -18,6 +18,6 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
-    # Optional: environment variables if needed later
-    # environment:
-    #   - NODE_ENV=production
+    environment:
+      SELF_SERVICE_BASE_URL: "${SELF_SERVICE_BASE_URL:-}"
+      SELF_SERVICE_TENANT_ID: "${SELF_SERVICE_TENANT_ID:-}"
