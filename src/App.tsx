@@ -30,7 +30,10 @@ import {
 } from "lucide-react";
 import { Brand, Eyebrow, Modal, Reveal, TextLink } from "./components/ui";
 import ProductPreview from "./components/ProductPreview";
-import { Contact, Legal, Login, Onboarding } from "./components/Access";
+import { Contact, Legal, Onboarding } from "./components/Access";
+import { CustomerAccess, CustomerHome } from "./components/CustomerAccess";
+import type { CustomerSession } from "./lib/authentication/client";
+import { authenticationMessages } from "./lib/authentication/messages";
 import type { BankView, Product, Segment } from "./lib/demo";
 import { LocaleToggle, LocalizedTree } from "./i18n";
 
@@ -194,6 +197,8 @@ const faqs = [
 ];
 
 export default function App() {
+  const [customerSession, setCustomerSession] = useState<CustomerSession | null>(null);
+  const [sessionNotice, setSessionNotice] = useState("");
   const [segment, setSegment] = useState<Segment>("personas");
   const [product, setProduct] = useState<Product>("cuenta");
   const [modal, setModal] = useState<ModalType>(null);
@@ -285,6 +290,27 @@ export default function App() {
   }
 
   const content = showcaseContent[product];
+
+  // Real customers never mount the demo dashboard or illustrative landing content.
+  if (customerSession) {
+    return (
+      <CustomerHome
+        session={customerSession}
+        onEnd={(expired, revocation) => {
+          setCustomerSession(null);
+          setModal("login");
+          setSessionNotice(expired
+            ? authenticationMessages.expired
+            : "Sesión local cerrada. Solicitando cierre al servidor...");
+          void revocation.then((acknowledged) => setSessionNotice(expired
+            ? authenticationMessages.expired
+            : acknowledged
+              ? "Sesión local cerrada. El servidor confirmó el cierre del token de acceso."
+              : "Sesión local cerrada. No pudimos confirmar el cierre en el servidor."));
+        }}
+      />
+    );
+  }
 
   return (
     <MotionConfig reducedMotion="user">
@@ -1244,7 +1270,7 @@ export default function App() {
               modal === "demo"
                 ? "Banca digital de demostración"
                 : modal === "login"
-                  ? "Acceso a la banca demo"
+                  ? "Acceso a la banca"
                   : modal === "onboarding"
                     ? "Abre tu experiencia de prueba"
                     : modal === "contact"
@@ -1255,11 +1281,23 @@ export default function App() {
             onClose={() => setModal(null)}
           >
             {modal === "login" ? (
-              <Login
-                initialSegment={segment}
-                onLogin={authenticated}
-                onRegister={() => setModal("onboarding")}
-              />
+              <>
+                {sessionNotice && (
+                  <LocalizedTree>
+                    <p role="status" className="form-note">{sessionNotice}</p>
+                  </LocalizedTree>
+                )}
+                <CustomerAccess
+                  onAuthenticated={(session) => {
+                    setModal(null);
+                    setSessionNotice("");
+                    setCustomerSession(session);
+                  }}
+                  initialSegment={segment}
+                  onLogin={authenticated}
+                  onRegister={() => setModal("onboarding")}
+                />
+              </>
             ) : modal === "onboarding" ? (
               <Onboarding
                 initialSegment={segment}

@@ -13,8 +13,8 @@ The entry point is `src/App.tsx`. The supplied Vite configuration produces a sta
 
 ## Self Service runtime configuration (MX-453)
 
-This establishes endpoint and tenant configuration only. It does not implement MX-452 authentication,
-connect the demo to Fineract, or make this application ready for live banking.
+MX-453 establishes public endpoint and tenant configuration. MX-452 consumes it for the provisional
+customer sign-in described below. Demo banking data remains separate; this is not ready for live banking.
 
 The standalone demo requires no backend settings. Leave **both** settings absent or empty to disable
 API configuration; the generated public resource is JSON `null`. Supplying either setting requires a
@@ -23,7 +23,7 @@ complete, valid pair. Neither endpoint nor tenant has a fallback or default:
 | Variable                 | Meaning                                                                                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `SELF_SERVICE_BASE_URL`  | Complete Self Service API root, e.g. `https://localhost:8443/fineract-provider/api/v1/self`. Includes the origin, any reverse-proxy/deployment prefix, and `/v1/self`. |
-| `SELF_SERVICE_TENANT_ID` | Tenant for the future `Fineract-Platform-TenantId` request header. 1–100 ASCII letters, digits, underscores or hyphens; starts with a letter or digit.                 |
+| `SELF_SERVICE_TENANT_ID` | Tenant for the `Fineract-Platform-TenantId` request header. 1–100 ASCII letters, digits, underscores or hyphens; starts with a letter or digit.                 |
 
 Trailing slashes are removed. HTTPS is mandatory in production, including loopback deployments.
 Only Vite development permits HTTP on `localhost`, `127.0.0.1` or `[::1]`; lookalike hostnames and
@@ -58,7 +58,7 @@ production bundle by the build. The runtime loader does not read `VITE_*` variab
 # Standalone demo: no .env or backend needed.
 docker compose up --build -d web
 
-# Optional public configuration for a future API integration:
+# Optional public configuration for customer sign-in:
 cp .env.example .env
 # Set BOTH settings; the URL must use HTTPS, then recreate the container.
 ```
@@ -70,8 +70,8 @@ the browser's TypeScript validator and safely serialize `/usr/share/nginx/html/r
 The final image includes Node for this startup step; it does not run an application server. Invalid or
 incomplete settings prevent Nginx from starting and emit an error without echoing environment values.
 When both are absent/empty, startup succeeds with JSON `null`, which disables API consumers while
-preserving all demonstration workflows. A valid pair selects configuration only; it does not enable
-live banking features or prove backend connectivity.
+preserving all demonstration workflows. A valid pair reveals customer sign-in; no banking request is made until submission. It does not
+enable financial operations or prove backend connectivity.
 
 To change environments, edit `.env` or the exported variables and recreate the container using the
 same image:
@@ -127,7 +127,7 @@ Bootstrap preloads configuration without delaying the demo. `getSelfServiceConfi
 Consumers of this runtime module must await it before sending any request. `selfServiceUrl("clients/123/accounts")` waits for
 that promise and constructs `.../v1/self/clients/123/accounts`; it performs no HTTP request. Pass only
 relative resource paths, with no leading slash or API prefix; add query parameters with `URL.searchParams`.
-The tenant is exposed for future callers; this ticket does not send banking headers or requests.
+The customer authentication client awaits the same configuration and uses its URL builder and tenant.
 
 JSON `null` explicitly disables API configuration. A missing resource, non-success HTTP response,
 redirect, malformed JSON, validation failure, unsupported page path, or five-second load timeout also
@@ -139,9 +139,9 @@ If startup fails, check that either both values are empty (demo only) or both ar
 full `/v1/self` path, HTTPS, and tenant syntax. Container errors do not echo supplied values. For browser
 load errors, inspect `/runtime-config.json` and its response headers, then
 reload after fixing and recreating the container. A valid configuration does not verify reachability:
-future direct browser API calls require a trusted backend TLS certificate and backend CORS permitting
-the frontend origin and required headers. This configuration layer requires no server-side proxy and
-adds none; backend integration and any session/proxy design remain separate work.
+direct browser authentication requires a trusted backend TLS certificate and backend CORS permitting
+the frontend origin and required headers. No server-side proxy is provided; the provisional session
+limitations below must be reviewed before production use.
 
 ### Configuration tests
 
@@ -156,6 +156,55 @@ different root application's configuration. These isolated checks do not prove s
 behavior. Nginx cache/routing assertions inspect its configuration; they do not replace a running-container
 check. The Playwright suite also checks successful and failed runtime
 configuration while preserving demo access and performing no banking requests.
+
+## Customer sign-in (MX-452)
+
+With valid MX-453 runtime settings, **Online banking** opens a username/password form for the
+configured Self Service Plugin. It sends `POST <baseUrl>/authentication` with JSON
+`{ "username": "…", "password": "…" }` and `Fineract-Platform-TenantId`. It sends no cookie or
+Authorization header on login, rejects redirects and times out requests after 15 seconds.
+Use a dedicated synthetic tenant/customer when testing; do not use shared banking credentials.
+
+Success requires `authenticated: true`, valid server identity, roles, permissions and an access key,
+and explicit false values for `shouldRenewPassword` and `isTwoFactorAuthenticationRequired`.
+An HTTP 200 response alone cannot grant access. Pending/disabled responses, required additional
+authentication and password renewal stay outside the customer boundary with localized feedback.
+No frontend verification code can complete these backend-required steps.
+
+A successful login opens a minimal customer view showing the **server-returned username** and an
+explicit accounts/operations-unavailable message. It never mounts the demo dashboard or illustrative
+landing balances. No real accounts, transfers, receipts, profile editing or client selection are
+implemented. Permissions and linked clients are parsed from the server, not inferred from demo state;
+future API operations still require independent server authorization.
+
+The password is cleared from form state on submission and is never saved by the app. The access key
+is held only in a closure for access-token logout; it is not exposed to React, the legacy step-up
+client, browser storage or cookies. Refresh tokens are discarded and there is no automatic refresh.
+Browser password managers remain under the customer's control (`current-password` autocomplete).
+The session disappears on reload, expires after 10 minutes of inactivity, and has an absolute local
+15-minute lifetime. These local limits do not change the backend token lifetime or detect remote
+revocation before a future authenticated API request.
+
+Logout and local expiry immediately clear the authenticated UI and attempt
+`POST <baseUrl>/authentication/logout` with `Authorization: Basic <base64EncodedAuthenticationKey>`
+and the original configured tenant. The key is already base64 of the plugin's raw access token;
+it is neither a Bearer token nor base64 of username/password. Logout feedback distinguishes local
+clearing from an acknowledged server access-token logout. The inspected backend deletes only the
+presented access token; **refresh-token revocation is incomplete**. Reload/tab closure, aborted
+requests and lost responses cannot guarantee server revocation. Notifications remain backend-owned.
+
+This is an **explicitly provisional direct browser session**, not an HttpOnly session. The static
+Vite/Nginx deployment has no trusted backend-for-frontend or session-cookie infrastructure. Memory
+storage does not protect against XSS. Production requires a session/threat-model review, trusted TLS
+on frontend and backend, reviewed CORS for the frontend origin and `Content-Type`, `Authorization`,
+`Fineract-Platform-TenantId` headers, and backend policy/revocation fixes. Never enable credential or
+response-body logging in deployment proxies. Live backend verification and the session/security
+review remain required before production use.
+
+**Explore demo with fictional data** is a separate explicit choice. Without valid configuration the
+original standalone demo login remains available with a configuration-unavailable notice. Real
+login failure never falls back to demo. Customer tokens are never installed in `src/lib/selfservice/`;
+that older client and its step-up adapter remain separate from this login and its permissions.
 
 ## Included
 
@@ -189,7 +238,7 @@ Sensitive actions, today the transfer confirmation, ask for a one-time code (MX-
 - `src/lib/stepup/`: `useStepUpChallenge` (the flow as a state machine) over a `StepUpApi`. Two adapters: `httpStepUpApi` (the real `/v1/self/stepup/*` endpoints of [selfservice-plugin](https://github.com/openMF/selfservice-plugin)) and `demoStepUpApi` (in memory, same rules, public code `123456`).
 - `src/lib/selfservice/`: typed client of the self-service API (`config`, `session`, `http`, `auth`, `stepup`). The session lives in memory only, never in `localStorage`. The `Authorization` header is built in a single function (`authorizationHeader` in `session.ts`) so the planned OIDC move touches one place.
 
-The real adapter is used only when a backend is configured **and** a session exists; otherwise the demo adapter is used. The demo UI has no login against the backend yet, so the full backend path is covered by mocked-`fetch` tests here and by the plugin's own integration tests, not by the demo screens.
+The real adapter is used only when a backend is configured **and** a session exists; otherwise the demo adapter is used. MX-452 customer authentication uses a separate memory-only capability and never sets this legacy session. The demo screens therefore remain isolated from real customer authentication; the backend step-up adapter is covered by mocked-`fetch` tests here and the plugin's own integration tests.
 
 The one-time token returned after a correct code is single use, valid for a short time and only for the exact transfer it was issued for. Hand it to the API in the `X-Step-Up-Token` header of that one request.
 
@@ -217,7 +266,7 @@ The "Actividad de seguridad" / "Security activity" view of the banking dialog li
 - `src/lib/activity/`: `ActivityApi` with two adapters, like step-up: `httpActivityApi` (the real `GET /v1/self/activity` of [selfservice-plugin](https://github.com/openMF/selfservice-plugin)) and `demoActivityApi` (in memory). `describe.ts` turns an entry into text; `useActivityFeed` loads page by page.
 - `src/lib/selfservice/activity.ts`: the typed client. It cannot ask for another user: the server only returns the history of the logged-in user.
 
-The real adapter is used only when a backend is configured **and** a session exists; otherwise the demo adapter is used, which says so on screen. The demo history starts with a few older entries (clearly fake, with the documentation-range address `192.0.x.x`) and then follows what the demo user does: sign-in, transfers (a business transfer only after the second signature), beneficiaries and the verification code. Like step-up, the real path is covered by mocked-`fetch` tests here and by the plugin's own integration tests, not by the demo screens (there is no real login yet).
+The real adapter is used only when a backend is configured **and** a session exists; otherwise the demo adapter is used, which says so on screen. The demo history starts with a few older entries (clearly fake, with the documentation-range address `192.0.x.x`) and then follows what the demo user does: sign-in, transfers (a business transfer only after the second signature), beneficiaries and the verification code. Like step-up, the real path is covered by mocked-`fetch` tests here and by the plugin's own integration tests. MX-452 customer login uses a separate session and does not enable this adapter in the demo screens.
 
 The server never sends a full IP address, a password, a code or a full account number; the screen shows only what it receives.
 
@@ -226,7 +275,7 @@ The server never sends a full IP address, a password, a code or a full account n
 Unit and component tests run without a server:
 
 - `npm run typecheck`
-- `npm test` (Vitest: API clients, step-up flow, activity history, panels)
+- `npm test` (Vitest: authentication client, customer components, legacy API clients, step-up flow, activity history and panels)
 - `npm run test:config` (runtime configuration and startup generation)
 
 Browser tests need a development server on port 5173 (`npm run dev`), then:
@@ -236,15 +285,15 @@ Browser tests need a development server on port 5173 (`npm run dev`), then:
 - `node tests/visual-check.mjs`
 - `npm audit`
 
-The browser suite covers navigation, calculators, FAQs, stories, login validation, transfers, verification failures (attempts left, lock-out, resend cooldown, expiry, accessibility, English), the security activity view (what the user did, filters, business approvals, accessibility, English), balance conservation for own-account transfers, exports, second-signature approval, beneficiary validation, local onboarding, contact preparation, focus restoration, and mobile layout.
+The browser suite uses synthetic intercepted responses for real-login success/failures, loading, configuration, demo isolation, storage, logout, reload and expiry; these are not live integration tests. It also covers navigation, calculators, FAQs, stories, login validation, transfers, verification failures (attempts left, lock-out, resend cooldown, expiry, accessibility, English), the security activity view (what the user did, filters, business approvals, accessibility, English), balance conservation for own-account transfers, exports, second-signature approval, beneficiary validation, local onboarding, contact preparation, focus restoration, and mobile layout.
 
 Visual and accessibility reports are written to `artifacts/`. Automated checks supplement, rather than replace, manual accessibility testing.
 
 ## Production Integration Boundary
 
-This frontend builds for production hosting, but it is **not an operational banking channel**. No MIFOS or Fineract backend is connected. The browser-side demo password and the demo verification code must never authorize real operations; with a backend, the code is checked by the server only.
+This frontend builds for production hosting, but it is **not an operational banking channel**. Configured customer authentication can call Self Service, but live integration has not been verified. Real financial operations remain unavailable. The browser-side demo password and the demo verification code must never authorize real operations; with a backend, the code is checked by the server only.
 
-Before launching live banking, implement a reviewed backend integration with server-side identity verification, authentication, HttpOnly secure sessions, authorization, genuine MFA, rate limiting, audit logging, idempotent ledger operations, and independently authenticated business approvers. Handle account balances and transaction validation exclusively on the server. Never place banking API secrets in Vite environment variables exposed to the browser.
+Before launching live banking, implement a reviewed backend integration with reviewed session management (including secure HttpOnly sessions where appropriate), authorization, genuine MFA, rate limiting, audit logging, idempotent ledger operations, and independently authenticated business approvers. Handle account balances and transaction validation exclusively on the server. Never place banking API secrets in Vite environment variables exposed to the browser.
 
 Verify the contracted products, current commissions, rates, GAT/CAT disclosures, regulatory statements, privacy notices, legal rights to brand assets, and operational support arrangements with MIFOS. Complete penetration testing, accessibility review, and financial/compliance approval. Replace illustrative stories with consented, verified testimonials if real endorsements are required.
 
@@ -253,7 +302,8 @@ Contact preparation only creates a local message to copy. It never claims an inq
 ## Files
 
 - `src/App.tsx`: landing sections and experience orchestration.
-- `src/components/Access.tsx`: access, onboarding, contact, and disclosures.
+- `src/components/Access.tsx`: demo access, onboarding, contact, and disclosures.
+- `src/components/CustomerAccess.tsx`, `src/lib/authentication/`: customer sign-in, provisional memory session and isolated authenticated view.
 - `src/components/Banking.tsx`: functional in-memory banking demo.
 - `src/components/ProductPreview.tsx`: interactive preview and calculators.
 - `src/components/ui.tsx`: brand, reveal, and accessible dialog primitives.
