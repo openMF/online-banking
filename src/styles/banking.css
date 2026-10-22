@@ -528,6 +528,41 @@
   color: var(--brand);
   letter-spacing: 2px;
 }
+/* Step-up (one-time code) verification */
+.stepup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.stepup-info {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.stepup-meta {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: center;
+}
+.stepup-status {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--muted);
+  text-align: center;
+  padding: 18px 0;
+}
+.stepup-resend {
+  align-self: center;
+}
+.stepup-resend:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.otp-input[aria-invalid="true"] {
+  border-color: var(--brand);
+}
+
 .transfer-success {
   max-width: 460px;
   margin: 0 auto;

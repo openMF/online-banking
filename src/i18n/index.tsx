@@ -56,6 +56,20 @@ export function translate(value: string, locale = activeLocale) {
   return `${start}${translated}${end}`;
 }
 
+/**
+ * Translates a message that has `{name}` placeholders and fills them in. The Spanish template
+ * (with its placeholders) is the catalog key, e.g. `"Te quedan {count} intentos."`.
+ */
+export function translateWith(
+  template: string,
+  values: Record<string, string | number>,
+  locale = activeLocale,
+) {
+  return translate(template, locale).replace(/\{(\w+)\}/g, (match, name: string) =>
+    name in values ? String(values[name]) : match,
+  );
+}
+
 type I18nValue = {
   locale: Locale;
   setLocale: (locale: Locale) => void;
