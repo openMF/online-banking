@@ -11,6 +11,152 @@ A complete Spanish-language React and TypeScript experience inspired by MIFOS's 
 
 The entry point is `src/App.tsx`. The supplied Vite configuration produces a static production build in `dist/`. Deploy the entire directory, including its images and fonts, at the site root.
 
+## Self Service runtime configuration (MX-453)
+
+This establishes endpoint and tenant configuration only. It does not implement MX-452 authentication,
+connect the demo to Fineract, or make this application ready for live banking.
+
+The standalone demo requires no backend settings. Leave **both** settings absent or empty to disable
+API configuration; the generated public resource is JSON `null`. Supplying either setting requires a
+complete, valid pair. Neither endpoint nor tenant has a fallback or default:
+
+| Variable                 | Meaning                                                                                                                                                                |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SELF_SERVICE_BASE_URL`  | Complete Self Service API root, e.g. `https://localhost:8443/fineract-provider/api/v1/self`. Includes the origin, any reverse-proxy/deployment prefix, and `/v1/self`. |
+| `SELF_SERVICE_TENANT_ID` | Tenant for the future `Fineract-Platform-TenantId` request header. 1–100 ASCII letters, digits, underscores or hyphens; starts with a letter or digit.                 |
+
+Trailing slashes are removed. HTTPS is mandatory in production, including loopback deployments.
+Only Vite development permits HTTP on `localhost`, `127.0.0.1` or `[::1]`; lookalike hostnames and
+private network HTTP are rejected. URLs with credentials, queries, fragments, encoded path segments,
+dot segments, repeated `/v1/self`, or missing `/v1/self` are rejected. Reverse-proxy prefixes such as
+`/gateway/fineract-provider/api/v1/self` are preserved.
+
+The runtime contract uses a complete API root rather than the earlier `SELF_SERVICE_ENDPOINT` split.
+There is no runtime API-key setting. The independently added step-up client still has its own build-time
+`VITE_SELF_SERVICE_*` settings (see below); these are not aliases for the runtime contract. This ticket's
+runtime loader does not reconfigure that client's synchronous configuration module.
+Never place administrator credentials, service keys, passwords, or private tokens in these settings,
+in a `VITE_*` variable, or in `public/`: browser configuration is visible to everyone.
+
+### Local development
+
+Use Node.js 24 (also used by Docker's build stage), install with `npm ci`, then either copy
+`.env.example` to an ignored `.env` and edit it, or supply system environment variables:
+
+```sh
+SELF_SERVICE_BASE_URL=http://localhost:8443/fineract-provider/api/v1/self \
+SELF_SERVICE_TENANT_ID=default npm run dev
+```
+
+Vite reads these same names and serves validated JSON at `/runtime-config.json` with `no-store`.
+Restart the development server after changing settings. These settings are never injected into the
+production bundle by the build. The runtime loader does not read `VITE_*` variables.
+
+### Docker Compose
+
+```sh
+# Standalone demo: no .env or backend needed.
+docker compose up --build -d web
+
+# Optional public configuration for a future API integration:
+cp .env.example .env
+# Set BOTH settings; the URL must use HTTPS, then recreate the container.
+```
+
+Compose passes only the two allowlisted settings to `web`, defaulting both to empty; exported shell
+values take precedence over `.env`. The official Nginx entrypoint runs `docker/40-self-service-config.sh`,
+which uses Node to share
+the browser's TypeScript validator and safely serialize `/usr/share/nginx/html/runtime-config.json`.
+The final image includes Node for this startup step; it does not run an application server. Invalid or
+incomplete settings prevent Nginx from starting and emit an error without echoing environment values.
+When both are absent/empty, startup succeeds with JSON `null`, which disables API consumers while
+preserving all demonstration workflows. A valid pair selects configuration only; it does not enable
+live banking features or prove backend connectivity.
+
+To change environments, edit `.env` or the exported variables and recreate the container using the
+same image:
+
+```sh
+docker compose up -d --no-build --force-recreate web
+```
+
+`docker compose restart` alone does **not** reload Compose environment changes. Reload browser tabs
+after recreating the container; each page session retains its validated configuration. Nginx serves
+`/runtime-config.json` as JSON with `Cache-Control: no-store`, never an SPA fallback. Existing static
+asset caching, SPA routing, and `/health` remain unchanged.
+
+For two harmless runtime checks, reuse the built image with
+`https://localhost:8443/fineract-provider/api/v1/self` and
+`https://localhost:9443/fineract-provider/api/v1/self`, recreating between values, and inspect
+`curl -i http://localhost:8080/runtime-config.json`. No backend request is needed. Verify both the
+JSON and `no-store` response header. The image ID should stay the same. With plain Docker, pass the
+same settings using `docker run -e SELF_SERVICE_BASE_URL=... -e SELF_SERVICE_TENANT_ID=...`.
+
+For another static host (including `npm run preview`), generate the resource after the build with
+exported environment settings and Node 24:
+
+```sh
+npm run build
+node --experimental-strip-types docker/generate-runtime-config.mjs dist/runtime-config.json
+npm run preview
+```
+
+That host must explicitly serve `/runtime-config.json` with `Cache-Control: no-store` and no SPA
+fallback. Vite preview itself does not provide the production Nginx cache contract. Deployments without
+this resource still support the in-memory demo, but API configuration is unavailable.
+
+### Supported frontend deployment path
+
+This application supports hosting at the origin root (`/` or `/index.html`) only. Its UI already uses
+root-relative image and font URLs; a full subpath deployment such as `/online-banking/` is not supported.
+The configuration loader enforces this contract **before fetching**: any other page pathname rejects
+API configuration with a clear diagnostic rather than reading an unrelated application's root resource.
+The demo may still render through an SPA fallback, but API configuration remains unavailable there.
+Root query strings and fragment navigation do not change the supported pathname.
+
+Configuration is fetched only from the fixed `/runtime-config.json` path; redirects are rejected.
+Neither an environment variable nor a page query parameter can select an arbitrary configuration URL.
+An API endpoint's reverse-proxy prefix remains independently configurable in `SELF_SERVICE_BASE_URL`.
+Supporting a frontend subpath would require reviewing the UI assets and hosting rules together; changing
+only Vite's `base` option or moving the built HTML is insufficient.
+
+### Typed consumers and troubleshooting
+
+Bootstrap preloads configuration without delaying the demo. `getSelfServiceConfig()` in
+`src/lib/self-service.ts` returns a shared promise for a validated, immutable `{ baseUrl, tenantId }`.
+Consumers of this runtime module must await it before sending any request. `selfServiceUrl("clients/123/accounts")` waits for
+that promise and constructs `.../v1/self/clients/123/accounts`; it performs no HTTP request. Pass only
+relative resource paths, with no leading slash or API prefix; add query parameters with `URL.searchParams`.
+The tenant is exposed for future callers; this ticket does not send banking headers or requests.
+
+JSON `null` explicitly disables API configuration. A missing resource, non-success HTTP response,
+redirect, malformed JSON, validation failure, unsupported page path, or five-second load timeout also
+rejects the configuration promise with an explicit error. Bootstrap logs a `[Self Service]`
+warning in the developer console, and the demo remains available. No configured URL is treated as proof
+of connectivity, and failures never fall back to the frontend origin or a shared banking instance.
+
+If startup fails, check that either both values are empty (demo only) or both are valid, including the
+full `/v1/self` path, HTTPS, and tenant syntax. Container errors do not echo supplied values. For browser
+load errors, inspect `/runtime-config.json` and its response headers, then
+reload after fixing and recreating the container. A valid configuration does not verify reachability:
+future direct browser API calls require a trusted backend TLS certificate and backend CORS permitting
+the frontend origin and required headers. This configuration layer requires no server-side proxy and
+adds none; backend integration and any session/proxy design remain separate work.
+
+### Configuration tests
+
+```sh
+npm run test:config
+```
+
+The Node 24 suite tests validation, path construction, loading order and failures, public allowlisting,
+Vite development responses, standalone demo-only generation, invalid/partial settings, and generation
+with two endpoint values. Root and subpath checks verify that unsupported deployments cannot fetch a
+different root application's configuration. These isolated checks do not prove same-image container
+behavior. Nginx cache/routing assertions inspect its configuration; they do not replace a running-container
+check. The Playwright suite also checks successful and failed runtime
+configuration while preserving demo access and performing no banking requests.
+
 ## Included
 
 - Responsive Spanish-language landing page with sticky navigation, custom architectural imagery, regulatory information, interactive products, account preview, benefits, illustrative stories, costs and conditions, FAQ, contact tools, and footer.
@@ -47,9 +193,13 @@ The real adapter is used only when a backend is configured **and** a session exi
 
 The one-time token returned after a correct code is single use, valid for a short time and only for the exact transfer it was issued for. Hand it to the API in the `X-Step-Up-Token` header of that one request.
 
-### Configuration
+### Existing step-up client build-time configuration
 
-Copy `.env.example` to `.env.local`. `VITE_*` values are public: put no secrets in them. Without `VITE_SELF_SERVICE_BASE_URL` the app runs as the in-memory demo.
+The current `src/lib/selfservice/config.ts` client reads the following build-time settings. Set them
+explicitly in a local `.env.local` or system environment if exercising that client. `.env.example`
+documents the separate MX-453 runtime loader described above. `VITE_*` values are public: put no secrets
+in them. Without `VITE_SELF_SERVICE_BASE_URL` the step-up selector uses the in-memory demo. Runtime
+configuration does not establish a backend login session or switch this adapter by itself.
 
 | Variable                       | Meaning                                                    |
 | ------------------------------ | ---------------------------------------------------------- |
@@ -65,6 +215,7 @@ Unit and component tests run without a server:
 
 - `npm run typecheck`
 - `npm test` (Vitest: API client, step-up flow, panel)
+- `npm run test:config` (runtime configuration and startup generation)
 
 Browser tests need a development server on port 5173 (`npm run dev`), then:
 
