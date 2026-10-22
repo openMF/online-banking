@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Brand } from "./ui";
+import { StepUpPanel } from "./StepUpPanel";
 import { LocalizedTree, translate, useI18n } from "../i18n";
 import {
   exportTransactions,
@@ -46,6 +47,11 @@ import {
   type Transaction,
   type Transfer,
 } from "../lib/demo";
+import {
+  canCompleteTransferLocally,
+  resetDemoStepUpApi,
+  selectStepUpApi,
+} from "../lib/stepup";
 
 type TransferDraft = Omit<Transfer, "id" | "date" | "status">;
 
@@ -126,7 +132,6 @@ function TransferPanel({
   const [to, setTo] = useState(beneficiaries[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [concept, setConcept] = useState("");
-  const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [result, setResult] = useState<Transfer | null>(null);
   const source = accounts.find((account) => account.id === from)!;
@@ -134,6 +139,14 @@ function TransferPanel({
     ? accounts.find((account) => account.id === to)?.name
     : beneficiaries.find((beneficiary) => beneficiary.id === to)?.name;
   const cents = Math.round(Number(amount) * 100);
+  const stepUpApi = selectStepUpApi();
+  // Same field names as POST /v1/self/accounttransfers, so the real backend can bind the one-time
+  // token to exactly this transfer.
+  const stepUpPayload = {
+    fromAccountId: from,
+    toAccountId: to,
+    transferAmount: cents / 100,
+  };
 
   function changeType(value: boolean) {
     setOwn(value);
@@ -169,10 +182,17 @@ function TransferPanel({
     setStep("review");
   }
 
-  function confirm(event: FormEvent) {
-    event.preventDefault();
-    if (otp !== "123456") {
-      setError("El código no coincide. Para esta demo utiliza 123456.");
+  /**
+   * Called once the step-up verification succeeded (or the server does not require it). The
+   * verification itself happens in {@link StepUpPanel}; this component never checks a code.
+   */
+  function finish() {
+    if (!canCompleteTransferLocally(stepUpApi)) {
+      // The verification was real, but this demo cannot send the protected transfer: do not pretend
+      // that money moved.
+      setError(
+        "Las transferencias reales todavía no están conectadas en esta demostración. No se movió dinero.",
+      );
       return;
     }
     const transfer = onComplete({
@@ -185,6 +205,7 @@ function TransferPanel({
     });
     if (!transfer) {
       setError("El saldo disponible cambió. Regresa y verifica el importe.");
+      setStep("review");
       return;
     }
     setResult(transfer);
@@ -259,7 +280,6 @@ function TransferPanel({
               setStep("form");
               setAmount("");
               setConcept("");
-              setOtp("");
               setResult(null);
             }}
           >
@@ -292,7 +312,7 @@ function TransferPanel({
               ? "Elige el destino de tu transferencia de prueba."
               : step === "review"
                 ? "Revisa los datos de tu operación simulada."
-                : "Ingresa el código de demostración para confirmar."}
+                : "Ingresa el código que te enviamos para confirmar."}
           </p>
           {step === "form" ? (
             <form onSubmit={review} className="form-stack">
@@ -457,50 +477,29 @@ function TransferPanel({
                   </button>
                 </div>
               ) : (
-                <form onSubmit={confirm} className="form-stack">
-                  <label>
-                    Código de verificación demo
-                    <input
-                      className="otp-input"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      pattern="[0-9]{6}"
-                      maxLength={6}
-                      required
-                      value={otp}
-                      onChange={(event) =>
-                        setOtp(event.target.value.replace(/\D/g, ""))
-                      }
-                      placeholder="000000"
-                    />
-                  </label>
-                  <p className="demo-code">
-                    <Info size={15} />
-                    Tu código de prueba es <strong>123456</strong>
-                  </p>
+                <>
+                  <StepUpPanel
+                    api={stepUpApi}
+                    action={own ? "OWN_TRANSFER" : "TPT_TRANSFER"}
+                    payload={stepUpPayload}
+                    submitLabel={
+                      segment === "empresas"
+                        ? "Enviar a segunda firma"
+                        : "Confirmar transferencia demo"
+                    }
+                    onVerified={finish}
+                    onNotRequired={finish}
+                    onBack={() => {
+                      setStep("review");
+                      setError("");
+                    }}
+                  />
                   {error && (
                     <p className="form-error" role="alert">
                       {error}
                     </p>
                   )}
-                  <button className="button button-primary" type="submit">
-                    {segment === "empresas"
-                      ? "Enviar a segunda firma"
-                      : "Confirmar transferencia demo"}
-                    <Check size={17} />
-                  </button>
-                  <button
-                    type="button"
-                    className="back-link centered"
-                    onClick={() => {
-                      setStep("review");
-                      setError("");
-                    }}
-                  >
-                    <ArrowLeft size={15} />
-                    Volver al resumen
-                  </button>
-                </form>
+                </>
               )}
             </>
           )}
@@ -732,6 +731,9 @@ export default function DemoBank({
   const [support, setSupport] = useState(false);
   const onTimeoutRef = useRef(onTimeout);
   onTimeoutRef.current = onTimeout;
+
+  // Ending the demo session also forgets the demo step-up state (attempts, lock-out).
+  useEffect(() => resetDemoStepUpApi, []);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;

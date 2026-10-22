@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
 async function openDemo(page: Page) {
@@ -11,7 +12,7 @@ async function openDemo(page: Page) {
   ).toBeVisible();
 }
 
-async function prepareTransfer(
+async function reachStepUp(
   page: Page,
   amount: string,
   concept: string,
@@ -30,7 +31,20 @@ async function prepareTransfer(
   await dialog
     .getByRole("button", { name: "Continuar a verificación" })
     .click();
-  await dialog.getByLabel("Código de verificación demo").fill("123456");
+  await expect(dialog.getByLabel("Código de verificación demo")).toBeVisible();
+}
+
+async function prepareTransfer(
+  page: Page,
+  amount: string,
+  concept: string,
+  own = false,
+) {
+  await reachStepUp(page, amount, concept, own);
+  await page
+    .getByRole("dialog")
+    .getByLabel("Código de verificación demo")
+    .fill("123456");
 }
 
 test("landing navigation, product simulators, FAQ, and stories work", async ({
@@ -435,4 +449,153 @@ test("English and Mexican Spanish switch consistently and persist", async ({
         (window as Window & { __missingI18n?: string[] }).__missingI18n ?? [],
     ),
   ).toEqual([]);
+});
+
+test.describe("step-up verification", () => {
+  const confirm = "Confirmar transferencia demo";
+
+  test("a wrong code shows the attempts left, and the right code still works", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const dialog = page.getByRole("dialog");
+    await reachStepUp(page, "100", "Intentos");
+    const code = dialog.getByLabel("Código de verificación demo");
+    await expect(code).toBeFocused();
+    await expect(code).toHaveAttribute("autocomplete", "one-time-code");
+    await expect(dialog.getByText("Te quedan 5 intentos.")).toBeVisible();
+
+    await code.fill("000000");
+    await dialog.getByRole("button", { name: confirm }).click();
+    await expect(dialog.getByRole("alert")).toContainText("no coincide");
+    await expect(dialog.getByText("Te quedan 4 intentos.")).toBeVisible();
+    await expect(code).toBeFocused();
+
+    await code.fill("123456");
+    await dialog.getByRole("button", { name: confirm }).click();
+    await expect(
+      dialog.getByRole("heading", { name: "Transferencia simulada." }),
+    ).toBeVisible();
+  });
+
+  test("five wrong codes lock the verification, even for the right code", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const dialog = page.getByRole("dialog");
+    await reachStepUp(page, "100", "Bloqueo");
+    const code = dialog.getByLabel("Código de verificación demo");
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await code.fill("000000");
+      await dialog.getByRole("button", { name: confirm }).click();
+      if (attempt < 4) await expect(dialog.getByRole("alert")).toBeVisible();
+    }
+    await expect(dialog.getByRole("alert")).toContainText(
+      "Demasiados intentos incorrectos",
+    );
+    await expect(code).toHaveCount(0);
+    await expect(
+      dialog.getByRole("heading", { name: "Transferencia simulada." }),
+    ).toHaveCount(0);
+    // balances are untouched
+    await dialog.getByRole("button", { name: "Volver al resumen" }).click();
+    await dialog.getByRole("button", { name: "Mi resumen" }).click();
+    await expect(dialog.locator(".total-balance>strong")).toContainText(
+      "$215,680.50",
+    );
+  });
+
+  test("resend waits for the cooldown and clears the field", async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await openDemo(page);
+    const dialog = page.getByRole("dialog");
+    await reachStepUp(page, "100", "Reenvío");
+    const resend = dialog.getByRole("button", { name: /^Reenviar código/ });
+    await expect(resend).toBeDisabled();
+    await expect(resend).toContainText(/en \d+ s/);
+
+    await dialog.getByLabel("Código de verificación demo").fill("1234");
+    await page.clock.runFor(31_000);
+    await expect(resend).toBeEnabled();
+    await resend.click();
+    await expect(dialog.getByText("Te enviamos un código nuevo.")).toBeVisible();
+    await expect(dialog.getByLabel("Código de verificación demo")).toHaveValue(
+      "",
+    );
+    await expect(resend).toBeDisabled();
+  });
+
+  test("an expired code asks for a new one", async ({ page }) => {
+    await page.clock.install();
+    await openDemo(page);
+    const dialog = page.getByRole("dialog");
+    await reachStepUp(page, "100", "Vence");
+    await expect(dialog.getByRole("timer")).toContainText("5:00");
+    await page.clock.runFor(5 * 60 * 1000 + 1000);
+    await expect(dialog.getByRole("alert")).toContainText("ya no es válido");
+    await dialog.getByRole("button", { name: "Pedir un código nuevo" }).click();
+    await dialog
+      .getByLabel("Código de verificación demo")
+      .fill("123456");
+    await dialog.getByRole("button", { name: confirm }).click();
+    await expect(
+      dialog.getByRole("heading", { name: "Transferencia simulada." }),
+    ).toBeVisible();
+  });
+
+  test("the verification step has no accessibility violations and fits a phone", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await openDemo(page);
+    const dialog = page.getByRole("dialog");
+    await reachStepUp(page, "100", "Accesibilidad");
+    await dialog.getByLabel("Código de verificación demo").fill("000000");
+    await dialog.getByRole("button", { name: confirm }).click();
+    await expect(dialog.getByRole("alert")).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .include(".stepup-panel")
+      .analyze();
+    expect(results.violations).toEqual([]);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBeTruthy();
+  });
+
+  test("the verification step is fully translated into English", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page
+      .locator(".header-actions .locale-toggle")
+      .getByRole("button", { name: "EN" })
+      .click();
+    await page
+      .getByRole("button", { name: "Explore your banking", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Transfer", exact: true }).click();
+    await dialog.getByRole("spinbutton", { name: /Amount/ }).fill("100");
+    await dialog.getByLabel("Memo", { exact: true }).fill("English");
+    await dialog.getByRole("button", { name: /Review transfer/ }).click();
+    await dialog.getByRole("button", { name: /Continue to verification/ }).click();
+    await expect(dialog.getByLabel("Demo verification code")).toBeVisible();
+    await dialog.getByLabel("Demo verification code").fill("000000");
+    await dialog.getByRole("button", { name: /Confirm .*transfer/i }).click();
+    await expect(dialog.getByRole("alert")).toContainText("does not match");
+    await expect(dialog.getByText("You have 4 attempts left.")).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: /Resend code in \d+ s/ }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () =>
+          (window as Window & { __missingI18n?: string[] }).__missingI18n ?? [],
+      ),
+    ).toEqual([]);
+  });
 });

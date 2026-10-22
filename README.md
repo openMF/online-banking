@@ -19,7 +19,7 @@ The entry point is `src/App.tsx`. The supplied Vite configuration produces a sta
 - Accessible native dialogs, keyboard focus handling, form labels, visible focus indicators, and inline validation.
 - Demo login, local two-step onboarding, and an explicitly simulated recovery flow.
 - Personal and business account balances, balance privacy toggle, transaction search and filters, CSV export, and beneficiary management.
-- Transfers between own accounts and to demo beneficiaries, amount limits, balance validation, review, verification, and downloadable demo receipts.
+- Transfers between own accounts and to demo beneficiaries, amount limits, balance validation, review, step-up verification (one-time code), and downloadable demo receipts.
 - Business transfers remain pending until a simulated second signature approves them. Rejected operations do not change balances.
 - Investment and loan calculators with clearly disclosed hypothetical rates, not advertised product terms.
 - All data stays in memory. No analytics, tracking cookies, real financial operations, or form submissions are configured.
@@ -31,27 +31,55 @@ The entry point is `src/App.tsx`. The supplied Vite configuration produces a sta
 | Personas | `344988355`   | `Mifos#26` |
 | Empresas | `880214001`   | `Mifos#26` |
 
-First verification code: `123456`. Business second-signature code: `654321`.
+Demo verification code: `123456` (shown on screen in demo mode, never accepted by a real backend). Business second-signature code: `654321`.
 
 These values are intentionally public test fixtures, not real credentials or security controls. The session expires after ten minutes without pointer or keyboard activity. Closing the demo discards its data.
 
+## Step-up verification (OTP)
+
+Sensitive actions, today the transfer confirmation, ask for a one-time code (MX-488). The server issues, sends and checks the code; the browser never decides.
+
+- `src/components/StepUpPanel.tsx`: accessible inline panel (autofill with `one-time-code`, numeric keypad, attempts left, code lifetime timer, resend cooldown, lock-out message, English and Spanish).
+- `src/lib/stepup/`: `useStepUpChallenge` (the flow as a state machine) over a `StepUpApi`. Two adapters: `httpStepUpApi` (the real `/v1/self/stepup/*` endpoints of [selfservice-plugin](https://github.com/openMF/selfservice-plugin)) and `demoStepUpApi` (in memory, same rules, public code `123456`).
+- `src/lib/selfservice/`: typed client of the self-service API (`config`, `session`, `http`, `auth`, `stepup`). The session lives in memory only, never in `localStorage`. The `Authorization` header is built in a single function (`authorizationHeader` in `session.ts`) so the planned OIDC move touches one place.
+
+The real adapter is used only when a backend is configured **and** a session exists; otherwise the demo adapter is used. The demo UI has no login against the backend yet, so the full backend path is covered by mocked-`fetch` tests here and by the plugin's own integration tests, not by the demo screens.
+
+The one-time token returned after a correct code is single use, valid for a short time and only for the exact transfer it was issued for. Hand it to the API in the `X-Step-Up-Token` header of that one request.
+
+### Configuration
+
+Copy `.env.example` to `.env.local`. `VITE_*` values are public: put no secrets in them. Without `VITE_SELF_SERVICE_BASE_URL` the app runs as the in-memory demo.
+
+| Variable                       | Meaning                                                    |
+| ------------------------------ | ---------------------------------------------------------- |
+| `VITE_SELF_SERVICE_BASE_URL`   | Origin of the Fineract instance, no trailing slash         |
+| `VITE_SELF_SERVICE_ENDPOINT`   | Path before `/v1/self` (default `/fineract-provider/api`)   |
+| `VITE_SELF_SERVICE_TENANT_ID`  | `Fineract-Platform-TenantId` header (default `default`)    |
+
+The backend must allow this origin in CORS and accept the `X-Step-Up-Token` header.
+
 ## Verification
 
-Run a development server on port 5173, then:
+Unit and component tests run without a server:
 
-- `npx tsc --noEmit`
+- `npm run typecheck`
+- `npm test` (Vitest: API client, step-up flow, panel)
+
+Browser tests need a development server on port 5173 (`npm run dev`), then:
+
 - `npx playwright install --with-deps chromium`
 - `npx playwright test`
 - `node tests/visual-check.mjs`
 - `npm audit`
 
-The browser suite covers navigation, calculators, FAQs, stories, login validation, transfers, verification failures, balance conservation for own-account transfers, exports, second-signature approval, beneficiary validation, local onboarding, contact preparation, focus restoration, and mobile layout.
+The browser suite covers navigation, calculators, FAQs, stories, login validation, transfers, verification failures (attempts left, lock-out, resend cooldown, expiry, accessibility, English), balance conservation for own-account transfers, exports, second-signature approval, beneficiary validation, local onboarding, contact preparation, focus restoration, and mobile layout.
 
 Visual and accessibility reports are written to `artifacts/`. Automated checks supplement, rather than replace, manual accessibility testing.
 
 ## Production Integration Boundary
 
-This frontend builds for production hosting, but it is **not an operational banking channel**. No MIFOS or Fineract backend is connected. The browser-side demo password and verification checks must never authorize real operations.
+This frontend builds for production hosting, but it is **not an operational banking channel**. No MIFOS or Fineract backend is connected. The browser-side demo password and the demo verification code must never authorize real operations; with a backend, the code is checked by the server only.
 
 Before launching live banking, implement a reviewed backend integration with server-side identity verification, authentication, HttpOnly secure sessions, authorization, genuine MFA, rate limiting, audit logging, idempotent ledger operations, and independently authenticated business approvers. Handle account balances and transaction validation exclusively on the server. Never place banking API secrets in Vite environment variables exposed to the browser.
 
@@ -66,6 +94,7 @@ Contact preparation only creates a local message to copy. It never claims an inq
 - `src/components/Banking.tsx`: functional in-memory banking demo.
 - `src/components/ProductPreview.tsx`: interactive preview and calculators.
 - `src/components/ui.tsx`: brand, reveal, and accessible dialog primitives.
+- `src/components/StepUpPanel.tsx`, `src/lib/stepup/`, `src/lib/selfservice/`: step-up verification and the self-service client (see above).
 - `src/lib/demo.ts`: typed fixtures, centavo arithmetic, exports, and receipts.
 - `src/i18n/`: typed locale provider and matching `es-MX.json` / `en-US.json` message catalogs.
 - `src/styles/`: responsive design and component styling.
