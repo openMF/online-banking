@@ -451,6 +451,66 @@ test("English and Mexican Spanish switch consistently and persist", async ({
   ).toEqual([]);
 });
 
+test("transaction details, search, and CSV follow the selected language", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    window.localStorage.setItem("mifos-locale", "en-US"),
+  );
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Explore your banking", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator(".bank-segment-label")).toHaveText(
+    "PERSONAL BANKING",
+  );
+  await dialog.getByRole("button", { name: "Transfer", exact: true }).click();
+  await dialog.getByRole("spinbutton", { name: /Amount/ }).fill("100");
+  await dialog.getByLabel("Memo", { exact: true }).fill("Rent");
+  await dialog.getByRole("button", { name: "Review transfer" }).click();
+  await dialog
+    .getByRole("button", { name: "Continue to verification" })
+    .click();
+  await dialog.getByLabel("Demo verification code").fill("123456");
+  await dialog.getByRole("button", { name: "Confirm demo transfer" }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Transfer simulated." }),
+  ).toBeVisible();
+  await dialog.getByRole("button", { name: "View my transactions" }).click();
+  await expect(dialog.locator(".transaction-list>li").first()).toContainText(
+    "To Sofía Martínez",
+  );
+  await dialog.getByRole("searchbox").fill("incoming");
+  await expect(dialog.locator(".transaction-list>li")).not.toHaveCount(0);
+  await expect(dialog.locator(".transaction-list>li").first()).toContainText(
+    "Incoming transfer",
+  );
+  await dialog.getByRole("searchbox").fill("recibida");
+  await expect(dialog.locator(".transaction-list>li")).toHaveCount(0);
+  await dialog.getByRole("searchbox").fill("");
+  const download = page.waitForEvent("download");
+  await dialog.getByRole("button", { name: "CSV", exact: true }).click();
+  const csv = await (await download).createReadStream();
+  let content = "";
+  for await (const chunk of csv) content += chunk;
+  expect(content).toContain("Payroll deposit");
+  expect(content).not.toContain("Depósito de nómina");
+  expect(
+    await page.evaluate(
+      () =>
+        (window as Window & { __missingI18n?: string[] }).__missingI18n ?? [],
+    ),
+  ).toEqual([]);
+  await dialog
+    .locator(".dialog-locale")
+    .getByRole("button", { name: "ES" })
+    .click();
+  await expect(dialog.locator(".transaction-list>li").first()).toContainText(
+    "Para Sofía Martínez",
+  );
+});
+
 test.describe("step-up verification", () => {
   const confirm = "Confirmar transferencia demo";
 
