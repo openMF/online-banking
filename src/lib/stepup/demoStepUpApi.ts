@@ -25,6 +25,8 @@ export type DemoStepUpOptions = {
   lockoutSeconds?: number;
   /** Test seam: milliseconds clock. */
   now?: () => number;
+  /** Called when a code is requested, verified or the challenge gets locked. */
+  onEvent?: (event: "ISSUED" | "VERIFIED" | "LOCKED", action: CreateChallengeInput["action"]) => void;
 };
 
 type DemoChallenge = {
@@ -124,6 +126,7 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
         done: false,
       };
       challenges.set(sequence, challenge);
+      options.onEvent?.("ISSUED", input.action);
       return view(sequence, challenge);
     },
 
@@ -140,6 +143,7 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
         challenge.attempts += 1;
         if (challenge.attempts >= maxAttempts) {
           challenge.lockedUntil = now() + lockout * 1000;
+          options.onEvent?.("LOCKED", challenge.action);
           throw new StepUpError("locked", { retryAfterSeconds: lockout });
         }
         throw new StepUpError("otp.invalid", {
@@ -148,6 +152,7 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
       }
       challenge.done = true;
       const token = `demo-${globalThis.crypto.randomUUID()}`;
+      options.onEvent?.("VERIFIED", challenge.action);
       return {
         stepUpToken: token,
         action: challenge.action,

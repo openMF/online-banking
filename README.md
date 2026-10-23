@@ -209,12 +209,24 @@ configuration does not establish a backend login session or switch this adapter 
 
 The backend must allow this origin in CORS and accept the `X-Step-Up-Token` header.
 
+## Security activity history (MX-491)
+
+The "Actividad de seguridad" / "Security activity" view of the banking dialog lists the sign-ins and the sensitive actions of the user, newest first, so that unauthorised use can be spotted (US-E12-05). Each entry shows what happened, when and from where (**masked** IP address); a failed or unusual one (failed sign-in, new device, locked verification) is marked in words and with an icon, not only with a colour. Filter chips (all, sign-ins, transfers and beneficiaries, account, verifications) and "show more" page through the list.
+
+- `src/components/ActivityFeed.tsx`: the accessible screen (live status, `aria-pressed` filters, alert with retry, es-MX and en-US).
+- `src/lib/activity/`: `ActivityApi` with two adapters, like step-up: `httpActivityApi` (the real `GET /v1/self/activity` of [selfservice-plugin](https://github.com/openMF/selfservice-plugin)) and `demoActivityApi` (in memory). `describe.ts` turns an entry into text; `useActivityFeed` loads page by page.
+- `src/lib/selfservice/activity.ts`: the typed client. It cannot ask for another user: the server only returns the history of the logged-in user.
+
+The real adapter is used only when a backend is configured **and** a session exists; otherwise the demo adapter is used, which says so on screen. The demo history starts with a few older entries (clearly fake, with the documentation-range address `192.0.x.x`) and then follows what the demo user does: sign-in, transfers (a business transfer only after the second signature), beneficiaries and the verification code. Like step-up, the real path is covered by mocked-`fetch` tests here and by the plugin's own integration tests, not by the demo screens (there is no real login yet).
+
+The server never sends a full IP address, a password, a code or a full account number; the screen shows only what it receives.
+
 ## Verification
 
 Unit and component tests run without a server:
 
 - `npm run typecheck`
-- `npm test` (Vitest: API client, step-up flow, panel)
+- `npm test` (Vitest: API clients, step-up flow, activity history, panels)
 - `npm run test:config` (runtime configuration and startup generation)
 
 Browser tests need a development server on port 5173 (`npm run dev`), then:
@@ -224,7 +236,7 @@ Browser tests need a development server on port 5173 (`npm run dev`), then:
 - `node tests/visual-check.mjs`
 - `npm audit`
 
-The browser suite covers navigation, calculators, FAQs, stories, login validation, transfers, verification failures (attempts left, lock-out, resend cooldown, expiry, accessibility, English), balance conservation for own-account transfers, exports, second-signature approval, beneficiary validation, local onboarding, contact preparation, focus restoration, and mobile layout.
+The browser suite covers navigation, calculators, FAQs, stories, login validation, transfers, verification failures (attempts left, lock-out, resend cooldown, expiry, accessibility, English), the security activity view (what the user did, filters, business approvals, accessibility, English), balance conservation for own-account transfers, exports, second-signature approval, beneficiary validation, local onboarding, contact preparation, focus restoration, and mobile layout.
 
 Visual and accessibility reports are written to `artifacts/`. Automated checks supplement, rather than replace, manual accessibility testing.
 

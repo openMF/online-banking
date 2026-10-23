@@ -1,3 +1,4 @@
+import { recordDemoActivity } from "../activity";
 import { getSelfServiceConfig, hasSession } from "../selfservice";
 import type { StepUpApi } from "./api";
 import { createDemoStepUpApi } from "./demoStepUpApi";
@@ -22,7 +23,19 @@ let demoApi: StepUpApi | null = null;
  */
 export function selectStepUpApi(): StepUpApi {
   if (getSelfServiceConfig() && hasSession()) return createHttpStepUpApi();
-  demoApi ??= createDemoStepUpApi();
+  demoApi ??= createDemoStepUpApi({
+    // what the demo user does with the verification also shows in the demo activity history
+    onEvent: (event, action) =>
+      recordDemoActivity(
+        event === "ISSUED"
+          ? "STEP_UP_REQUESTED"
+          : event === "VERIFIED"
+            ? "STEP_UP_VERIFIED"
+            : "STEP_UP_LOCKED",
+        { action },
+        event === "LOCKED" ? "FAILURE" : "SUCCESS",
+      ),
+  });
   return demoApi;
 }
 

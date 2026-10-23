@@ -599,3 +599,210 @@ test.describe("step-up verification", () => {
     ).toEqual([]);
   });
 });
+
+test.describe("security activity", () => {
+  async function openActivity(page: Page) {
+    const dialog = page.getByRole("dialog");
+    await dialog
+      .getByRole("button", { name: "Actividad de seguridad", exact: true })
+      .click();
+    await expect(
+      dialog.getByRole("heading", { name: "Actividad de seguridad" }),
+    ).toBeVisible();
+    // the list is loaded after the heading appears: wait for it, so later checks do not race
+    await expect(entries(page).first()).toBeVisible();
+    return dialog;
+  }
+
+  const entries = (page: Page) =>
+    page.getByRole("list", { name: "Lista de actividad" }).getByRole("listitem");
+
+  test("shows the sign-in and the older demo history, with masked IP addresses", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const dialog = await openActivity(page);
+
+    await expect(entries(page).first()).toContainText("Iniciaste sesión");
+    await expect(entries(page).first()).toContainText("IP 192.0.x.x");
+    await expect(dialog.getByText("Actividad de demostración")).toBeVisible();
+    await expect(
+      entries(page).filter({ hasText: "Intento de acceso fallido" }),
+    ).toContainText("No completado");
+    // the full address is never on the screen
+    await expect(dialog).not.toContainText(/\d+\.\d+\.\d+\.\d+/);
+  });
+
+  test("follows what the user does: verification, transfer and beneficiary", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const dialog = page.getByRole("dialog");
+    await prepareTransfer(page, "321.50", "Actividad");
+    await dialog
+      .getByRole("button", { name: "Confirmar transferencia demo" })
+      .click();
+    await expect(
+      dialog.getByRole("heading", { name: "Transferencia simulada." }),
+    ).toBeVisible();
+    await dialog
+      .getByRole("button", { name: "Beneficiarios", exact: true })
+      .click();
+    await dialog
+      .getByRole("button", { name: "Agregar beneficiario", exact: true })
+      .click();
+    await dialog
+      .getByLabel("Nombre del beneficiario de prueba")
+      .fill("Luz Actividad");
+    await dialog.getByLabel(/Cuenta de prueba/).fill("000000000000000077");
+    await dialog.getByRole("button", { name: "Guardar beneficiario" }).click();
+    await dialog
+      .getByRole("button", { name: "Eliminar a Luz Actividad" })
+      .click();
+    await dialog.getByRole("button", { name: "Sí", exact: true }).click();
+
+    await openActivity(page);
+
+    const texts = await entries(page).allTextContents();
+    const at = (needle: string) =>
+      texts.findIndex((text) => text.includes(needle));
+    expect(at("Eliminaste al beneficiario Luz Actividad")).toBeGreaterThanOrEqual(0);
+    expect(at("Agregaste al beneficiario Luz Actividad")).toBeGreaterThan(
+      at("Eliminaste al beneficiario Luz Actividad"),
+    );
+    expect(at("Transferencia confirmada de $321.50")).toBeGreaterThan(
+      at("Agregaste al beneficiario Luz Actividad"),
+    );
+    expect(at("Verificaste un código")).toBeGreaterThan(
+      at("Transferencia confirmada de $321.50"),
+    );
+    expect(at("Solicitaste un código de verificación")).toBeGreaterThan(
+      at("Verificaste un código"),
+    );
+    expect(texts.join(" ")).not.toContain("123456");
+  });
+
+  test("a wrong code is not listed one by one, but the lock-out is", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const dialog = page.getByRole("dialog");
+    await reachStepUp(page, "10", "Bloqueo");
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await dialog.getByLabel("Código de verificación demo").fill("000000");
+      await dialog
+        .getByRole("button", { name: "Confirmar transferencia demo" })
+        .click();
+      if (attempt < 4) await expect(dialog.getByRole("alert")).toBeVisible();
+    }
+    await expect(dialog.getByRole("alert")).toContainText(
+      "Demasiados intentos incorrectos",
+    );
+    await dialog.getByRole("button", { name: "Volver al resumen" }).click();
+
+    await openActivity(page);
+
+    await expect(
+      entries(page).filter({
+        hasText: "Verificación bloqueada por demasiados intentos",
+      }),
+    ).toHaveCount(1);
+    await expect(
+      entries(page).filter({ hasText: "Verificaste un código" }),
+    ).toHaveCount(0);
+  });
+
+  test("the filter chips narrow the list", async ({ page }) => {
+    await openDemo(page);
+    const dialog = await openActivity(page);
+    const all = await entries(page).count();
+
+    await dialog.getByRole("button", { name: "Cuenta", exact: true }).click();
+    await expect(entries(page)).toHaveCount(1);
+    await expect(entries(page).first()).toContainText("Cambiaste tu contraseña");
+    await expect(
+      dialog.getByRole("button", { name: "Cuenta", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await dialog.getByRole("button", { name: "Todo", exact: true }).click();
+    await expect(entries(page)).toHaveCount(all);
+  });
+
+  test("a business transfer waiting for the second signature is not listed until it is approved", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page
+      .locator(".header-segments")
+      .getByRole("button", { name: "Empresas" })
+      .click();
+    await page
+      .getByRole("button", { name: "Conoce tu banca", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await prepareTransfer(page, "2000", "Proveedor");
+    await dialog.getByRole("button", { name: "Enviar a segunda firma" }).click();
+    await openActivity(page);
+    await expect(
+      entries(page).filter({ hasText: "Transferencia confirmada" }),
+    ).toHaveCount(0);
+
+    await dialog.getByRole("button", { name: /Aprobaciones/ }).click();
+    await dialog.getByRole("button", { name: "Simular segunda firma" }).click();
+    await dialog.getByLabel("Código de segunda firma demo").fill("654321");
+    await dialog.getByRole("button", { name: "Confirmar segunda firma" }).click();
+    await openActivity(page);
+
+    await expect(
+      entries(page).filter({ hasText: "Transferencia confirmada de $2,000.00" }),
+    ).toHaveCount(1);
+  });
+
+  test("has no accessibility violations and fits a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    await openDemo(page);
+    await openActivity(page);
+
+    const results = await new AxeBuilder({ page })
+      .include(".activity-feed")
+      .analyze();
+    expect(results.violations).toEqual([]);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBeTruthy();
+  });
+
+  test("is fully translated into English", async ({ page }) => {
+    await page.goto("/");
+    await page
+      .locator(".header-actions .locale-toggle")
+      .getByRole("button", { name: "EN" })
+      .click();
+    await page
+      .getByRole("button", { name: "Explore your banking", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await dialog
+      .getByRole("button", { name: "Security activity", exact: true })
+      .click();
+
+    await expect(
+      dialog.getByRole("heading", { name: "Security activity" }),
+    ).toBeVisible();
+    await expect(page.locator(".activity-list li").first()).toContainText("You signed in");
+    await expect(
+      page.locator(".activity-list li").filter({ hasText: "Failed sign-in attempt" }),
+    ).toContainText("Not completed");
+    await expect(dialog.getByText(/Showing \d+ of \d+/)).toBeVisible();
+    await dialog.getByRole("button", { name: "Sign-ins", exact: true }).click();
+    await expect(page.locator(".activity-list li").first()).toBeVisible();
+    expect(
+      await page.evaluate(
+        () =>
+          (window as Window & { __missingI18n?: string[] }).__missingI18n ?? [],
+      ),
+    ).toEqual([]);
+  });
+});

@@ -3,7 +3,7 @@ import { getLocale, translate } from "../i18n";
 export type Segment = "personas" | "empresas";
 export type Product = "cuenta" | "inversion" | "credito";
 export type BankView =
-  "overview" | "transfer" | "activity" | "beneficiaries" | "approvals";
+  "overview" | "transfer" | "activity" | "beneficiaries" | "approvals" | "security";
 
 export type Account = {
   id: string;

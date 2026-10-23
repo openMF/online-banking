@@ -47,6 +47,8 @@ import {
   type Transaction,
   type Transfer,
 } from "../lib/demo";
+import { ActivityFeed } from "./ActivityFeed";
+import { recordDemoActivity, resetDemoActivity } from "../lib/activity";
 import {
   canCompleteTransferLocally,
   resetDemoStepUpApi,
@@ -735,6 +737,35 @@ export default function DemoBank({
   // Ending the demo session also forgets the demo step-up state (attempts, lock-out).
   useEffect(() => resetDemoStepUpApi, []);
 
+  // Signing in to the demo is the first entry of this session's demo activity history; ending the
+  // session forgets it (the next one starts again with the older demo history).
+  useEffect(() => {
+    recordDemoActivity("LOGIN");
+    return resetDemoActivity;
+  }, []);
+
+  /** The beneficiaries panel hands over the whole new list: work out what was added or removed. */
+  function changeBeneficiaries(next: Beneficiary[]) {
+    const known = new Set(beneficiaries.map((item) => item.id));
+    const kept = new Set(next.map((item) => item.id));
+    next
+      .filter((item) => !known.has(item.id))
+      .forEach((item) => recordDemoActivity("BENEFICIARY_ADDED", { name: item.name }));
+    beneficiaries
+      .filter((item) => !kept.has(item.id))
+      .forEach((item) => recordDemoActivity("BENEFICIARY_DELETED", { name: item.name }));
+    setBeneficiaries(next);
+  }
+
+  /** A transfer that really went through (not one that still waits for the second signature). */
+  function recordTransfer(transfer: Transfer) {
+    recordDemoActivity("TRANSFER_CONFIRMED", {
+      amount: (transfer.amount / 100).toFixed(2),
+      currency: "MXN",
+      toName: transfer.toName,
+    });
+  }
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const reset = () => {
@@ -826,6 +857,7 @@ export default function DemoBank({
     if (segment === "empresas")
       setApprovals((current) => [transfer, ...current]);
     else if (!execute(transfer)) return null;
+    else recordTransfer(transfer);
     return transfer;
   }
 
@@ -847,6 +879,7 @@ export default function DemoBank({
       );
       return;
     }
+    recordTransfer(transfer);
     setApprovals((current) =>
       current.map((item) =>
         item.id === approvalId ? { ...item, status: "approved" } : item,
@@ -865,6 +898,7 @@ export default function DemoBank({
     { id: "transfer" as const, label: "Transferir", icon: ArrowUpRight },
     { id: "activity" as const, label: "Movimientos", icon: ListFilter },
     { id: "beneficiaries" as const, label: "Beneficiarios", icon: Users },
+    { id: "security" as const, label: "Actividad de seguridad", icon: ShieldCheck },
     ...(segment === "empresas"
       ? [{ id: "approvals" as const, label: "Aprobaciones", icon: FileClock }]
       : []),
@@ -984,6 +1018,7 @@ export default function DemoBank({
                       activity: "Cada paso, en detalle.",
                       beneficiaries: "Tus personas de confianza.",
                       approvals: "Avancemos en equipo.",
+                      security: "Lo que pasa en tu cuenta.",
                     }[view]}
               </h3>
             </div>
@@ -1175,9 +1210,10 @@ export default function DemoBank({
               {view === "beneficiaries" && (
                 <BeneficiariesPanel
                   beneficiaries={beneficiaries}
-                  onChange={setBeneficiaries}
+                  onChange={changeBeneficiaries}
                 />
               )}
+              {view === "security" && <ActivityFeed />}
               {view === "approvals" && (
                 <div className="approvals-panel">
                   <div className="demo-notice">
