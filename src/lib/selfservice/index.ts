@@ -1,4 +1,14 @@
 export { getSelfServiceConfig, selfUrl, type SelfServiceConfig } from "./config";
+export {
+  ACTIVITY_TYPES,
+  getActivity,
+  type ActivityDetails,
+  type ActivityItem,
+  type ActivityOutcome,
+  type ActivityPage,
+  type ActivityQuery,
+  type ActivityType,
+} from "./activity";
 export { login, logout } from "./auth";
 export { SelfServiceError, STEP_UP_HEADER, selfRequest, type RequestOptions } from "./http";
 export {
