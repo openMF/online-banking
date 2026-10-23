@@ -66,10 +66,13 @@ User-facing strings live in:
 
 When adding or changing copy:
 
-1. Add the key to **both** locale files (keep structures aligned).
-2. Use `t("section.key")` or `t("section.key", { var: value })` in components.
-3. Prefer domain-grouped keys (`nav.*`, `login.*`, `dashboard.*`, `session.*`, …).
-4. Navigation and screen titles should go through `getNav()` / `getScreenTitle()` in `src/lib/banca/model.ts` so they respect the active locale.
+1. The key is the Spanish text itself. Add it to **both** locale files: `es-MX.json` maps it to itself, `en-US.json` to the English text.
+2. Text inside `<LocalizedTree>` (including `aria-label`, `placeholder`, `title` and `alt`) is translated on render, so writing the Spanish string in JSX is enough.
+3. For text built in code, use `translate("…")`. For values such as names, use a placeholder: `translateWith("Eliminar a {name}", { name })`, with the same `{name}` in the English text.
+4. Store Spanish keys in data (for example a transaction detail) and translate them when rendering, so they follow a language switch.
+5. Form validation messages (`required`, `minLength`, `pattern`, `type="email"`, `min`/`max`) are translated automatically by `I18nProvider`; add a message to `validationMessage` only for a new kind of rule.
+
+`npm test` checks that both locale files have the same keys and placeholders. The Playwright i18n audit (`tests/i18n.spec.ts`) fails when a main screen shows text in the other language.
 
 Do not leave new hardcoded user-facing Spanish or English strings in the UI without a matching key.
 

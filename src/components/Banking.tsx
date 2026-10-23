@@ -31,7 +31,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { Brand } from "./ui";
 import { StepUpPanel } from "./StepUpPanel";
-import { LocalizedTree, translate, useI18n } from "../i18n";
+import { LocalizedTree, translate, translateWith, useI18n } from "../i18n";
 import {
   exportTransactions,
   getAccounts,
@@ -39,6 +39,7 @@ import {
   initialBeneficiaries,
   money,
   shortDate,
+  transactionDetail,
   transferReceipt,
   type Account,
   type BankView,
@@ -54,6 +55,12 @@ import {
 } from "../lib/stepup";
 
 type TransferDraft = Omit<Transfer, "id" | "date" | "status">;
+
+// A component boundary keeps LocalizedTree from re-translating the already translated text.
+function TransactionDetail({ transaction }: { transaction: Transaction }) {
+  useI18n();
+  return <small>{transactionDetail(transaction)}</small>;
+}
 
 function TransactionList({
   transactions,
@@ -88,7 +95,7 @@ function TransactionList({
             </span>
             <span className="transaction-description">
               <strong>{transaction.description}</strong>
-              <small>{transaction.detail}</small>
+              <TransactionDetail transaction={transaction} />
             </span>
             <time dateTime={transaction.date}>
               {shortDate(transaction.date)}
@@ -677,7 +684,9 @@ function BeneficiariesPanel({
               ) : (
                 <button
                   className="icon-button"
-                  aria-label={`${translate("Eliminar a")} ${beneficiary.name}`}
+                  aria-label={translateWith("Eliminar a {name}", {
+                    name: beneficiary.name,
+                  })}
                   onClick={() => setDeleting(beneficiary.id)}
                 >
                   <Trash2 size={17} />
@@ -772,12 +781,13 @@ export default function DemoBank({
         return (
           matchesAccount &&
           matchesType &&
-          normalize(transaction.description + transaction.detail).includes(
-            normalize(search),
-          )
+          normalize(
+            translate(transaction.description, locale) +
+              transactionDetail(transaction),
+          ).includes(normalize(search))
         );
       }),
-    [transactions, selectedAccount, filter, search],
+    [transactions, selectedAccount, filter, search, locale],
   );
 
   function execute(transfer: Transfer): boolean {
@@ -799,7 +809,8 @@ export default function DemoBank({
       id: `${transfer.id}-out`,
       date: transfer.date,
       description: transfer.concept,
-      detail: `Para ${transfer.toName}`,
+      detail: "Para {name}",
+      counterparty: transfer.toName,
       amount: -transfer.amount,
       accountId: transfer.from,
     };
@@ -882,7 +893,7 @@ export default function DemoBank({
         <aside className="bank-sidebar">
           <Brand compact />
           <span className="bank-segment-label">
-            BANCA {segment === "empresas" ? "EMPRESARIAL" : "PERSONAL"}
+            {segment === "empresas" ? "BANCA EMPRESARIAL" : "BANCA PERSONAL"}
           </span>
           <nav aria-label="Navegación de banca demo">
             {navigation.map((item) => (

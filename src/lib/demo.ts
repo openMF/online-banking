@@ -1,4 +1,4 @@
-import { getLocale, translate } from "../i18n";
+import { getLocale, translate, translateWith } from "../i18n";
 
 export type Segment = "personas" | "empresas";
 export type Product = "cuenta" | "inversion" | "credito";
@@ -17,6 +17,7 @@ export type Transaction = {
   date: string;
   description: string;
   detail: string;
+  counterparty?: string;
   amount: number;
   accountId: string;
 };
@@ -47,6 +48,9 @@ export const shortDate = (date: string) =>
     day: "numeric",
     month: "short",
   }).format(new Date(date));
+
+export const transactionDetail = (transaction: Transaction) =>
+  translateWith(transaction.detail, { name: transaction.counterparty ?? "" });
 
 export function getAccounts(segment: Segment): Account[] {
   return [
@@ -144,7 +148,7 @@ export function exportTransactions(transactions: Transaction[]) {
   const rows = transactions.map((t) =>
     [
       cell(t.date.slice(0, 10)),
-      cell(t.description),
+      cell(translate(t.description)),
       (t.amount / 100).toFixed(2),
       cell("MXN"),
       cell(translate("DEMOSTRACIÓN")),

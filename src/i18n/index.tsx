@@ -65,9 +65,96 @@ export function translateWith(
   values: Record<string, string | number>,
   locale = activeLocale,
 ) {
-  return translate(template, locale).replace(/\{(\w+)\}/g, (match, name: string) =>
+  const result = translate(template, locale).replace(/\{(\w+)\}/g, (match, name: string) =>
     name in values ? String(values[name]) : match,
   );
+  // LocalizedTree passes rendered text through translate() again; a name such as "Sofía" in
+  // an English result must not be reported as a missing translation.
+  if (locale === "en-US") translatedEnglish.add(normalize(result));
+  return result;
+}
+
+type FormField = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+function isFormField(target: EventTarget | null): target is FormField {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
+}
+
+/**
+ * The browser writes constraint-validation messages in its own language, so a Spanish UI in an
+ * English browser would show English errors. This returns the message in the app's language.
+ */
+export function validationMessage(field: FormField, locale = activeLocale) {
+  const { validity } = field;
+  const say = (template: string, values: Record<string, string | number> = {}) =>
+    translateWith(template, values, locale);
+  const number = (value: string) => new Intl.NumberFormat(locale).format(Number(value));
+  if (validity.valueMissing)
+    return say(
+      field.type === "checkbox" ? "Marca esta casilla para continuar." : "Completa este campo.",
+    );
+  if (validity.typeMismatch)
+    return say(
+      field.type === "email"
+        ? "Escribe un correo electrónico válido."
+        : "Revisa el formato de este campo.",
+    );
+  if (validity.tooShort && "minLength" in field)
+    return say("Escribe al menos {min} caracteres; llevas {count}.", {
+      min: field.minLength,
+      count: field.value.length,
+    });
+  if (validity.tooLong && "maxLength" in field)
+    return say("Escribe como máximo {max} caracteres.", { max: field.maxLength });
+  if (validity.badInput) return say("Escribe un número válido.");
+  if (validity.rangeUnderflow && "min" in field)
+    return say("Escribe un valor de al menos {min}.", { min: number(field.min) });
+  if (validity.rangeOverflow && "max" in field)
+    return say("Escribe un valor de {max} como máximo.", { max: number(field.max) });
+  if (validity.stepMismatch) return say("Escribe un valor válido.");
+  if (validity.patternMismatch && "pattern" in field) {
+    const digits = field.pattern.match(/^\[0-9\]\{(\d+)\}$/);
+    if (digits) return say("Escribe {count} dígitos.", { count: digits[1] });
+    // `.*\S.*` only rejects whitespace, which to the user is an empty field.
+    if (field.pattern === ".*\\S.*") return say("Completa este campo.");
+    return say("Revisa el formato de este campo.");
+  }
+  return "";
+}
+
+function localizeValidation() {
+  // `invalid` does not bubble, so every listener runs in the capture phase.
+  const onInvalid = (event: Event) => {
+    if (!isFormField(event.target) || event.target.form?.noValidate) return;
+    event.target.setCustomValidity("");
+    event.target.setCustomValidity(validationMessage(event.target));
+  };
+  const onEdit = (event: Event) => {
+    if (isFormField(event.target)) event.target.setCustomValidity("");
+  };
+  // A custom message marks the field invalid until it is cleared. Values set from code fire no
+  // input event, so clear the form's messages before each submit re-runs native validation.
+  const onSubmitClick = (event: Event) => {
+    const control = (event.target as Element | null)?.closest?.("button, input");
+    if (!(control instanceof HTMLButtonElement || control instanceof HTMLInputElement)) return;
+    if (control.type !== "submit" || !control.form) return;
+    for (const element of control.form.elements)
+      if (isFormField(element)) element.setCustomValidity("");
+  };
+  document.addEventListener("invalid", onInvalid, true);
+  document.addEventListener("input", onEdit, true);
+  document.addEventListener("change", onEdit, true);
+  document.addEventListener("click", onSubmitClick, true);
+  return () => {
+    document.removeEventListener("invalid", onInvalid, true);
+    document.removeEventListener("input", onEdit, true);
+    document.removeEventListener("change", onEdit, true);
+    document.removeEventListener("click", onSubmitClick, true);
+  };
 }
 
 type I18nValue = {
@@ -94,6 +181,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem("mifos-locale", next);
     updateLocale(next);
   };
+
+  useEffect(localizeValidation, []);
 
   useEffect(() => {
     document.documentElement.lang = locale;
