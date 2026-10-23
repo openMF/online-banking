@@ -15,6 +15,7 @@ export {
 } from "./describe";
 export { createDemoActivityStore, DEMO_MASKED_IP } from "./demoActivityApi";
 export { createHttpActivityApi } from "./httpActivityApi";
+export { parseActivityPage } from "./parse";
 export { useActivityFeed, type ActivityFeed, type ActivityFeedPhase } from "./useActivityFeed";
 
 // One demo history for the whole page, so that what the demo user does shows up in it.

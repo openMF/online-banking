@@ -14,6 +14,7 @@ import {
   describeActivity,
   formatActivityAmount,
   groupOf,
+  parseActivityPage,
   recordDemoActivity,
   resetDemoActivity,
   selectActivityApi,
@@ -116,6 +117,63 @@ describe("http adapter", () => {
     expect(error).toBeInstanceOf(ActivityError);
     expect(error.code).toBe(code);
     expect(error.message).not.toContain("SELECT");
+  });
+
+  it.each([
+    ["an empty object", {}],
+    ["a missing page", { totalFilteredRecords: 1 }],
+    ["a page that is not a list", { totalFilteredRecords: 1, pageItems: "x" }],
+    ["a negative total", { totalFilteredRecords: -1, pageItems: [] }],
+    ["null", null],
+    ["a list", []],
+    [
+      "an item without an id",
+      { totalFilteredRecords: 1, pageItems: [{ ...item(), id: undefined }] },
+    ],
+    [
+      "an item with an odd outcome",
+      { totalFilteredRecords: 1, pageItems: [{ ...item(), outcome: "MAYBE" }] },
+    ],
+    [
+      "an item without a time",
+      { totalFilteredRecords: 1, pageItems: [{ ...item(), occurredAt: 5 }] },
+    ],
+    [
+      "details that are not an object",
+      { totalFilteredRecords: 1, pageItems: [{ ...item(), details: "x" }] },
+    ],
+    ["an item that is not an object", { totalFilteredRecords: 1, pageItems: [null] }],
+  ])("refuses a successful answer with %s, before it reaches the screen", async (_label, body) => {
+    const api = createHttpActivityApi({
+      fetchImpl: vi.fn(async () => jsonResponse(body)),
+      config,
+      session,
+    });
+
+    const error = await api.list().catch((e) => e);
+
+    expect(error).toBeInstanceOf(ActivityError);
+    expect(error.code).toBe("invalid");
+  });
+
+  it("keeps an activity type of a newer server, fills in missing details and drops what it does not know", () => {
+    const page = parseActivityPage({
+      totalFilteredRecords: 2,
+      pageItems: [
+        { id: 2, type: "SOMETHING_NEW", outcome: "SUCCESS", occurredAt: "2026-10-23T10:00:00" },
+        {
+          ...item({ id: 1 }),
+          details: { amount: "5.00", toName: "Luz", secret: "x", currency: 5, nested: { a: 1 } },
+        },
+      ],
+    });
+
+    expect(page.pageItems[0]).toMatchObject({
+      type: "SOMETHING_NEW",
+      ipAddress: null,
+      details: {},
+    });
+    expect(page.pageItems[1].details).toEqual({ amount: "5.00", toName: "Luz" });
   });
 
   it("reports an unreachable server as a network error", async () => {

@@ -609,6 +609,8 @@ test.describe("security activity", () => {
     await expect(
       dialog.getByRole("heading", { name: "Actividad de seguridad" }),
     ).toBeVisible();
+    // the list is loaded after the heading appears: wait for it, so later checks do not race
+    await expect(entries(page).first()).toBeVisible();
     return dialog;
   }
 
