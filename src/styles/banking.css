@@ -166,7 +166,11 @@
   gap: 11px;
   margin-top: 23px;
 }
+.account-card {
+  position: relative;
+}
 .account-choice {
+  width: 100%;
   border: 1px solid #e6dfd6;
   border-radius: 6px;
   padding: 17px;
@@ -214,6 +218,21 @@
   font-size: 9px;
   color: #786347;
   margin-top: 5px;
+}
+.pocket-toggle {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  gap: 5px;
+  padding: 0 7px;
+  font-size: 10px;
+  color: #aa9983;
+}
+.pocket-toggle.active {
+  color: var(--brand);
+}
+.pocket-toggle.active svg {
+  fill: currentColor;
 }
 .bank-quick-actions {
   display: flex;
