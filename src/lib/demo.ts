@@ -69,6 +69,12 @@ export function getAccounts(segment: Segment): Account[] {
   ];
 }
 
+/** Pocket accounts first, in the order they were pinned; the rest keep their order. */
+export function pocketsFirst(accounts: Account[], pockets: string[]): Account[] {
+  const pinned = pockets.flatMap((id) => accounts.filter((account) => account.id === id));
+  return [...pinned, ...accounts.filter((account) => !pockets.includes(account.id))];
+}
+
 export function getTransactions(segment: Segment): Transaction[] {
   const day = (offset: number) => {
     const date = new Date();

@@ -19,6 +19,7 @@ import {
   ListFilter,
   LockKeyhole,
   LogOut,
+  Pin,
   Plus,
   Search,
   Send,
@@ -38,6 +39,7 @@ import {
   getTransactions,
   initialBeneficiaries,
   money,
+  pocketsFirst,
   shortDate,
   transactionDetail,
   transferReceipt,
@@ -733,6 +735,7 @@ export default function DemoBank({
   const [approvals, setApprovals] = useState<Transfer[]>([]);
   const [hidden, setHidden] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState("all");
+  const [pockets, setPockets] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [approvalId, setApprovalId] = useState<string | null>(null);
@@ -1070,33 +1073,58 @@ export default function DemoBank({
                     <p>Más claridad para lo que viene.</p>
                   </div>
                   <div className="account-grid">
-                    {accounts.map((account, index) => (
-                      <button
+                    {pocketsFirst(accounts, pockets).map((account) => (
+                      <motion.div
                         key={account.id}
-                        className={`account-choice ${selectedAccount === account.id ? "selected" : ""}`}
-                        aria-pressed={selectedAccount === account.id}
-                        onClick={() =>
-                          setSelectedAccount(
-                            selectedAccount === account.id ? "all" : account.id,
-                          )
-                        }
+                        layout
+                        className="account-card"
                       >
-                        <span className="account-choice-top">
-                          <span>
-                            {index === 0 ? (
-                              <Wallet size={18} />
-                            ) : (
-                              <Landmark size={18} />
-                            )}
-                            {account.name}
+                        <button
+                          className={`account-choice ${selectedAccount === account.id ? "selected" : ""}`}
+                          aria-pressed={selectedAccount === account.id}
+                          onClick={() =>
+                            setSelectedAccount(
+                              selectedAccount === account.id ? "all" : account.id,
+                            )
+                          }
+                        >
+                          <span className="account-choice-top">
+                            <span>
+                              {account.id === "daily" ? (
+                                <Wallet size={18} />
+                              ) : (
+                                <Landmark size={18} />
+                              )}
+                              {account.name}
+                            </span>
+                            <ChevronRight size={16} />
                           </span>
-                          <ChevronRight size={16} />
-                        </span>
-                        <strong>
-                          {hidden ? "••••••" : money(account.balance)}
-                        </strong>
-                        <small>Cuenta de prueba · {account.number}</small>
-                      </button>
+                          <strong>
+                            {hidden ? "••••••" : money(account.balance)}
+                          </strong>
+                          <small>Cuenta de prueba · {account.number}</small>
+                        </button>
+                        <button
+                          className={`icon-button pocket-toggle ${pockets.includes(account.id) ? "active" : ""}`}
+                          aria-pressed={pockets.includes(account.id)}
+                          aria-label={translateWith(
+                            "Fijar {name} como bolsillo",
+                            { name: translate(account.name) },
+                          )}
+                          onClick={() =>
+                            setPockets((current) =>
+                              current.includes(account.id)
+                                ? current.filter((id) => id !== account.id)
+                                : [...current, account.id],
+                            )
+                          }
+                        >
+                          <Pin size={14} />
+                          {pockets.includes(account.id) && (
+                            <span>Bolsillo</span>
+                          )}
+                        </button>
+                      </motion.div>
                     ))}
                   </div>
                   <div className="bank-quick-actions">
