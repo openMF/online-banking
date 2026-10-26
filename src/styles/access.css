@@ -66,7 +66,8 @@
   letter-spacing: 1.4px;
   margin-bottom: 10px;
 }
-.modal-heading h3 {
+.modal-heading h3,
+.customer-home .modal-heading h1 {
   font-size: 29px;
   letter-spacing: -1.2px;
   line-height: 1.2;
@@ -527,7 +528,8 @@ textarea {
   .access-content {
     padding: 38px 39px 29px;
   }
-  .access-content .modal-heading h3 {
+  .access-content .modal-heading h3,
+  .customer-home .modal-heading h1 {
     font-size: 31px;
   }
   .app-dialog-wide {
@@ -540,4 +542,19 @@ textarea {
     right: 25px;
     bottom: 25px;
   }
+}
+
+/* The authenticated boundary reuses the access screen's typography and spacing. */
+.customer-home {
+  max-width: 640px;
+  margin: 0 auto;
+  overflow-wrap: anywhere;
+}
+.customer-home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.customer-home h1:focus {
+  outline: none;
 }
