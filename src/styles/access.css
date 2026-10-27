@@ -558,3 +558,55 @@ textarea {
 .customer-home h1:focus {
   outline: none;
 }
+
+.savings-application {
+  margin-block: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.savings-application h2 {
+  font-size: 24px;
+  line-height: 1.25;
+  margin-bottom: 20px;
+}
+.savings-application h3 {
+  font-size: 20px;
+  margin-block: 16px;
+}
+.savings-application > .button,
+.savings-application > div > .button {
+  margin-top: 16px;
+}
+.savings-summary {
+  margin-block: 16px;
+  display: grid;
+  gap: 12px;
+}
+.savings-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.savings-summary dt {
+  color: var(--muted);
+}
+.savings-summary dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.form-stack > .savings-review {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+.savings-review input {
+  width: 20px;
+  min-height: 20px;
+  flex-shrink: 0;
+}
+.savings-application select {
+  width: 100%;
+  min-width: 0;
+}

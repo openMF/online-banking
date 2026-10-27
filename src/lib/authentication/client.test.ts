@@ -249,3 +249,97 @@ describe("customer authentication", () => {
     spies.forEach((spy) => expect(spy).not.toHaveBeenCalled());
   });
 });
+
+it("pins protected GET and POST requests to the login tenant and private credential", async () => {
+  const { client, transport } = fake();
+  const session = await client.login("user", "pass");
+  transport.mockResolvedValue(new Response(JSON.stringify({ productOptions: [] })));
+  await session.request("savingsaccounts/template", {
+    method: "GET",
+    query: { clientId: 81, productId: 15 },
+  });
+  expect(String(transport.mock.calls[1][0])).toBe(
+    `${config.baseUrl}/savingsaccounts/template?clientId=81&productId=15`,
+  );
+  expect(transport.mock.calls[1][1]).toMatchObject({
+    method: "GET",
+    headers: { Authorization: `Basic ${key}`, "Fineract-Platform-TenantId": config.tenantId },
+    credentials: "omit",
+    redirect: "error",
+    cache: "no-store",
+  });
+  expect(transport.mock.calls[1][1]?.body).toBeUndefined();
+  await session.request("savingsaccounts", {
+    method: "POST",
+    body: { clientId: 81, productId: 15 },
+  });
+  expect(transport.mock.calls[2][1]).toMatchObject({
+    method: "POST",
+    body: JSON.stringify({ clientId: 81, productId: 15 }),
+  });
+});
+
+it.each(["expiry", "logout", "401"])(
+  "invalidates the protected request capability after %s",
+  async (scenario) => {
+    let now = 100;
+    const { transport, configuration } = fake();
+    const session = await createAuthenticationClient({
+      transport,
+      configuration,
+      now: () => now,
+    }).login("user", "pass");
+    if (scenario === "expiry") now = session.expiresAt;
+    if (scenario === "logout") await session.logout();
+    if (scenario === "401") {
+      transport.mockResolvedValue(new Response("{}", { status: 401 }));
+      await session.request("savingsaccounts/template", { method: "GET" });
+    }
+    const count = transport.mock.calls.length;
+    await expect(
+      session.request("savingsaccounts", { method: "POST", body: {} }),
+    ).rejects.toMatchObject({ code: "expired" });
+    expect(transport.mock.calls.length).toBe(count);
+  },
+);
+
+it("bounds protected requests without retrying a timed-out POST", async () => {
+  vi.useFakeTimers();
+  const { transport, configuration } = fake();
+  const session = await createAuthenticationClient({
+    transport,
+    configuration,
+    timeoutMs: 50,
+  }).login("user", "pass");
+  transport.mockImplementation(
+    (_url, options) =>
+      new Promise((_resolve, reject) => {
+        options?.signal?.addEventListener("abort", () =>
+          reject(new Error("private transport details")),
+        );
+      }),
+  );
+  const assertion = expect(
+    session.request("savingsaccounts", { method: "POST", body: {} }),
+  ).rejects.toMatchObject({ code: "timeout", message: "timeout" });
+  await vi.advanceTimersByTimeAsync(50);
+  await assertion;
+  expect(transport).toHaveBeenCalledTimes(2);
+});
+
+it("cancels protected in-flight requests when logout discards the credential", async () => {
+  const { client, transport } = fake();
+  const session = await client.login("user", "pass");
+  transport.mockImplementationOnce(
+    (_url, options) =>
+      new Promise((_resolve, reject) => {
+        options?.signal?.addEventListener("abort", () => reject(new Error("cancelled")));
+      }),
+  );
+  const assertion = expect(
+    session.request("savingsaccounts/template", { method: "GET" }),
+  ).rejects.toMatchObject({ code: "cancelled" });
+  transport.mockResolvedValue(new Response(JSON.stringify({ status: "success" })));
+  await session.logout();
+  await assertion;
+});
