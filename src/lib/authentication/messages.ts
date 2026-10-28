@@ -10,6 +10,7 @@ export const authenticationMessages: Record<AuthenticationFailure, string> = {
     "Debes renovar tu contraseña por los canales oficiales de tu institución antes de continuar.",
   expired: "Tu sesión ha expirado. Inicia sesión de nuevo.",
   network: "No pudimos conectar con tu institución. Inténtalo de nuevo.",
+  offline: "Sin conexión a internet. Revisa tu conexión e inténtalo de nuevo.",
   server: "El servicio de acceso no está disponible. Inténtalo más tarde.",
   timeout: "Se agotó el tiempo de espera. Inténtalo de nuevo.",
   configuration: "El acceso a clientes no está configurado. La demostración sigue disponible.",

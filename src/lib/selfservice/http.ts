@@ -1,3 +1,12 @@
+import {
+  problemOfStatus,
+  trackRequest,
+  transientStatus,
+  withRetry,
+  type ProblemKind,
+  type RetryEnv,
+  type RetryPolicy,
+} from "../network";
 import { getSelfServiceConfig, selfUrl, type SelfServiceConfig } from "./config";
 import { authorizationHeader, getSession, type Session } from "./session";
 
@@ -6,6 +15,8 @@ export const STEP_UP_HEADER = "X-Step-Up-Token";
 
 const STEP_UP_CODE_PREFIX = "error.msg.selfservice.stepup.";
 const DEFAULT_TIMEOUT_MS = 30_000;
+/** A read is repeated when it fails in transit, so it gets less time per attempt. */
+const READ_TIMEOUT_MS = 15_000;
 
 /**
  * An error answered by the API (or a failure to reach it).
@@ -32,6 +43,18 @@ export class SelfServiceError extends Error {
     this.details = details;
   }
 
+  /**
+   * What kind of problem this is, in the terms every screen words the same way: a failure to reach
+   * the server (offline, timeout, other) or the kind of the HTTP status.
+   */
+  get problem(): ProblemKind {
+    if (this.status === 0) {
+      const reason = this.details.reason;
+      return reason === "offline" || reason === "timeout" ? reason : "network";
+    }
+    return problemOfStatus(this.status);
+  }
+
   /** The step-up error suffix (`required`, `otp.invalid`, `locked`, …) or `null`. */
   get stepUpCode(): string | null {
     return this.code.startsWith(STEP_UP_CODE_PREFIX)
@@ -50,11 +73,27 @@ export type RequestOptions = {
   stepUpToken?: string;
   signal?: AbortSignal;
   timeoutMs?: number;
+  /** Test seam: the retry policy and what it waits with. */
+  retry?: { policy?: Partial<RetryPolicy>; env?: Partial<RetryEnv> };
   /** Test seam. */
   fetchImpl?: typeof fetch;
   /** Test seam. */
   config?: SelfServiceConfig | null;
 };
+
+type Answer = { status: number; ok: boolean; text: string; retryAfter: string | null };
+
+/** The request did not get an answer. `reason` tells why, and whether trying again can help. */
+class TransportFailure extends Error {
+  constructor(readonly reason: "cancelled" | "timeout" | "offline" | "network") {
+    super(reason);
+    this.name = "TransportFailure";
+  }
+}
+
+function isOffline(): boolean {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
+}
 
 function parseBody(text: string): unknown {
   if (!text) return undefined;
@@ -105,28 +144,82 @@ export async function selfRequest<T>(path: string, options: RequestOptions = {})
   if (session) headers.Authorization = authorizationHeader(session);
   if (options.stepUpToken) headers[STEP_UP_HEADER] = options.stepUpToken;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-  options.signal?.addEventListener("abort", () => controller.abort(), { once: true });
+  const method = options.method ?? (options.body !== undefined ? "POST" : "GET");
+  // Only a read is repeated. A write that failed in transit may have run on the server.
+  const idempotent = method === "GET";
+  const timeoutMs = options.timeoutMs ?? (idempotent ? READ_TIMEOUT_MS : DEFAULT_TIMEOUT_MS);
 
-  let response: Response;
-  try {
-    response = await (options.fetchImpl ?? fetch)(url, {
-      method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
-      headers,
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      signal: controller.signal,
-      credentials: "omit",
-      cache: "no-store",
-    });
-  } catch {
-    // Do not leak URLs or headers through the message.
-    throw new SelfServiceError(0, "error.network", "The server could not be reached");
-  } finally {
-    clearTimeout(timer);
+  /** One try. A failure to reach the server is a {@link TransportFailure}, an answer is returned. */
+  async function attempt(): Promise<Answer> {
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+    const onAbort = () => controller.abort();
+    options.signal?.addEventListener("abort", onAbort, { once: true });
+    if (options.signal?.aborted) controller.abort();
+    try {
+      const response = await (options.fetchImpl ?? fetch)(url, {
+        method,
+        headers,
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
+        credentials: "omit",
+        cache: "no-store",
+      });
+      const text = await response.text().catch(() => "");
+      return {
+        status: response.status,
+        ok: response.ok,
+        text,
+        retryAfter: response.headers?.get("Retry-After") ?? null,
+      };
+    } catch {
+      throw new TransportFailure(
+        options.signal?.aborted
+          ? "cancelled"
+          : timedOut
+            ? "timeout"
+            : isOffline()
+              ? "offline"
+              : "network",
+      );
+    } finally {
+      clearTimeout(timer);
+      options.signal?.removeEventListener("abort", onAbort);
+    }
   }
 
-  const body = parseBody(await response.text().catch(() => ""));
-  if (!response.ok) throw toError(response.status, body);
+  let answer: Answer;
+  try {
+    answer = await trackRequest((handle) =>
+      withRetry(attempt, {
+        idempotent,
+        transientError: (error) =>
+          error instanceof TransportFailure && error.reason !== "cancelled",
+        transientResult: (result) => transientStatus(result.status, result.retryAfter),
+        signal: options.signal,
+        policy: options.retry?.policy,
+        env: options.retry?.env,
+        onRetry: () => handle.retrying(),
+      }),
+    );
+  } catch (error) {
+    if (error instanceof TransportFailure) {
+      // Do not leak URLs or headers through the message.
+      throw new SelfServiceError(0, "error.network", "The server could not be reached", {
+        reason: error.reason,
+      });
+    }
+    // The caller cancelled while waiting to try again.
+    throw new SelfServiceError(0, "error.network", "The server could not be reached", {
+      reason: "cancelled",
+    });
+  }
+
+  const body = parseBody(answer.text);
+  if (!answer.ok) throw toError(answer.status, body);
   return body as T;
 }

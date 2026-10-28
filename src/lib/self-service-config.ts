@@ -1,3 +1,10 @@
+import {
+  trackRequest,
+  transientStatus,
+  withRetry,
+  type RetryEnv,
+  type RetryPolicy,
+} from "./network";
 /** Public deployment settings only. Never add credentials or tokens here. */
 export interface SelfServiceConfig {
   readonly baseUrl: string;
@@ -10,9 +17,16 @@ export interface ConfigValidationOptions {
 }
 
 export class SelfServiceConfigError extends Error {
-  constructor(message: string) {
+  /**
+   * The configuration could not be reached (network, timeout, service restarting), as opposed to
+   * being wrong. Only this kind is worth asking for again.
+   */
+  readonly transient: boolean;
+
+  constructor(message: string, transient = false) {
     super(message);
     this.name = "SelfServiceConfigError";
+    this.transient = transient;
   }
 }
 
@@ -115,6 +129,8 @@ export function createSelfServiceConfigLoader(
   options: ConfigValidationOptions = {},
   fetcher: typeof fetch = fetch,
   pagePath = "/",
+  /** Test seam: the retry policy and what it waits with. */
+  retry?: { policy?: Partial<RetryPolicy>; env?: Partial<RetryEnv> },
 ): () => Promise<SelfServiceConfig> {
   let pending: Promise<SelfServiceConfig> | undefined;
   return () => {
@@ -128,20 +144,37 @@ export function createSelfServiceConfigLoader(
       }
       let response: Response;
       try {
-        response = await fetcher("/runtime-config.json", {
-          cache: "no-store",
-          credentials: "omit",
-          redirect: "error",
-          signal: AbortSignal.timeout(5000),
-        });
+        // A read: repeated when the network fails or the service is restarting.
+        response = await trackRequest((handle) =>
+          withRetry(
+            () =>
+              fetcher("/runtime-config.json", {
+                cache: "no-store",
+                credentials: "omit",
+                redirect: "error",
+                signal: AbortSignal.timeout(5000),
+              }),
+            {
+              idempotent: true,
+              transientError: () => true,
+              transientResult: (result) =>
+                transientStatus(result.status, result.headers.get("Retry-After")),
+              policy: retry?.policy,
+              env: retry?.env,
+              onRetry: () => handle.retrying(),
+            },
+          ),
+        );
       } catch {
         throw new SelfServiceConfigError(
           "Could not load /runtime-config.json. Check deployment configuration.",
+          true,
         );
       }
       if (!response.ok) {
         throw new SelfServiceConfigError(
           `Could not load /runtime-config.json (HTTP ${response.status}). Check SELF_SERVICE_BASE_URL and SELF_SERVICE_TENANT_ID.`,
+          response.status >= 500 || response.status === 408 || response.status === 429,
         );
       }
       let data: unknown;
@@ -153,7 +186,12 @@ export function createSelfServiceConfigLoader(
         );
       }
       return validateSelfServiceConfig(data, options);
-    })();
+    })().catch((error: unknown) => {
+      // A configuration that is wrong stays wrong, so its error is kept. One that could not be
+      // reached is forgotten: the next login asks again instead of failing until the page reloads.
+      if (error instanceof SelfServiceConfigError && error.transient) pending = undefined;
+      throw error;
+    });
     return pending;
   };
 }
