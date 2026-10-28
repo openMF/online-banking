@@ -42,11 +42,18 @@ export interface CustomerSession {
   logout(): Promise<boolean>;
 }
 
+export type CustomerMethod = "GET" | "POST" | "PUT" | "DELETE";
+
 export interface CustomerRequest {
-  method: "GET" | "POST";
+  method: CustomerMethod;
   body?: unknown;
   signal?: AbortSignal;
   query?: Record<string, string | number>;
+  /**
+   * The one-time token of a step-up verification, sent as `X-Step-Up-Token`. It is the only extra
+   * header a caller can set: `Authorization` and the tenant stay private to the session.
+   */
+  stepUpToken?: string;
 }
 export interface CustomerResponse {
   status: number;
@@ -113,8 +120,9 @@ export function createAuthenticationClient({
     body: unknown,
     key?: string,
     signal?: AbortSignal,
-    method: "GET" | "POST" = "POST",
+    method: CustomerMethod = "POST",
     query?: Record<string, string | number>,
+    stepUpToken?: string,
   ): Promise<{ status: number; ok: boolean; data: unknown }> {
     const controller = new AbortController();
     let timedOut = false;
@@ -137,6 +145,7 @@ export function createAuthenticationClient({
           Accept: "application/json",
           "Fineract-Platform-TenantId": config.tenantId,
           ...(key ? { Authorization: `Basic ${key}` } : {}),
+          ...(key && stepUpToken ? { "X-Step-Up-Token": stepUpToken } : {}),
         },
         body: body === undefined ? undefined : JSON.stringify(body),
         credentials: "omit",
@@ -225,6 +234,7 @@ export function createAuthenticationClient({
             options.signal ? AbortSignal.any([options.signal, lifetime.signal]) : lifetime.signal,
             options.method,
             options.query,
+            options.stepUpToken,
           );
           if (response.status === 401) {
             key = null;
