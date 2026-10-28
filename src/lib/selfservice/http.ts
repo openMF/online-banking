@@ -213,7 +213,9 @@ export async function selfRequest<T>(path: string, options: RequestOptions = {})
         credentials: "omit",
         cache: "no-store",
       });
-      const text = await response.text().catch(() => "");
+      // A body that is cut short, or a timeout or cancel that fires while it is read, is a failure
+      // to get the answer (the catch below says which), never an empty successful one.
+      const text = await response.text();
       return {
         status: response.status,
         ok: response.ok,

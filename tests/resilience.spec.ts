@@ -18,14 +18,38 @@ type Options = {
   loginStatus?: number;
   /** Statuses answered, in order, to runtime-config.json; then it works. */
   configSteps?: number[];
+  /** Milliseconds runtime-config.json takes. */
+  configDelayMs?: number;
   /** Requests fail as if there was no connection. */
   offline?: boolean;
 };
 
-type Seen = { templateReads: number; posts: number; logins: number; configs: number };
+type Seen = {
+  templateReads: number;
+  posts: number;
+  logins: number;
+  configs: number;
+  /** Template reads issued by the page, counted before any route runs: they include the ones that fail offline. */
+  templateAttempts: number;
+  /** While true, requests to the API fail as if there was no connection. */
+  offline: boolean;
+};
 
 async function configure(page: Page, options: Options = {}): Promise<Seen> {
-  const seen: Seen = { templateReads: 0, posts: 0, logins: 0, configs: 0 };
+  const seen: Seen = {
+    templateReads: 0,
+    posts: 0,
+    logins: 0,
+    configs: 0,
+    templateAttempts: 0,
+    offline: options.offline ?? false,
+  };
+  // Counted at the boundary of the page: a request that fails before any route runs still counts.
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (url.pathname.endsWith("/savingsaccounts/template") && !url.searchParams.has("productId"))
+      seen.templateAttempts += 1;
+  });
   const steps = [...(options.templateSteps ?? [])];
   const configSteps = [...(options.configSteps ?? [])];
   const fulfill = (
@@ -36,8 +60,10 @@ async function configure(page: Page, options: Options = {}): Promise<Seen> {
   ) =>
     route.fulfill({ status, contentType: "application/json", headers, body: JSON.stringify(data) });
 
-  await page.route("**/runtime-config.json", (route) => {
+  await page.route("**/runtime-config.json", async (route) => {
     seen.configs += 1;
+    if (options.configDelayMs)
+      await new Promise((resolve) => setTimeout(resolve, options.configDelayMs));
     const status = configSteps.shift();
     if (status) return fulfill(route, { developerMessage: "SECRET_INTERNAL_STACK" }, status);
     return fulfill(route, { baseUrl, tenantId: "mx490-synthetic" });
@@ -45,7 +71,7 @@ async function configure(page: Page, options: Options = {}): Promise<Seen> {
   await page.route(`${baseUrl}/**`, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (options.offline && !url.pathname.endsWith("/authentication"))
+    if (seen.offline && !url.pathname.endsWith("/authentication"))
       return route.abort("internetdisconnected");
     if (url.pathname.endsWith("/authentication/logout"))
       return fulfill(route, { status: "success" });
@@ -200,16 +226,23 @@ test.describe("loading, retry and offline", () => {
     page,
     context,
   }) => {
+    // Arrange: signed in, then the connection goes away
     const seen = await configure(page);
     await signIn(page);
+    seen.templateAttempts = 0;
+    seen.offline = true;
     await context.setOffline(true);
-    await configure(page, { offline: true });
 
+    // Act
     await openSavings(page);
 
+    // Assert: said at once; the counter works (at least one attempt), and nothing was repeated.
+    // The dev server runs effects twice (StrictMode), so up to two attempts are one read.
     await expect(page.getByRole("alert")).toContainText("Sin conexión a internet");
     await expect(status(page).getByText("Sin conexión a internet")).toBeVisible();
-    expect(seen.templateReads).toBe(0);
+    expect(seen.templateAttempts).toBeGreaterThanOrEqual(1);
+    expect(seen.templateAttempts).toBeLessThanOrEqual(2);
+    seen.offline = false;
     await context.setOffline(false);
     await expect(status(page)).toHaveText("");
   });
@@ -244,6 +277,26 @@ test.describe("loading, retry and offline", () => {
       page.getByRole("button", { name: "Solicitar una cuenta de ahorro", exact: true }),
     ).toBeVisible();
     expect(seen.configs).toBe(2);
+  });
+
+  test("inside the login dialog the indicator is the dialog's own, and the page's one steps aside", async ({
+    page,
+  }) => {
+    // the configuration is read as soon as the dialog opens, so look at once, not after a sign-in
+    await configure(page, { configSteps: [503], configDelayMs: 1500 });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Banca en línea", exact: true }).first().click();
+
+    const dialog = page.getByRole("dialog");
+    // the page was inert while the dialog was open: its indicator must not be the one in use
+    await expect(dialog.locator(".network-status-region.in-dialog")).toContainText(
+      "La conexión es lenta. Estamos reintentando…",
+    );
+    await expect(page.locator(".network-status-region:not(.in-dialog)")).toBeHidden();
+    // and it clears when the read is done
+    await expect(dialog.locator(".network-status-region.in-dialog")).toHaveText("", {
+      timeout: 15_000,
+    });
   });
 
   test("has no accessibility violations while it is loading, and fits a phone", async ({

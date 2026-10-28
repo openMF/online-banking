@@ -107,6 +107,8 @@ export function toStepUpError(error: unknown): StepUpError {
     }
     // A service that is down or restarting (502, 503, 504) answers without a step-up code.
     if (error.problem === "unavailable") return new StepUpError("unavailable");
+    // HTTP 408 (the server gave up waiting) reads as a timeout, like a request that ran out of time.
+    if (error.problem === "timeout") return new StepUpError("timeout");
   }
   return new StepUpError("unknown");
 }

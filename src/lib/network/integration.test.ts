@@ -149,6 +149,100 @@ describe("selfRequest: reads are repeated", () => {
   });
 });
 
+describe("selfRequest: a body that is not read to the end", () => {
+  /** A response whose headers arrived but whose body fails to be read. */
+  const brokenBody = () =>
+    ({
+      status: 200,
+      ok: true,
+      headers: new Headers(),
+      text: () => Promise.reject(new TypeError("body stream failed")),
+    }) as unknown as Response;
+
+  it("is never a successful empty answer: the read is repeated, then reported as a failure", async () => {
+    const fetchImpl = vi.fn(async () => brokenBody()) as unknown as typeof fetch;
+
+    const error = await failure(read(fetchImpl));
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(error.code).toBe("error.network");
+    expect(error.problem).toBe("network");
+  });
+
+  it("a read whose body fails once is repeated and returns the good answer", async () => {
+    const fetchImpl = scripted(brokenBody, json({ ok: true }));
+    await expect(read(fetchImpl)).resolves.toEqual({ ok: true });
+  });
+
+  it("a timeout that fires while the body is read is a timeout, and the read is repeated", async () => {
+    vi.useFakeTimers();
+    try {
+      let calls = 0;
+      const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+        calls += 1;
+        if (calls > 1) return json({ ok: true });
+        return {
+          status: 200,
+          ok: true,
+          headers: new Headers(),
+          // the headers arrived; the body never does, until the time runs out
+          text: () =>
+            new Promise<string>((_resolve, reject) => {
+              init?.signal?.addEventListener("abort", () =>
+                reject(new DOMException("x", "AbortError")),
+              );
+            }),
+        } as unknown as Response;
+      }) as unknown as typeof fetch;
+
+      const result = read(fetchImpl);
+      await vi.advanceTimersByTimeAsync(15_001);
+
+      await expect(result).resolves.toEqual({ ok: true });
+      expect(calls).toBe(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a write whose body is cut is reported, never repeated and never an empty success", async () => {
+    const fetchImpl = vi.fn(async () => brokenBody()) as unknown as typeof fetch;
+    const error = await failure(
+      selfRequest("/x", {
+        method: "POST",
+        body: {},
+        fetchImpl,
+        config,
+        session,
+        retry: { env: noWait },
+      }),
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(error.code).toBe("error.network");
+  });
+
+  it("a read cancelled while its body is read is a cancelled request", async () => {
+    const controller = new AbortController();
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => ({
+      status: 200,
+      ok: true,
+      headers: new Headers(),
+      text: () =>
+        new Promise<string>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("x", "AbortError")),
+          );
+          controller.abort();
+        }),
+    })) as unknown as typeof fetch;
+
+    const error = await failure(read(fetchImpl, { signal: controller.signal }));
+
+    expect(error.details.reason).toBe("cancelled");
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("selfRequest: writes are never repeated", () => {
   it.each(["POST", "PUT", "DELETE"] as const)(
     "%s that failed in transit is sent once",

@@ -278,6 +278,8 @@ describe("password change", () => {
     expect(toPasswordError(new SelfServiceError(503, "error.http.503", "x")).code).toBe(
       "unavailable",
     );
+    // HTTP 408 is a timeout as well
+    expect(toPasswordError(new SelfServiceError(408, "error.http.408", "x")).code).toBe("timeout");
     expect(toPasswordError(new SelfServiceError(500, "error.http.500", "x")).code).toBe("unknown");
   });
 

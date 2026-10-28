@@ -13,7 +13,7 @@ const SHOW_AFTER_MS = 400;
  * `role="status"` on purpose: it is always on the page, and the screens that have a status of their
  * own (a toast, a notice) must stay the only ones with that role.
  */
-export function NetworkStatus() {
+export function NetworkStatus({ inDialog = false }: { inDialog?: boolean }) {
   const { t } = useI18n();
   const state = useSyncExternalStore(subscribeNetwork, networkSnapshot, networkSnapshot);
   const busy = state.pending > 0;
@@ -35,7 +35,11 @@ export function NetworkStatus() {
   else if (busy && slow) kind = "loading";
 
   return (
-    <div className="network-status-region" aria-live="polite" aria-atomic="true">
+    <div
+      className={`network-status-region${inDialog ? " in-dialog" : ""}`}
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {kind && (
         <p className={`network-status ${kind}`} data-kind={kind}>
           {kind === "offline" ? (

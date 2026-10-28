@@ -638,3 +638,7 @@ textarea {
 .network-status.offline {
   background: #7a1b21;
 }
+/* While a modal dialog is open the indicator of the dialog is the one to show and announce. */
+body:has(dialog[open]) .network-status-region:not(.in-dialog) {
+  display: none;
+}

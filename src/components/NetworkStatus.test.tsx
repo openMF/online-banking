@@ -47,6 +47,17 @@ describe("NetworkStatus", () => {
     expect(region.textContent).toBe("");
   });
 
+  it("marks the indicator of a modal dialog, so the page one can step aside while it is open", () => {
+    const { container } = render(
+      <I18nProvider>
+        <NetworkStatus inDialog />
+      </I18nProvider>,
+    );
+    const region = container.querySelector(".network-status-region");
+    expect(region?.classList.contains("in-dialog")).toBe(true);
+    expect(region?.getAttribute("aria-live")).toBe("polite");
+  });
+
   it("does not flicker for a quick request", async () => {
     const region = show();
     const request = openRequest();

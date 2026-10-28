@@ -44,6 +44,8 @@ export function toPasswordError(error: unknown): PasswordError {
       );
     }
     if (error.problem === "unavailable") return new PasswordError("unavailable");
+    // HTTP 408 (the server gave up waiting) reads as a timeout, like a request that ran out of time.
+    if (error.problem === "timeout") return new PasswordError("timeout");
     const stepUp = error.stepUpCode;
     if (stepUp === "required" || stepUp === "invalid") return new PasswordError("stepup");
     if (stepUp === "session.required" || error.status === 401) return new PasswordError("session");

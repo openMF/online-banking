@@ -67,6 +67,8 @@ describe("toStepUpError", () => {
         "unavailable",
       );
     }
+    // HTTP 408 (the server gave up waiting) is a timeout too, whatever the code of the body
+    expect(toStepUpError(new SelfServiceError(408, "error.http.408", "x")).code).toBe("timeout");
     // a plain 500 and a 404 stay unknown: nothing the user can do differently
     expect(toStepUpError(new SelfServiceError(500, "error.http.500", "x")).code).toBe("unknown");
   });
