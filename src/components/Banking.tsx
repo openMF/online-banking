@@ -53,6 +53,7 @@ import {
 import { ActivityFeed } from "./ActivityFeed";
 import { AuthenticatorSection } from "./AuthenticatorSection";
 import { recordDemoActivity, resetDemoActivity } from "../lib/activity";
+import { resetDemoAuthenticator } from "../lib/authenticator";
 import {
   canCompleteTransferLocally,
   resetDemoStepUpApi,
@@ -749,8 +750,16 @@ export default function DemoBank({
   const onTimeoutRef = useRef(onTimeout);
   onTimeoutRef.current = onTimeout;
 
-  // Ending the demo session also forgets the demo step-up state (attempts, lock-out).
-  useEffect(() => resetDemoStepUpApi, []);
+  // Ending the demo session also forgets the demo step-up state (attempts, lock-out) and the demo
+  // authenticator. Both together: the step-up keeps a reference to the authenticator it was built
+  // with, so clearing only one would leave the two out of step.
+  useEffect(
+    () => () => {
+      resetDemoStepUpApi();
+      resetDemoAuthenticator();
+    },
+    [],
+  );
 
   // Signing in to the demo is the first entry of this session's demo activity history; ending the
   // session forgets it (the next one starts again with the older demo history).

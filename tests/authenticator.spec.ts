@@ -195,6 +195,21 @@ test.describe("authenticator app", () => {
     await expect(transfer.getByLabel("Código de verificación demo")).toBeVisible();
   });
 
+  test("ending the demo session forgets the authenticator, like the history", async ({ page }) => {
+    await openDemo(page);
+    const { dialog } = await pair(page);
+    await dialog.getByRole("button", { name: "Cerrar sesión demo" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await openDemo(page);
+    const again = await openSecurity(page);
+
+    await expect(again.getByText("No has vinculado una app de autenticación.")).toBeVisible();
+    // and the verification is the e-mail code again
+    const transfer = await reachTransferVerification(page, "Nueva sesión");
+    await expect(transfer.getByLabel("Código de verificación demo")).toBeVisible();
+  });
+
   test("cancelling a pairing leaves nothing behind", async ({ page }) => {
     await openDemo(page);
     const dialog = await openSecurity(page);
