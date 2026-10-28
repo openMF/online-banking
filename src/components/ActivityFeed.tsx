@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Smartphone,
+  SmartphoneNfc,
   TriangleAlert,
   UserMinus,
   UserPlus,
@@ -48,6 +49,12 @@ const ICONS: Record<ActivityType, Icon> = {
   STEP_UP_REQUESTED: LockKeyhole,
   STEP_UP_VERIFIED: ShieldCheck,
   STEP_UP_LOCKED: ShieldAlert,
+  AUTHENTICATOR_ENROLLED: SmartphoneNfc,
+  AUTHENTICATOR_REMOVED: SmartphoneNfc,
+  AUTHENTICATOR_RESET: SmartphoneNfc,
+  AUTHENTICATOR_LOCKED: ShieldAlert,
+  RECOVERY_CODES_REGENERATED: KeyRound,
+  RECOVERY_CODE_USED: KeyRound,
 };
 
 /** The chips of the filter, in order. The label is a Spanish source string (catalog key). */

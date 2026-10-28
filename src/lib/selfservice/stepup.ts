@@ -5,8 +5,14 @@
 
 import { selfRequest, type RequestOptions } from "./http";
 
-export type StepUpAction = "TPT_TRANSFER" | "OWN_TRANSFER" | "CONFIRM_TRANSFER" | "CHANGE_PASSWORD";
-export type StepUpChannel = "SMS" | "EMAIL";
+export type StepUpAction =
+  | "TPT_TRANSFER"
+  | "OWN_TRANSFER"
+  | "CONFIRM_TRANSFER"
+  | "CHANGE_PASSWORD"
+  | "MANAGE_AUTHENTICATOR";
+/** `TOTP` is the code of the user's authenticator app: nothing is sent to anyone. */
+export type StepUpChannel = "SMS" | "EMAIL" | "TOTP";
 
 export type StepUpConfig = {
   enabled: boolean;
@@ -27,8 +33,8 @@ export type StepUpChallenge = {
   challengeId: number;
   action: StepUpAction;
   channel: StepUpChannel;
-  /** e.g. `a***@example.com` or `******0324`. The full address is never sent. */
-  maskedDestination: string;
+  /** e.g. `a***@example.com` or `******0324`; `null` for `TOTP`. The full address is never sent. */
+  maskedDestination: string | null;
   /** Tenant local date-time without zone. Use durations from the config for countdowns. */
   expiresAt: string;
   attemptsRemaining: number;
@@ -71,17 +77,23 @@ export function createStepUpChallenge(
   });
 }
 
+/**
+ * Verifies a challenge. `code` is the one-time code (the 6 digits of an authenticator app, or the
+ * code received by SMS or e-mail); with `kind: "recovery"` it is a recovery code instead, which
+ * the server only accepts on a challenge of the authenticator app.
+ */
 export function verifyStepUpChallenge(
   challengeId: number,
-  otp: string,
-  options: Options = {},
+  code: string,
+  options: Options & { kind?: "otp" | "recovery" } = {},
 ): Promise<StepUpGrant> {
+  const { kind = "otp", ...rest } = options;
   return selfRequest<StepUpGrant>(
     `/stepup/challenges/${encodeURIComponent(String(challengeId))}/verify`,
     {
-      ...options,
+      ...rest,
       method: "POST",
-      body: { otp },
+      body: kind === "recovery" ? { recoveryCode: code } : { otp: code },
     },
   );
 }

@@ -31,3 +31,14 @@ export {
   type StepUpConfig,
   type StepUpGrant,
 } from "./stepup";
+export {
+  beginTotpEnrollment,
+  confirmTotpEnrollment,
+  getTotpStatus,
+  regenerateRecoveryCodes,
+  removeTotp,
+  type TotpEnrollment,
+  type TotpRecoveryCodes,
+  type TotpState,
+  type TotpStatus,
+} from "./totp";

@@ -1,5 +1,14 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Check, Info, Mail, MessageSquareText, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Info,
+  KeyRound,
+  Mail,
+  MessageSquareText,
+  RotateCcw,
+  SmartphoneNfc,
+} from "lucide-react";
 import { LocalizedTree, translateWith } from "../i18n";
 import {
   useStepUpChallenge,
@@ -20,6 +29,8 @@ type Props = {
   /** The server does not require step-up for this action: carry on without a token. */
   onNotRequired?: () => void;
   onBack: () => void;
+  /** Text of the back button (a Spanish source string). Defaults to going back to the summary. */
+  backLabel?: string;
 };
 
 function clock(seconds: number): string {
@@ -37,15 +48,19 @@ const MESSAGES: Partial<Record<StepUpErrorCode, string>> = {
   "channel.unavailable":
     "No hay un medio disponible para enviarte el código. Contacta a tu institución.",
   "session.required": "Tu sesión no permite esta verificación. Inicia sesión de nuevo.",
+  "totp.not.enrolled":
+    "Tu app de autenticación ya no está activa. Inicia la verificación de nuevo.",
   network: "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
 };
 
 function errorMessage(
   code: StepUpErrorCode | "format",
-  values: { length: number; minutes: number | null },
+  values: { length: number; minutes: number | null; recovery?: boolean },
 ): string {
   if (code === "format") {
-    return translateWith("Escribe los {length} dígitos del código.", { length: values.length });
+    return values.recovery
+      ? translateWith("Escribe los 10 caracteres de tu código de recuperación.", {})
+      : translateWith("Escribe los {length} dígitos del código.", { length: values.length });
   }
   if (code === "locked") {
     return values.minutes
@@ -73,13 +88,17 @@ export function StepUpPanel({
   onVerified,
   onNotRequired,
   onBack,
+  backLabel = "Volver al resumen",
 }: Props) {
   const state = useStepUpChallenge({ api, action, payload, onVerified, onNotRequired });
-  const { phase, config, challenge, errorCode } = state;
+  const { phase, challenge, errorCode } = state;
   const [otp, setOtp] = useState("");
+  // The authenticator app (TOTP): the user types the code of the app, or one of the recovery codes.
+  const [recovery, setRecovery] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const ids = { code: useId(), info: useId(), attempts: useId(), error: useId() };
-  const otpLength = config?.otpLength ?? 6;
+  const otpLength = state.codeLength;
+  const isApp = challenge?.channel === "TOTP";
   const minutes = state.retryAfterSeconds
     ? Math.max(1, Math.ceil(state.retryAfterSeconds / 60))
     : null;
@@ -95,17 +114,24 @@ export function StepUpPanel({
   // A new code (resend / restart) clears what was typed.
   useEffect(() => {
     setOtp("");
+    setRecovery(false);
   }, [state.codeVersion]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    state.submit(otp);
+    state.submit(otp, recovery ? "recovery" : "otp");
+  }
+
+  function switchKind() {
+    setRecovery((value) => !value);
+    setOtp("");
+    input.current?.focus();
   }
 
   const back = (
     <button type="button" className="back-link centered" onClick={onBack}>
       <ArrowLeft size={15} />
-      Volver al resumen
+      {backLabel}
     </button>
   );
 
@@ -129,6 +155,7 @@ export function StepUpPanel({
     const labels: Record<StepUpChannel, { text: string; icon: typeof Mail }> = {
       SMS: { text: "Recibir por mensaje de texto (SMS)", icon: MessageSquareText },
       EMAIL: { text: "Recibir por correo electrónico", icon: Mail },
+      TOTP: { text: "Usar mi app de autenticación", icon: SmartphoneNfc },
     };
     return (
       <LocalizedTree>
@@ -180,8 +207,16 @@ export function StepUpPanel({
   // phase === "code" | "verifying"
   const busy = phase === "verifying";
   const destination = challenge?.maskedDestination ?? "";
-  const sentMessage =
-    challenge?.channel === "SMS"
+  const sentMessage = isApp
+    ? recovery
+      ? translateWith(
+          "Escribe uno de los códigos de recuperación que guardaste. Cada código sirve una sola vez.",
+          {},
+        )
+      : translateWith("Abre tu app de autenticación y escribe el código de {length} dígitos.", {
+          length: otpLength,
+        })
+    : challenge?.channel === "SMS"
       ? translateWith("Enviamos un código de {length} dígitos por SMS a {destination}.", {
           length: otpLength,
           destination,
@@ -190,6 +225,18 @@ export function StepUpPanel({
           length: otpLength,
           destination,
         });
+  const codeLabel = recovery
+    ? "Código de recuperación"
+    : isApp
+      ? "Código de tu app de autenticación"
+      : api.mode === "demo"
+        ? "Código de verificación demo"
+        : "Código de verificación";
+  const demoHint = isApp ? (recovery ? undefined : api.demoAppHint) : api.demoHint;
+  const timeLeft = translateWith(
+    isApp ? "Tienes {time} para escribir el código." : "El código vence en {time}.",
+    { time: clock(state.expiresIn) },
+  );
   const attempts = state.attemptsRemaining;
   const attemptsMessage =
     attempts === null
@@ -207,44 +254,55 @@ export function StepUpPanel({
         <p id={ids.info} className="stepup-info">
           {sentMessage}
         </p>
-        <label htmlFor={ids.code}>
-          {api.mode === "demo" ? "Código de verificación demo" : "Código de verificación"}
-        </label>
+        <label htmlFor={ids.code}>{codeLabel}</label>
         <input
           id={ids.code}
           ref={input}
           className="otp-input"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          pattern={`[0-9]{${otpLength}}`}
-          maxLength={otpLength}
+          {...(recovery
+            ? {
+                inputMode: "text" as const,
+                autoComplete: "off",
+                autoCapitalize: "characters",
+                spellCheck: false,
+                maxLength: 12,
+                placeholder: "ABCDE-FGHJK",
+              }
+            : {
+                inputMode: "numeric" as const,
+                autoComplete: "one-time-code",
+                pattern: `[0-9]{${otpLength}}`,
+                maxLength: otpLength,
+                placeholder: "0".repeat(otpLength),
+              })}
           required
           disabled={busy}
           value={otp}
           aria-invalid={errorCode === "otp.invalid" || errorCode === "format" ? true : undefined}
           aria-describedby={describedBy}
-          onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-          placeholder={"0".repeat(otpLength)}
+          onChange={(event) =>
+            setOtp(
+              recovery
+                ? event.target.value.replace(/[^A-Za-z0-9\s-]/g, "")
+                : event.target.value.replace(/\D/g, ""),
+            )
+          }
         />
-        {api.demoHint && (
+        {demoHint && (
           <p className="demo-code">
             <Info size={15} />
-            Tu código de prueba es <strong>{api.demoHint}</strong>
+            Tu código de prueba es <strong>{demoHint}</strong>
           </p>
         )}
         <p id={ids.attempts} className="stepup-meta" aria-live="polite">
           {attemptsMessage}
         </p>
-        <p
-          className="stepup-meta"
-          role="timer"
-          aria-label={translateWith("El código vence en {time}.", { time: clock(state.expiresIn) })}
-        >
-          {translateWith("El código vence en {time}.", { time: clock(state.expiresIn) })}
+        <p className="stepup-meta" role="timer" aria-label={timeLeft}>
+          {timeLeft}
         </p>
         {errorCode && (
           <p id={ids.error} className="form-error" role="alert">
-            {errorMessage(errorCode, { length: otpLength, minutes })}
+            {errorMessage(errorCode, { length: otpLength, minutes, recovery })}
           </p>
         )}
         {state.notice === "resent" && !errorCode && (
@@ -256,17 +314,33 @@ export function StepUpPanel({
           {submitLabel}
           <Check size={17} />
         </button>
-        <button
-          type="button"
-          className="subtle-link stepup-resend"
-          onClick={state.resend}
-          disabled={busy || !state.canResend}
-        >
-          <RotateCcw size={14} />
-          {state.resendCooldownLeft > 0
-            ? translateWith("Reenviar código en {seconds} s", { seconds: state.resendCooldownLeft })
-            : translateWith("Reenviar código", {})}
-        </button>
+        {isApp ? (
+          // Nothing is sent to an authenticator app, so there is nothing to resend: the way out
+          // when the phone is lost is a recovery code.
+          <button
+            type="button"
+            className="subtle-link stepup-resend"
+            onClick={switchKind}
+            disabled={busy}
+          >
+            <KeyRound size={14} />
+            {recovery ? "Usar el código de mi app" : "Usar un código de recuperación"}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="subtle-link stepup-resend"
+            onClick={state.resend}
+            disabled={busy || !state.canResend}
+          >
+            <RotateCcw size={14} />
+            {state.resendCooldownLeft > 0
+              ? translateWith("Reenviar código en {seconds} s", {
+                  seconds: state.resendCooldownLeft,
+                })
+              : translateWith("Reenviar código", {})}
+          </button>
+        )}
         {back}
       </form>
     </LocalizedTree>

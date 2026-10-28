@@ -1,3 +1,4 @@
+import type { DemoAuthenticatorStore } from "../authenticator/demoAuthenticatorApi";
 import {
   StepUpError,
   type CreateChallengeInput,
@@ -25,6 +26,11 @@ export type DemoStepUpOptions = {
   lockoutSeconds?: number;
   /** Test seam: milliseconds clock. */
   now?: () => number;
+  /**
+   * The demo authenticator app. While it is active the verification asks for its code (or a
+   * recovery code) instead of the e-mail code, like the real service does by default.
+   */
+  authenticator?: DemoAuthenticatorStore;
   /** Called when a code is requested, verified or the challenge gets locked. */
   onEvent?: (event: "ISSUED" | "VERIFIED" | "LOCKED", action: CreateChallengeInput["action"]) => void;
 };
@@ -57,7 +63,13 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
 
   const config: StepUpConfig = {
     enabled: true,
-    protectedActions: ["TPT_TRANSFER", "OWN_TRANSFER", "CONFIRM_TRANSFER", "CHANGE_PASSWORD"],
+    protectedActions: [
+      "TPT_TRANSFER",
+      "OWN_TRANSFER",
+      "CONFIRM_TRANSFER",
+      "CHANGE_PASSWORD",
+      "MANAGE_AUTHENTICATOR",
+    ],
     availableChannels: ["EMAIL"],
     otpLength: code.length,
     otpTtlSeconds: ttl,
@@ -68,6 +80,12 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
     sessionBound: true,
   };
 
+  /** With an active authenticator only the app is offered (SIM-swap protection), like the server. */
+  function currentConfig(): StepUpConfig {
+    const app = options.authenticator?.isActive() ?? false;
+    return { ...config, availableChannels: app ? ["TOTP"] : ["EMAIL"] };
+  }
+
   const challenges = new Map<number, DemoChallenge>();
   let sequence = 0;
 
@@ -76,11 +94,12 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
       challengeId: id,
       action: challenge.action,
       channel: challenge.channel,
-      maskedDestination: DEMO_DESTINATION,
+      maskedDestination: challenge.channel === "TOTP" ? null : DEMO_DESTINATION,
       expiresAt: isoLocal(challenge.expiresAt),
       attemptsRemaining: Math.max(0, maxAttempts - challenge.attempts),
       resendAvailableAt: isoLocal(challenge.lastSentAt + cooldown * 1000),
-      resendsRemaining: Math.max(0, maxResends - challenge.resends),
+      resendsRemaining:
+        challenge.channel === "TOTP" ? 0 : Math.max(0, maxResends - challenge.resends),
     };
   }
 
@@ -97,15 +116,18 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
   return {
     mode: "demo",
     demoHint: code,
+    demoAppHint: options.authenticator?.appCode,
 
     async getConfig() {
-      return config;
+      return currentConfig();
     },
 
     async createChallenge(input) {
-      if (!config.availableChannels.includes(input.channel)) {
+      if (!currentConfig().availableChannels.includes(input.channel)) {
         throw new StepUpError("channel.unavailable");
       }
+      const appLock = input.channel === "TOTP" ? (options.authenticator?.lockedSeconds() ?? 0) : 0;
+      if (appLock > 0) throw new StepUpError("locked", { retryAfterSeconds: appLock });
       for (const challenge of challenges.values()) {
         if (challenge.lockedUntil && challenge.lockedUntil > now()) {
           throw new StepUpError("locked", {
@@ -130,7 +152,7 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
       return view(sequence, challenge);
     },
 
-    async verify(challengeId, otp): Promise<StepUpGrant> {
+    async verify(challengeId, otp, kind = "otp"): Promise<StepUpGrant> {
       const challenge = open(challengeId);
       if (challenge.lockedUntil && challenge.lockedUntil > now()) {
         throw new StepUpError("locked", { retryAfterSeconds: secondsUntil(challenge.lockedUntil) });
@@ -139,7 +161,21 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
         challenge.done = true;
         throw new StepUpError("otp.expired");
       }
-      if (otp !== code) {
+      let correct: boolean;
+      if (challenge.channel === "TOTP" && options.authenticator) {
+        const app = options.authenticator;
+        if (app.lockedSeconds() > 0) {
+          throw new StepUpError("locked", { retryAfterSeconds: app.lockedSeconds() });
+        }
+        correct = kind === "recovery" ? app.useRecoveryCode(otp) : app.checkAppCode(otp) === "ok";
+        if (!correct && app.lockedSeconds() > 0) {
+          throw new StepUpError("locked", { retryAfterSeconds: app.lockedSeconds() });
+        }
+      } else {
+        // a recovery code is only for the app, like on the server
+        correct = kind === "otp" && otp === code;
+      }
+      if (!correct) {
         challenge.attempts += 1;
         if (challenge.attempts >= maxAttempts) {
           challenge.lockedUntil = now() + lockout * 1000;
@@ -162,6 +198,7 @@ export function createDemoStepUpApi(options: DemoStepUpOptions = {}): StepUpApi 
 
     async resend(challengeId) {
       const challenge = open(challengeId);
+      if (challenge.channel === "TOTP") throw new StepUpError("resend.unsupported");
       if (now() >= challenge.expiresAt) {
         challenge.done = true;
         throw new StepUpError("otp.expired");

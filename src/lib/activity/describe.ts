@@ -12,8 +12,18 @@ export const ACTIVITY_GROUPS: Record<ActivityGroup, readonly ActivityType[]> = {
     "PROFILE_IMAGE_CHANGED",
     "PROFILE_IMAGE_REMOVED",
     "SINPE_SUBSCRIPTION_CHANGED",
+    "AUTHENTICATOR_ENROLLED",
+    "AUTHENTICATOR_REMOVED",
+    "AUTHENTICATOR_RESET",
+    "RECOVERY_CODES_REGENERATED",
   ],
-  verification: ["STEP_UP_REQUESTED", "STEP_UP_VERIFIED", "STEP_UP_LOCKED"],
+  verification: [
+    "STEP_UP_REQUESTED",
+    "STEP_UP_VERIFIED",
+    "STEP_UP_LOCKED",
+    "AUTHENTICATOR_LOCKED",
+    "RECOVERY_CODE_USED",
+  ],
 };
 
 export function groupOf(type: ActivityType): ActivityGroup {
@@ -32,6 +42,7 @@ const ACTION_NAMES: Record<string, string> = {
   OWN_TRANSFER: "Transferencia entre cuentas",
   CONFIRM_TRANSFER: "Confirmación de transferencia",
   CHANGE_PASSWORD: "Cambio de contraseña",
+  MANAGE_AUTHENTICATOR: "Cambio de la app de autenticación",
 };
 
 const PLAIN_TITLES: Partial<Record<ActivityType, string>> = {
@@ -47,6 +58,12 @@ const PLAIN_TITLES: Partial<Record<ActivityType, string>> = {
   STEP_UP_REQUESTED: "Solicitaste un código de verificación",
   STEP_UP_VERIFIED: "Verificaste un código",
   STEP_UP_LOCKED: "Verificación bloqueada por demasiados intentos",
+  AUTHENTICATOR_ENROLLED: "Vinculaste una app de autenticación",
+  AUTHENTICATOR_REMOVED: "Quitaste tu app de autenticación",
+  AUTHENTICATOR_RESET: "Tu institución quitó tu app de autenticación",
+  AUTHENTICATOR_LOCKED: "App de autenticación bloqueada por demasiados intentos",
+  RECOVERY_CODES_REGENERATED: "Generaste códigos de recuperación nuevos",
+  RECOVERY_CODE_USED: "Usaste un código de recuperación",
 };
 
 const TRANSFER_TITLES = {
@@ -144,6 +161,10 @@ export function describeActivity(item: ActivityItem, locale: Locale): ActivityDe
     warning:
       item.outcome === "FAILURE" ||
       item.type === "LOGIN_NEW_DEVICE" ||
-      item.type === "STEP_UP_LOCKED",
+      item.type === "STEP_UP_LOCKED" ||
+      item.type === "AUTHENTICATOR_LOCKED" ||
+      // done by someone else, or a way in that is meant for emergencies: worth a second look
+      item.type === "AUTHENTICATOR_RESET" ||
+      item.type === "RECOVERY_CODE_USED",
   };
 }

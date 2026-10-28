@@ -51,7 +51,9 @@ import {
   type Transfer,
 } from "../lib/demo";
 import { ActivityFeed } from "./ActivityFeed";
+import { AuthenticatorSection } from "./AuthenticatorSection";
 import { recordDemoActivity, resetDemoActivity } from "../lib/activity";
+import { resetDemoAuthenticator } from "../lib/authenticator";
 import {
   canCompleteTransferLocally,
   resetDemoStepUpApi,
@@ -726,6 +728,8 @@ export default function DemoBank({
 }) {
   const { locale } = useI18n();
   const [view, setView] = useState<BankView>(initialView);
+  // Changes the key of the history, so it is read again after the authenticator changed.
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [accounts, setAccounts] = useState(() => getAccounts(segment));
   const [transactions, setTransactions] = useState(() =>
     getTransactions(segment),
@@ -746,8 +750,16 @@ export default function DemoBank({
   const onTimeoutRef = useRef(onTimeout);
   onTimeoutRef.current = onTimeout;
 
-  // Ending the demo session also forgets the demo step-up state (attempts, lock-out).
-  useEffect(() => resetDemoStepUpApi, []);
+  // Ending the demo session also forgets the demo step-up state (attempts, lock-out) and the demo
+  // authenticator. Both together: the step-up keeps a reference to the authenticator it was built
+  // with, so clearing only one would leave the two out of step.
+  useEffect(
+    () => () => {
+      resetDemoStepUpApi();
+      resetDemoAuthenticator();
+    },
+    [],
+  );
 
   // Signing in to the demo is the first entry of this session's demo activity history; ending the
   // session forgets it (the next one starts again with the older demo history).
@@ -1252,7 +1264,15 @@ export default function DemoBank({
                   onChange={changeBeneficiaries}
                 />
               )}
-              {view === "security" && <ActivityFeed />}
+              {view === "security" && (
+                <div className="security-view">
+                  <AuthenticatorSection
+                    onChanged={() => setHistoryVersion((version) => version + 1)}
+                  />
+                  {/* a new key reads the history again: pairing or removing shows up at once */}
+                  <ActivityFeed key={historyVersion} />
+                </div>
+              )}
               {view === "approvals" && (
                 <div className="approvals-panel">
                   <div className="demo-notice">
