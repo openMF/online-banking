@@ -746,6 +746,17 @@
     "Te queda {count} código de recuperación.": "You have {count} recovery code left.",
     "Te quedan {count} códigos de recuperación.": "You have {count} recovery codes left.",
     "Generar códigos de recuperación nuevos": "Generate new recovery codes",
-    "Quitar la app de autenticación": "Remove the authenticator app"
+    "Quitar la app de autenticación": "Remove the authenticator app",
+    "Sin conexión a internet. Revisa tu conexión e inténtalo de nuevo.": "No internet connection. Check your connection and try again.",
+    "El servidor tardó demasiado en responder. Inténtalo de nuevo.": "The server took too long to answer. Try again.",
+    "Tu sesión terminó. Inicia sesión de nuevo.": "Your session ended. Sign in again.",
+    "Tu institución no permite esta operación.": "Your institution does not allow this operation.",
+    "No encontramos lo que buscas.": "We could not find what you are looking for.",
+    "Revisa los datos e inténtalo de nuevo.": "Check the data and try again.",
+    "Esto ya cambió. Actualiza la pantalla e inténtalo de nuevo.": "This has changed. Refresh the screen and try again.",
+    "Hay demasiadas solicitudes. Espera un momento e inténtalo de nuevo.": "There are too many requests. Wait a moment and try again.",
+    "El servicio no está disponible por ahora. Inténtalo en unos minutos.": "The service is not available right now. Try again in a few minutes.",
+    "Algo salió mal de nuestro lado. Inténtalo más tarde.": "Something went wrong on our side. Try again later.",
+    "La conexión es lenta. Estamos reintentando…": "The connection is slow. We are trying again…"
   }
 }

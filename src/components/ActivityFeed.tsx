@@ -30,6 +30,8 @@ import {
   type ActivityType,
 } from "../lib/activity";
 
+import { PROBLEM_MESSAGES } from "../lib/network";
+
 type Icon = ComponentType<{ size?: number }>;
 
 const ICONS: Record<ActivityType, Icon> = {
@@ -67,7 +69,12 @@ const FILTERS: { id: "all" | ActivityGroup; label: string }[] = [
 ];
 
 const ERRORS: Record<ActivityErrorCode, string> = {
-  network: "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+  network: PROBLEM_MESSAGES.network,
+  offline: PROBLEM_MESSAGES.offline,
+  timeout: PROBLEM_MESSAGES.timeout,
+  unavailable: PROBLEM_MESSAGES.unavailable,
+  rateLimited: PROBLEM_MESSAGES.rateLimited,
+  server: PROBLEM_MESSAGES.server,
   session: "Tu sesión terminó. Inicia sesión de nuevo para ver tu actividad.",
   invalid: "No pudimos leer tu actividad. Inténtalo más tarde.",
   unknown: "No pudimos leer tu actividad. Inténtalo más tarde.",

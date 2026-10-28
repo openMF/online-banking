@@ -32,6 +32,7 @@ import { Brand, Eyebrow, Modal, Reveal, TextLink } from "./components/ui";
 import ProductPreview from "./components/ProductPreview";
 import { Contact, Legal, Onboarding } from "./components/Access";
 import { CustomerAccess, CustomerHome } from "./components/CustomerAccess";
+import { NetworkStatus } from "./components/NetworkStatus";
 import type { CustomerSession } from "./lib/authentication/client";
 import { authenticationMessages } from "./lib/authentication/messages";
 import type { BankView, Product, Segment } from "./lib/demo";
@@ -294,7 +295,9 @@ export default function App() {
   // Real customers never mount the demo dashboard or illustrative landing content.
   if (customerSession) {
     return (
-      <CustomerHome
+      <>
+        <NetworkStatus />
+        <CustomerHome
         session={customerSession}
         onEnd={(expired, revocation) => {
           setCustomerSession(null);
@@ -308,12 +311,14 @@ export default function App() {
               ? "Sesión local cerrada. El servidor confirmó el cierre del token de acceso."
               : "Sesión local cerrada. No pudimos confirmar el cierre en el servidor."));
         }}
-      />
+        />
+      </>
     );
   }
 
   return (
     <MotionConfig reducedMotion="user">
+      <NetworkStatus />
       <LocalizedTree>
         <a href="#contenido" className="skip-link">
           Saltar al contenido

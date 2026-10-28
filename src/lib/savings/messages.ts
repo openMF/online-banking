@@ -3,6 +3,7 @@ export const savingsMessages: Record<SavingsFailure, string> = {
   expired: "Tu sesión ha expirado. Inicia sesión de nuevo.",
   denied: "Tu institución no autorizó esta solicitud. No se muestran datos protegidos.",
   unavailable: "No pudimos consultar los productos o cuentas. Intenta la consulta de nuevo.",
+  offline: "Sin conexión a internet. Revisa tu conexión e inténtalo de nuevo.",
   malformed: "No pudimos verificar la respuesta de tu institución.",
   invalid: "Revisa los campos indicados. Tu institución no aceptó la solicitud.",
   changed:

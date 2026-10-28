@@ -4,6 +4,7 @@ export type SavingsFailure =
   | "expired"
   | "denied"
   | "unavailable"
+  | "offline"
   | "malformed"
   | "invalid"
   | "changed"
@@ -259,7 +260,11 @@ export function createSavingsClient(session: CustomerSession) {
       if (error instanceof SavingsError) throw error;
       if (error instanceof AuthenticationError && error.code === "expired")
         throw new SavingsError("expired");
-      throw new SavingsError(method === "POST" ? "uncertain" : "unavailable");
+      // A write that got no answer may have run: never "try again", always "uncertain".
+      if (method === "POST") throw new SavingsError("uncertain");
+      throw new SavingsError(
+        error instanceof AuthenticationError && error.code === "offline" ? "offline" : "unavailable",
+      );
     }
   }
   async function loadTemplate(clientId: number, productId?: number, signal?: AbortSignal) {

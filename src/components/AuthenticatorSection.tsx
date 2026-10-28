@@ -16,6 +16,7 @@ import {
   type AuthenticatorApi,
   type AuthenticatorErrorCode,
 } from "../lib/authenticator";
+import { PROBLEM_MESSAGES } from "../lib/network";
 import { selectStepUpApi, type StepUpApi } from "../lib/stepup";
 import { QrCode } from "./QrCode";
 import { StepUpPanel } from "./StepUpPanel";
@@ -35,7 +36,10 @@ const MESSAGES: Partial<Record<AuthenticatorErrorCode, string>> = {
   required: "La verificación ya no es válida. Inténtalo de nuevo.",
   "totp.already.enrolled": "Ya tienes una app de autenticación vinculada.",
   "session.required": "Tu sesión no permite esta operación. Inicia sesión de nuevo.",
-  network: "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+  network: PROBLEM_MESSAGES.network,
+  offline: PROBLEM_MESSAGES.offline,
+  timeout: PROBLEM_MESSAGES.timeout,
+  unavailable: PROBLEM_MESSAGES.unavailable,
 };
 
 function errorMessage(code: AuthenticatorErrorCode, minutes: number | null): string {
