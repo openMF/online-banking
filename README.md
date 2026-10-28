@@ -282,6 +282,16 @@ The security view also lets the user link an authenticator app (Google Authentic
 
 The recovery codes and the secret are shown once because the server keeps only an encrypted secret and hashed codes and never returns them again. The demo codes are public and not a security control.
 
+## Security area of a signed-in customer (MX-455)
+
+A customer who signed in through the backend (MX-452) has a "Seguridad de tu cuenta" / "Your account security" area in the customer home. It holds the **authenticator app**, **change password** (US-E01-03) and the **activity history**, all against the real self-service API. None of it is demo data, and the demo dialog is unchanged.
+
+- Everything goes through the memory-only `CustomerSession` of the login: the area never sees the credential, the tenant or the URL. `CustomerSession.request` gained `PUT`, `DELETE` and an optional `stepUpToken` (sent as `X-Step-Up-Token`); that is the only header a caller can set. `selfRequest` takes a `customer` option, and the step-up, activity, authenticator and password adapters pass it on, so they behave exactly as with the older session module.
+- `src/components/ChangePasswordSection.tsx` and `src/lib/password/`: new password twice (hidden by default, `autocomplete="new-password"`), then the verification (`CHANGE_PASSWORD`, the password is never part of it), then `PUT /v1/self/user` with the one-time token. The **server** decides the password policy and its answer is shown as a fixed, translated message; the plugin checks the request before it spends the token, so a refused password costs no new code (the same grant is used for the retry). On success the server has ended every session: the page returns to the login and says why.
+- `src/components/CustomerSecurity.tsx` builds one set of clients per login and shows the three sections; the history is read again after the authenticator changes.
+
+The real adapters are still not used inside the demo dialog: they need a real session, which only the customer home has.
+
 ## Loading, errors and retry (MX-490)
 
 One place decides how a request is repeated, counted and worded, so every screen behaves the same (US-E12-04).

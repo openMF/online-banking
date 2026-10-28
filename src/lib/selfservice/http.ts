@@ -1,3 +1,4 @@
+import { AuthenticationError, type CustomerSession } from "../authentication/client";
 import {
   problemOfStatus,
   trackRequest,
@@ -71,6 +72,12 @@ export type RequestOptions = {
   session?: Session | null;
   /** One-time step-up token for a protected operation. */
   stepUpToken?: string;
+  /**
+   * The logged-in customer (MX-452). When it is given, the call goes through its memory-only
+   * session: this module never sees the credential, the tenant or the URL of the login, and
+   * `session` and `config` are not used.
+   */
+  customer?: CustomerSession;
   signal?: AbortSignal;
   timeoutMs?: number;
   /** Test seam: the retry policy and what it waits with. */
@@ -116,7 +123,43 @@ function toError(status: number, body: unknown): SelfServiceError {
   for (const key of ["action", "attemptsRemaining", "retryAfterSeconds"]) {
     if (key in record) details[key] = record[key];
   }
+  // The codes of the field errors of a validation answer (never their texts or their values).
+  if (Array.isArray(record.errors)) {
+    details.errorCodes = record.errors
+      .map((entry) =>
+        entry && typeof entry === "object"
+          ? (entry as Record<string, unknown>).userMessageGlobalisationCode
+          : undefined,
+      )
+      .filter((entry): entry is string => typeof entry === "string");
+  }
   return new SelfServiceError(status, code, message, details);
+}
+
+/** A call made through the session of the logged-in customer. Same errors as a direct call. */
+async function viaCustomer<T>(path: string, options: RequestOptions): Promise<T> {
+  const query: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(options.query ?? {})) {
+    if (value !== undefined) query[key] = value;
+  }
+  let response;
+  try {
+    response = await options.customer!.request(path.replace(/^\/+/, ""), {
+      method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
+      body: options.body,
+      query,
+      signal: options.signal,
+      stepUpToken: options.stepUpToken,
+    });
+  } catch (error) {
+    if (error instanceof AuthenticationError && error.code === "expired") {
+      throw new SelfServiceError(401, "error.http.401", "The session ended");
+    }
+    // Network, timeout, cancelled, malformed: the same words as a direct call, nothing leaked.
+    throw new SelfServiceError(0, "error.network", "The server could not be reached");
+  }
+  if (!response.ok) throw toError(response.status, response.data);
+  return (response.data ?? undefined) as T;
 }
 
 /**
@@ -124,6 +167,7 @@ function toError(status: number, body: unknown): SelfServiceError {
  * step-up token. Never throws anything but {@link SelfServiceError}.
  */
 export async function selfRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (options.customer) return viaCustomer<T>(path, options);
   const config = options.config === undefined ? getSelfServiceConfig() : options.config;
   if (!config) {
     throw new SelfServiceError(0, "error.not.configured", "No self-service backend is configured");

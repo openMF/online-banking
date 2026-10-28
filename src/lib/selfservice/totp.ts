@@ -37,7 +37,7 @@ export type TotpRecoveryCodes = {
   recoveryCodes: string[];
 };
 
-type Options = Pick<RequestOptions, "fetchImpl" | "config" | "signal" | "session">;
+type Options = Pick<RequestOptions, "fetchImpl" | "config" | "signal" | "session" | "customer">;
 type ProtectedOptions = Options & {
   /** One-time token of a step-up for `MANAGE_AUTHENTICATOR`, when the server asks for one. */
   stepUpToken?: string;

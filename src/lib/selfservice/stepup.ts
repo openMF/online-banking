@@ -60,7 +60,7 @@ export type CreateChallengeInput = {
   payload?: Record<string, unknown>;
 };
 
-type Options = Pick<RequestOptions, "fetchImpl" | "config" | "signal" | "session">;
+type Options = Pick<RequestOptions, "fetchImpl" | "config" | "signal" | "session" | "customer">;
 
 export function getStepUpConfig(options: Options = {}): Promise<StepUpConfig> {
   return selfRequest<StepUpConfig>("/stepup/config", options);

@@ -757,6 +757,23 @@
     "Hay demasiadas solicitudes. Espera un momento e inténtalo de nuevo.": "Hay demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
     "El servicio no está disponible por ahora. Inténtalo en unos minutos.": "El servicio no está disponible por ahora. Inténtalo en unos minutos.",
     "Algo salió mal de nuestro lado. Inténtalo más tarde.": "Algo salió mal de nuestro lado. Inténtalo más tarde.",
-    "La conexión es lenta. Estamos reintentando…": "La conexión es lenta. Estamos reintentando…"
+    "La conexión es lenta. Estamos reintentando…": "La conexión es lenta. Estamos reintentando…",
+    "Seguridad de tu cuenta": "Seguridad de tu cuenta",
+    "Volver al inicio": "Volver al inicio",
+    "Cambiar contraseña": "Cambiar contraseña",
+    "Al cambiarla, cerramos todas tus sesiones y tendrás que iniciar sesión de nuevo.": "Al cambiarla, cerramos todas tus sesiones y tendrás que iniciar sesión de nuevo.",
+    "Antes de cambiarla, confirma que eres tú.": "Antes de cambiarla, confirma que eres tú.",
+    "Volver al formulario": "Volver al formulario",
+    "Cambiando tu contraseña…": "Cambiando tu contraseña…",
+    "Nueva contraseña": "Nueva contraseña",
+    "Repite la nueva contraseña": "Repite la nueva contraseña",
+    "Tu institución define las reglas de la contraseña y revisa la nueva antes de cambiarla.": "Tu institución define las reglas de la contraseña y revisa la nueva antes de cambiarla.",
+    "Mostrar contraseñas": "Mostrar contraseñas",
+    "Ocultar contraseñas": "Ocultar contraseñas",
+    "Escribe la nueva contraseña dos veces.": "Escribe la nueva contraseña dos veces.",
+    "Las contraseñas no coinciden.": "Las contraseñas no coinciden.",
+    "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.": "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.",
+    "No pudimos cambiar tu contraseña. Inténtalo más tarde.": "No pudimos cambiar tu contraseña. Inténtalo más tarde.",
+    "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.": "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña."
   }
 }
