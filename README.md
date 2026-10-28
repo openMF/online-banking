@@ -270,6 +270,18 @@ The real adapter is used only when a backend is configured **and** a session exi
 
 The server never sends a full IP address, a password, a code or a full account number; the screen shows only what it receives.
 
+## Authenticator app (TOTP)
+
+The security view also lets the user link an authenticator app (Google Authenticator, Microsoft Authenticator, Authy, 1Password...) and use the 6-digit code of the app instead of an SMS or e-mail code for the same protected actions (MX-488 follow-up). The screen is shown only when the tenant switched the authenticator on in the plugin (`totpEnabled`, see the plugin's README); otherwise it is not rendered at all and nothing changes.
+
+- Linking: the secret is drawn as a **QR code in the browser** (the `qrcode` library, loaded only when needed, shown as an SVG inside an `<img>`) and offered as text; it never goes to a third party and is dropped from memory as soon as the step ends. A verification for `MANAGE_AUTHENTICATOR` (e-mail or SMS code) comes first, then the user types the first code of the app, then the **recovery codes** are shown once (copy or download, and a checkbox "I saved them" before "Done").
+- Using it: the verification panel (`StepUpPanel`) offers the channel `TOTP`: no code is sent, there is no resend, and a link "Use a recovery code" is the way out when the phone is lost. While an app is active the server offers only the app (SIM-swap protection), so that is what the panel shows.
+- Managing it: new recovery codes and removal each need a verification again.
+- `src/components/AuthenticatorSection.tsx`, `QrCode.tsx`: the accessible screens (focus moves to each new step, alerts, no colour-only state, es-MX and en-US).
+- `src/lib/authenticator/`: `AuthenticatorApi` with two adapters, like step-up and activity: `httpAuthenticatorApi` (the real `/v1/self/stepup/totp` endpoints, typed in `src/lib/selfservice/totp.ts`) and `demoAuthenticatorApi` (in memory, same rules; the demo "app" shows the code `135790`). `useAuthenticator` is the state machine; the one-time grant of the verification is kept in a ref, never in state, so it cannot be rendered.
+
+The recovery codes and the secret are shown once because the server keeps only an encrypted secret and hashed codes and never returns them again. The demo codes are public and not a security control.
+
 ## Verification
 
 Unit and component tests run without a server:
