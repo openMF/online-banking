@@ -1,4 +1,5 @@
 import { recordDemoActivity } from "../activity";
+import { demoAuthenticator } from "../authenticator";
 import { getSelfServiceConfig, hasSession } from "../selfservice";
 import type { StepUpApi } from "./api";
 import { createDemoStepUpApi } from "./demoStepUpApi";
@@ -8,7 +9,9 @@ export * from "./api";
 export { createDemoStepUpApi } from "./demoStepUpApi";
 export { createHttpStepUpApi } from "./httpStepUpApi";
 export {
+  TOTP_CODE_LENGTH,
   useStepUpChallenge,
+  type StepUpCodeKind,
   type StepUpPhase,
   type UseStepUpChallenge,
   type UseStepUpChallengeInput,
@@ -24,6 +27,7 @@ let demoApi: StepUpApi | null = null;
 export function selectStepUpApi(): StepUpApi {
   if (getSelfServiceConfig() && hasSession()) return createHttpStepUpApi();
   demoApi ??= createDemoStepUpApi({
+    authenticator: demoAuthenticator(),
     // what the demo user does with the verification also shows in the demo activity history
     onEvent: (event, action) =>
       recordDemoActivity(

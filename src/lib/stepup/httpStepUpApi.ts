@@ -23,7 +23,8 @@ export function createHttpStepUpApi(seams: Seams = {}): StepUpApi {
     mode: "backend",
     getConfig: () => guarded(getStepUpConfig(seams)),
     createChallenge: (input) => guarded(createStepUpChallenge(input, seams)),
-    verify: (challengeId, otp) => guarded(verifyStepUpChallenge(challengeId, otp, seams)),
+    verify: (challengeId, code, kind = "otp") =>
+      guarded(verifyStepUpChallenge(challengeId, code, { ...seams, kind })),
     resend: (challengeId) => guarded(resendStepUpChallenge(challengeId, seams)),
   };
 }

@@ -81,8 +81,8 @@ describe("activity client", () => {
   });
 
   it("knows every type the plugin can send", () => {
-    expect(ACTIVITY_TYPES).toHaveLength(16);
-    expect(new Set(ACTIVITY_TYPES).size).toBe(16);
+    expect(ACTIVITY_TYPES).toHaveLength(22);
+    expect(new Set(ACTIVITY_TYPES).size).toBe(22);
   });
 });
 
@@ -370,6 +370,44 @@ describe("description of an activity", () => {
     expect(
       describeActivity(item({ type: "STEP_UP_LOCKED", outcome: "FAILURE" }), "es-MX").warning,
     ).toBe(true);
+  });
+
+  it("describes the authenticator app, and flags what the user did not do or must look at twice", () => {
+    const titles = {
+      AUTHENTICATOR_ENROLLED: "Vinculaste una app de autenticación",
+      AUTHENTICATOR_REMOVED: "Quitaste tu app de autenticación",
+      AUTHENTICATOR_RESET: "Tu institución quitó tu app de autenticación",
+      AUTHENTICATOR_LOCKED: "App de autenticación bloqueada por demasiados intentos",
+      RECOVERY_CODES_REGENERATED: "Generaste códigos de recuperación nuevos",
+      RECOVERY_CODE_USED: "Usaste un código de recuperación",
+    } as const;
+    for (const [type, title] of Object.entries(titles)) {
+      expect(describeActivity(item({ type: type as never }), "es-MX").title).toBe(title);
+    }
+    // what the user did on purpose is quiet; a staff reset, a lock-out and the emergency way in are not
+    expect(describeActivity(item({ type: "AUTHENTICATOR_ENROLLED" }), "es-MX").warning).toBe(false);
+    expect(describeActivity(item({ type: "AUTHENTICATOR_REMOVED" }), "es-MX").warning).toBe(false);
+    expect(describeActivity(item({ type: "RECOVERY_CODES_REGENERATED" }), "es-MX").warning).toBe(
+      false,
+    );
+    expect(describeActivity(item({ type: "AUTHENTICATOR_RESET" }), "es-MX").warning).toBe(true);
+    expect(describeActivity(item({ type: "RECOVERY_CODE_USED" }), "es-MX").warning).toBe(true);
+    expect(
+      describeActivity(item({ type: "AUTHENTICATOR_LOCKED", outcome: "FAILURE" }), "es-MX").warning,
+    ).toBe(true);
+  });
+
+  it("names the authenticator change when a verification was for it", () => {
+    const entry = item({ type: "STEP_UP_VERIFIED", details: { action: "MANAGE_AUTHENTICATOR" } });
+    expect(describeActivity(entry, "es-MX").extra).toBe("Para: Cambio de la app de autenticación");
+    expect(describeActivity(entry, "en-US").extra).toBe("For: Authenticator app change");
+  });
+
+  it("the history filter groups the new types where a user would look for them", () => {
+    expect(ACTIVITY_GROUPS.account).toContain("AUTHENTICATOR_ENROLLED");
+    expect(ACTIVITY_GROUPS.account).toContain("RECOVERY_CODES_REGENERATED");
+    expect(ACTIVITY_GROUPS.verification).toContain("AUTHENTICATOR_LOCKED");
+    expect(ACTIVITY_GROUPS.verification).toContain("RECOVERY_CODE_USED");
   });
 
   it("an activity type from a newer server still gets a neutral title", () => {

@@ -31,8 +31,13 @@ export type StepUpErrorCode =
   | "locked"
   | "resend.cooldown"
   | "resend.limit"
+  | "resend.unsupported"
   | "rate.limited"
   | "misconfigured"
+  | "totp.disabled"
+  | "totp.not.enrolled"
+  | "totp.enrollment.missing"
+  | "totp.already.enrolled"
   | "network"
   | "unknown";
 
@@ -49,8 +54,13 @@ const KNOWN_CODES: ReadonlySet<string> = new Set<StepUpErrorCode>([
   "locked",
   "resend.cooldown",
   "resend.limit",
+  "resend.unsupported",
   "rate.limited",
   "misconfigured",
+  "totp.disabled",
+  "totp.not.enrolled",
+  "totp.enrollment.missing",
+  "totp.already.enrolled",
 ]);
 
 export class StepUpError extends Error {
@@ -101,8 +111,11 @@ export interface StepUpApi {
   readonly mode: "demo" | "backend";
   /** Demo only: the code to show as a hint. Never set for the real backend. */
   readonly demoHint?: string;
+  /** Demo only: the code of the demo authenticator app, to show as a hint on that channel. */
+  readonly demoAppHint?: string;
   getConfig(): Promise<StepUpConfig>;
   createChallenge(input: CreateChallengeInput): Promise<StepUpChallenge>;
-  verify(challengeId: number, otp: string): Promise<StepUpGrant>;
+  /** `kind: "recovery"` sends a recovery code instead of a one-time code (authenticator app only). */
+  verify(challengeId: number, code: string, kind?: "otp" | "recovery"): Promise<StepUpGrant>;
   resend(challengeId: number): Promise<StepUpChallenge>;
 }

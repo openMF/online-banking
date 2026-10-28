@@ -32,6 +32,17 @@ export type StepUpPhase =
 
 export type StepUpNotice = "resent" | null;
 
+/** What the user typed: the code of the challenge, or a recovery code of the authenticator app. */
+export type StepUpCodeKind = "otp" | "recovery";
+
+/** The digits of a code of an authenticator app: fixed by the standard, not by the tenant. */
+export const TOTP_CODE_LENGTH = 6;
+
+/** A recovery code is 10 letters and digits; dashes and spaces are only for reading. */
+export function normalizeRecoveryCode(input: string): string {
+  return input.replace(/[\s-]/g, "").toUpperCase();
+}
+
 export type UseStepUpChallengeInput = {
   api: StepUpApi;
   action: StepUpAction;
@@ -59,8 +70,10 @@ export type UseStepUpChallenge = {
   /** For `locked`: seconds to wait, when the server said so. */
   retryAfterSeconds: number | null;
   canResend: boolean;
+  /** Digits the user has to type: 6 for an authenticator app, the tenant's length otherwise. */
+  codeLength: number;
   selectChannel: (channel: StepUpChannel) => void;
-  submit: (otp: string) => void;
+  submit: (code: string, kind?: StepUpCodeKind) => void;
   resend: () => void;
   restart: () => void;
 };
@@ -238,11 +251,17 @@ export function useStepUpChallenge({
   }, [phase, challenge, expiresIn]);
 
   const submit = useCallback(
-    (otp: string) => {
+    (typed: string, kind: StepUpCodeKind = "otp") => {
       const { api: current, onVerified: done, challenge: active, config: cfg } = latest.current;
       if (!active || !cfg || busy.current || phase !== "code") return;
-      const code = otp.trim();
-      if (!new RegExp(`^\\d{${cfg.otpLength}}$`).test(code)) {
+      // A recovery code only exists for the authenticator app: anywhere else it is a format error.
+      const isRecovery = kind === "recovery" && active.channel === "TOTP";
+      const length = active.channel === "TOTP" ? TOTP_CODE_LENGTH : cfg.otpLength;
+      const code = isRecovery ? normalizeRecoveryCode(typed) : typed.trim();
+      const wellFormed = isRecovery
+        ? /^[A-Z0-9]{10}$/.test(code)
+        : new RegExp(`^\\d{${length}}$`).test(code);
+      if ((kind === "recovery" && !isRecovery) || !wellFormed) {
         setErrorCode("format");
         return;
       }
@@ -250,8 +269,10 @@ export function useStepUpChallenge({
       setErrorCode(null);
       setNotice(null);
       setPhase("verifying");
-      current
-        .verify(active.challengeId, code)
+      (isRecovery
+        ? current.verify(active.challengeId, code, "recovery")
+        : current.verify(active.challengeId, code)
+      )
         .then((grant) => {
           if (!mounted.current || verified.current) return;
           verified.current = true;
@@ -312,6 +333,7 @@ export function useStepUpChallenge({
     expiresIn,
     retryAfterSeconds,
     canResend: phase === "code" && resendCooldownLeft === 0 && resendsLeft > 0,
+    codeLength: challenge?.channel === "TOTP" ? TOTP_CODE_LENGTH : (config?.otpLength ?? 6),
     selectChannel: (channel) => void start(channel),
     submit,
     resend,
