@@ -162,9 +162,12 @@ async function signIn(page: Page, english = false) {
       .locator(".header-actions .locale-toggle")
       .getByRole("button", { name: "EN", exact: true })
       .click();
-  // on a phone the header actions are in the menu
-  const menu = page.getByRole("button", { name: english ? "Open menu" : "Abrir menú" });
-  if (await menu.isVisible()) await menu.click();
+  // On a phone the header actions are in the menu. The width decides, not a visibility check that
+  // does not wait: right after the page loads that check could say "hidden" for a button that
+  // is about to appear.
+  if ((page.viewportSize()?.width ?? Infinity) < 800) {
+    await page.getByRole("button", { name: english ? "Open menu" : "Abrir menú" }).click();
+  }
   await page
     .getByRole("button", { name: english ? "Online banking" : "Banca en línea", exact: true })
     .first()
