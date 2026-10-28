@@ -36,8 +36,22 @@ export interface CustomerSession {
   readonly identity: CustomerIdentity;
   /** Local maximum lifetime, independent of the backend's sliding token expiry. */
   readonly expiresAt: number;
+  /** Uses this login's pinned tenant and memory-only credential. Never uses demo storage. */
+  request(resource: string, options: CustomerRequest): Promise<CustomerResponse>;
   /** Forgets the credential immediately; true means the access-token logout was acknowledged. */
   logout(): Promise<boolean>;
+}
+
+export interface CustomerRequest {
+  method: "GET" | "POST";
+  body?: unknown;
+  signal?: AbortSignal;
+  query?: Record<string, string | number>;
+}
+export interface CustomerResponse {
+  status: number;
+  ok: boolean;
+  data: unknown;
 }
 
 const positiveId = (value: unknown): value is number =>
@@ -99,6 +113,8 @@ export function createAuthenticationClient({
     body: unknown,
     key?: string,
     signal?: AbortSignal,
+    method: "GET" | "POST" = "POST",
+    query?: Record<string, string | number>,
   ): Promise<{ status: number; ok: boolean; data: unknown }> {
     const controller = new AbortController();
     let timedOut = false;
@@ -111,15 +127,18 @@ export function createAuthenticationClient({
     }, timeoutMs);
     try {
       if (controller.signal.aborted) throw new AuthenticationError("cancelled");
-      const response = await transport(buildSelfServiceUrl(config, resource), {
-        method: "POST",
+      const url = buildSelfServiceUrl(config, resource);
+      for (const [name, value] of Object.entries(query ?? {}))
+        url.searchParams.set(name, String(value));
+      const response = await transport(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
           "Fineract-Platform-TenantId": config.tenantId,
           ...(key ? { Authorization: `Basic ${key}` } : {}),
         },
-        body: JSON.stringify(body),
+        body: body === undefined ? undefined : JSON.stringify(body),
         credentials: "omit",
         cache: "no-store",
         redirect: "error",
@@ -187,13 +206,42 @@ export function createAuthenticationClient({
       const identity = parseIdentity(data);
       let key: string | null = accessKey(data.base64EncodedAuthenticationKey);
       let closing: Promise<boolean> | undefined;
+      const expiresAt = now() + 15 * 60_000;
+      const lifetime = new AbortController();
       return Object.freeze({
         identity,
-        expiresAt: now() + 15 * 60_000,
+        expiresAt,
+        async request(resource: string, options: CustomerRequest) {
+          if (!key || now() >= expiresAt) {
+            key = null;
+            lifetime.abort();
+            throw new AuthenticationError("expired");
+          }
+          const response = await request(
+            config,
+            resource,
+            options.body,
+            key,
+            options.signal ? AbortSignal.any([options.signal, lifetime.signal]) : lifetime.signal,
+            options.method,
+            options.query,
+          );
+          if (response.status === 401) {
+            key = null;
+            lifetime.abort();
+          }
+          if (now() >= expiresAt) {
+            key = null;
+            lifetime.abort();
+            throw new AuthenticationError("expired");
+          }
+          return response;
+        },
         logout() {
           if (closing) return closing;
           const currentKey = key;
           key = null;
+          lifetime.abort();
           closing = (async () => {
             if (!currentKey) return false;
             try {

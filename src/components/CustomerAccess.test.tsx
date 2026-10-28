@@ -21,6 +21,7 @@ function session(): CustomerSession {
   return {
     identity: { userId: 12, username: "backend-customer", roles: [], permissions: [], clients: [] },
     expiresAt: Date.now() + 900000,
+    request: vi.fn(),
     logout: vi.fn(async () => true),
   };
 }
@@ -197,7 +198,7 @@ it("shows server identity and unavailable data, then clears the authenticated vi
   );
   expect(screen.getByTestId("customer-username").textContent).toBe("backend-customer");
   expect(screen.getByRole("status").textContent).toContain(
-    "Las cuentas y operaciones aún no están integradas",
+    "Las consultas de saldos y movimientos aún no están integradas",
   );
   expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Acceso verificado" }));
   fireEvent.click(screen.getByRole("button", { name: "Cerrar sesión" }));

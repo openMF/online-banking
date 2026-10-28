@@ -171,14 +171,14 @@ An HTTP 200 response alone cannot grant access. Pending/disabled responses, requ
 authentication and password renewal stay outside the customer boundary with localized feedback.
 No frontend verification code can complete these backend-required steps.
 
-A successful login opens a minimal customer view showing the **server-returned username** and an
-explicit accounts/operations-unavailable message. It never mounts the demo dashboard or illustrative
-landing balances. No real accounts, transfers, receipts, profile editing or client selection are
-implemented. Permissions and linked clients are parsed from the server, not inferred from demo state;
-future API operations still require independent server authorization.
+A successful login opens a customer view showing the **server-returned username** and the MX-469
+savings application entry point. It never mounts the demo dashboard or illustrative landing balances.
+Balance/transaction enquiries, transfers, receipts and profile editing remain unavailable here.
+Permissions and linked clients are parsed from the server, not inferred from demo state; savings
+operations require independent server authorization.
 
 The password is cleared from form state on submission and is never saved by the app. The access key
-is held only in a closure for access-token logout; it is not exposed to React, the legacy step-up
+is held only in a closure for authenticated requests and access-token logout; it is not exposed to React, the legacy step-up
 client, browser storage or cookies. Refresh tokens are discarded and there is no automatic refresh.
 Browser password managers remain under the customer's control (`current-password` autocomplete).
 The session disappears on reload, expires after 10 minutes of inactivity, and has an absolute local
@@ -318,3 +318,21 @@ Contact preparation only creates a local message to copy. It never claims an inq
 Custom AI-generated campaign imagery is stored locally in `public/images/`. The Mexico City hero is an illustrative architectural composition, not a photograph of an actual MIFOS location. Manrope is self-hosted and distributed under the SIL Open Font License in `public/fonts/OFL.txt`. Icons use Lucide. Motion uses Motion for React.
 
 The implementation is original to this project; the linked openMF repository was consulted for demo workflows and test credentials. No claim is made that this demo modifies or deploys the upstream repository, or that it is an officially authorized banking service.
+
+## Savings applications (MX-469)
+
+After a backend-verified customer login, choose **Apply for a savings account**. Select an
+explicitly authorized client (when several are linked), then a product from the Self Service
+savings template. Review the institution's defaults, supply the application date if it has no
+backend default, and submit once. The confirmation reads the new account's actual number and
+status through the authorized savings detail endpoint; unavailable details remain explicit.
+
+This workflow uses MX-453 runtime configuration and the MX-452 memory-only session. Demo login
+cannot enable it. An uncertain POST is locked against resubmission for the current session;
+**Check accounts without resubmitting** performs only authorized reads. Contact the institution
+before applying again if an outcome remains uncertain, including after reloading or signing in
+again. No server idempotency contract was established for this endpoint.
+
+Products requiring extra datatables or charge schedules absent from the template direct customers
+to their institution. No required product charges are silently removed. Live verification against
+an isolated synthetic tenant remains blocked; mocked tests do not prove account creation.

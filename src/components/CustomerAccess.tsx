@@ -10,6 +10,8 @@ import {
 } from "../lib/authentication/client";
 import { authenticationMessages } from "../lib/authentication/messages";
 import { Login } from "./Access";
+import { SavingsApplication } from "./SavingsApplication";
+import { createSavingsClient } from "../lib/savings/client";
 import type { Segment } from "../lib/demo";
 
 /** Configuration chooses an explicit customer login; demo remains a separate opt-in. */
@@ -187,6 +189,9 @@ export function CustomerHome({
 }) {
   const { t } = useI18n();
   const ended = useRef(false);
+  const [savingsOpen, setSavingsOpen] = useState(false);
+  const [savingsClient] = useState(() => createSavingsClient(session));
+  const savingsEntry = useRef<HTMLButtonElement>(null);
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
   useEffect(() => {
@@ -239,10 +244,33 @@ export function CustomerHome({
         <LockKeyhole size={18} aria-hidden="true" />
         <p>
           {t(
-            "Las cuentas y operaciones aún no están integradas. No se muestran saldos ni movimientos de demostración en esta sesión.",
+            "Las consultas de saldos y movimientos aún no están integradas. No se muestran datos de demostración en esta sesión.",
           )}
         </p>
       </div>
+      {savingsOpen ? (
+        <SavingsApplication
+          client={savingsClient}
+          clients={session.identity.clients}
+          onExpired={() => {
+            if (ended.current) return;
+            ended.current = true;
+            onEnd(true, session.logout());
+          }}
+          onClose={() => {
+            setSavingsOpen(false);
+            requestAnimationFrame(() => savingsEntry.current?.focus());
+          }}
+        />
+      ) : (
+        <button
+          ref={savingsEntry}
+          className="button button-primary"
+          onClick={() => setSavingsOpen(true)}
+        >
+          {t("Solicitar una cuenta de ahorro")}
+        </button>
+      )}
       <p className="form-note">
         {t(
           "La sesión se conserva solo en esta página y termina al recargar, tras 10 minutos de inactividad o después de 15 minutos.",
