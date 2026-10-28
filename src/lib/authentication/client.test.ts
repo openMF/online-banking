@@ -279,6 +279,49 @@ it("pins protected GET and POST requests to the login tenant and private credent
   });
 });
 
+it("sends PUT and DELETE, and the step-up token as the only extra header", async () => {
+  const { client, transport } = fake();
+  const session = await client.login("user", "pass");
+  transport.mockResolvedValue(new Response(JSON.stringify({ changes: {} })));
+
+  await session.request("user", {
+    method: "PUT",
+    body: { password: "x", repeatPassword: "x" },
+    stepUpToken: "ONE-TIME",
+  });
+  await session.request("stepup/totp", { method: "DELETE" });
+  await session.request("stepup/totp", { method: "DELETE", stepUpToken: "T2" });
+
+  expect(transport.mock.calls[1][1]).toMatchObject({
+    method: "PUT",
+    headers: {
+      Authorization: `Basic ${key}`,
+      "Fineract-Platform-TenantId": config.tenantId,
+      "X-Step-Up-Token": "ONE-TIME",
+    },
+  });
+  expect(transport.mock.calls[2][1]?.method).toBe("DELETE");
+  expect(
+    (transport.mock.calls[2][1]?.headers as Record<string, string>)["X-Step-Up-Token"],
+  ).toBeUndefined();
+  expect(
+    (transport.mock.calls[3][1]?.headers as Record<string, string>)["X-Step-Up-Token"],
+  ).toBe("T2");
+});
+
+it("never sends the step-up token without the credential of a live session", async () => {
+  const { client, transport } = fake();
+  const session = await client.login("user", "pass");
+  await session.logout();
+  const count = transport.mock.calls.length;
+
+  await expect(
+    session.request("user", { method: "PUT", body: {}, stepUpToken: "ONE-TIME" }),
+  ).rejects.toMatchObject({ code: "expired" });
+
+  expect(transport.mock.calls).toHaveLength(count);
+});
+
 it.each(["expiry", "logout", "401"])(
   "invalidates the protected request capability after %s",
   async (scenario) => {

@@ -72,7 +72,7 @@ export type ActivityQuery = {
   types?: ActivityType[];
 };
 
-type Options = Pick<RequestOptions, "fetchImpl" | "config" | "signal" | "session">;
+type Options = Pick<RequestOptions, "fetchImpl" | "config" | "signal" | "session" | "customer">;
 
 /** The activity of the logged-in user, newest first. There is no way to ask for another user. */
 export function getActivity(

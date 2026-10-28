@@ -8,7 +8,7 @@ import {
 import type { RequestOptions } from "../selfservice/http";
 import { toStepUpError, type AuthenticatorApi } from "./api";
 
-type Seams = Pick<RequestOptions, "fetchImpl" | "config" | "session">;
+type Seams = Pick<RequestOptions, "fetchImpl" | "config" | "session" | "customer">;
 
 async function guarded<T>(call: Promise<T>): Promise<T> {
   try {

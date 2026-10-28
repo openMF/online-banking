@@ -296,9 +296,15 @@ export default function App() {
     return (
       <CustomerHome
         session={customerSession}
-        onEnd={(expired, revocation) => {
+        onEnd={(expired, revocation, reason) => {
           setCustomerSession(null);
           setModal("login");
+          if (reason === "passwordChanged") {
+            // The server ended every session when the password changed: say why, and that the new
+            // password is the one to use. The (failed) logout of the old token adds nothing.
+            setSessionNotice("Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.");
+            return;
+          }
           setSessionNotice(expired
             ? authenticationMessages.expired
             : "Sesión local cerrada. Solicitando cierre al servidor...");

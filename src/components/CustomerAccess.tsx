@@ -10,6 +10,7 @@ import {
 } from "../lib/authentication/client";
 import { authenticationMessages } from "../lib/authentication/messages";
 import { Login } from "./Access";
+import { CustomerSecurity } from "./CustomerSecurity";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
 import type { Segment } from "../lib/demo";
@@ -185,11 +186,17 @@ export function CustomerHome({
   onEnd,
 }: {
   session: CustomerSession;
-  onEnd: (expired: boolean, revocation: Promise<boolean>) => void;
+  onEnd: (
+    expired: boolean,
+    revocation: Promise<boolean>,
+    reason?: "passwordChanged",
+  ) => void;
 }) {
   const { t } = useI18n();
   const ended = useRef(false);
   const [savingsOpen, setSavingsOpen] = useState(false);
+  const [securityOpen, setSecurityOpen] = useState(false);
+  const securityEntry = useRef<HTMLButtonElement>(null);
   const [savingsClient] = useState(() => createSavingsClient(session));
   const savingsEntry = useRef<HTMLButtonElement>(null);
   const endRef = useRef(onEnd);
@@ -248,7 +255,26 @@ export function CustomerHome({
           )}
         </p>
       </div>
-      {savingsOpen ? (
+      {securityOpen ? (
+        <CustomerSecurity
+          session={session}
+          onClose={() => {
+            setSecurityOpen(false);
+            requestAnimationFrame(() => securityEntry.current?.focus());
+          }}
+          onPasswordChanged={() => {
+            if (ended.current) return;
+            ended.current = true;
+            // The server already ended every session; the logout only forgets the local credential.
+            onEnd(false, session.logout(), "passwordChanged");
+          }}
+          onExpired={() => {
+            if (ended.current) return;
+            ended.current = true;
+            onEnd(true, session.logout());
+          }}
+        />
+      ) : savingsOpen ? (
         <SavingsApplication
           client={savingsClient}
           clients={session.identity.clients}
@@ -263,13 +289,22 @@ export function CustomerHome({
           }}
         />
       ) : (
-        <button
-          ref={savingsEntry}
-          className="button button-primary"
-          onClick={() => setSavingsOpen(true)}
-        >
-          {t("Solicitar una cuenta de ahorro")}
-        </button>
+        <>
+          <button
+            ref={savingsEntry}
+            className="button button-primary"
+            onClick={() => setSavingsOpen(true)}
+          >
+            {t("Solicitar una cuenta de ahorro")}
+          </button>
+          <button
+            ref={securityEntry}
+            className="button button-outline"
+            onClick={() => setSecurityOpen(true)}
+          >
+            {t("Seguridad de tu cuenta")}
+          </button>
+        </>
       )}
       <p className="form-note">
         {t(

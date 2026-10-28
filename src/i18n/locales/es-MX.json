@@ -746,6 +746,23 @@
     "Te queda {count} código de recuperación.": "Te queda {count} código de recuperación.",
     "Te quedan {count} códigos de recuperación.": "Te quedan {count} códigos de recuperación.",
     "Generar códigos de recuperación nuevos": "Generar códigos de recuperación nuevos",
-    "Quitar la app de autenticación": "Quitar la app de autenticación"
+    "Quitar la app de autenticación": "Quitar la app de autenticación",
+    "Seguridad de tu cuenta": "Seguridad de tu cuenta",
+    "Volver al inicio": "Volver al inicio",
+    "Cambiar contraseña": "Cambiar contraseña",
+    "Al cambiarla, cerramos todas tus sesiones y tendrás que iniciar sesión de nuevo.": "Al cambiarla, cerramos todas tus sesiones y tendrás que iniciar sesión de nuevo.",
+    "Antes de cambiarla, confirma que eres tú.": "Antes de cambiarla, confirma que eres tú.",
+    "Volver al formulario": "Volver al formulario",
+    "Cambiando tu contraseña…": "Cambiando tu contraseña…",
+    "Nueva contraseña": "Nueva contraseña",
+    "Repite la nueva contraseña": "Repite la nueva contraseña",
+    "Tu institución define las reglas de la contraseña y revisa la nueva antes de cambiarla.": "Tu institución define las reglas de la contraseña y revisa la nueva antes de cambiarla.",
+    "Mostrar contraseñas": "Mostrar contraseñas",
+    "Ocultar contraseñas": "Ocultar contraseñas",
+    "Escribe la nueva contraseña dos veces.": "Escribe la nueva contraseña dos veces.",
+    "Las contraseñas no coinciden.": "Las contraseñas no coinciden.",
+    "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.": "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.",
+    "No pudimos cambiar tu contraseña. Inténtalo más tarde.": "No pudimos cambiar tu contraseña. Inténtalo más tarde.",
+    "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.": "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña."
   }
 }

@@ -746,6 +746,23 @@
     "Te queda {count} código de recuperación.": "You have {count} recovery code left.",
     "Te quedan {count} códigos de recuperación.": "You have {count} recovery codes left.",
     "Generar códigos de recuperación nuevos": "Generate new recovery codes",
-    "Quitar la app de autenticación": "Remove the authenticator app"
+    "Quitar la app de autenticación": "Remove the authenticator app",
+    "Seguridad de tu cuenta": "Your account security",
+    "Volver al inicio": "Back to home",
+    "Cambiar contraseña": "Change password",
+    "Al cambiarla, cerramos todas tus sesiones y tendrás que iniciar sesión de nuevo.": "When you change it, we end all your sessions and you will have to sign in again.",
+    "Antes de cambiarla, confirma que eres tú.": "Before changing it, confirm it is you.",
+    "Volver al formulario": "Back to the form",
+    "Cambiando tu contraseña…": "Changing your password…",
+    "Nueva contraseña": "New password",
+    "Repite la nueva contraseña": "Repeat the new password",
+    "Tu institución define las reglas de la contraseña y revisa la nueva antes de cambiarla.": "Your institution sets the password rules and checks the new one before changing it.",
+    "Mostrar contraseñas": "Show passwords",
+    "Ocultar contraseñas": "Hide passwords",
+    "Escribe la nueva contraseña dos veces.": "Type the new password twice.",
+    "Las contraseñas no coinciden.": "The passwords do not match.",
+    "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.": "Your institution did not accept that password. Use a longer one, with letters, numbers and symbols, that you have not used before.",
+    "No pudimos cambiar tu contraseña. Inténtalo más tarde.": "We could not change your password. Try again later.",
+    "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.": "Your password changed. Sign in again with the new password."
   }
 }
