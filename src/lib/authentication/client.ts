@@ -34,6 +34,8 @@ export class AuthenticationError extends Error {
 export interface CustomerIdentity {
   readonly userId: number;
   readonly username: string;
+  readonly officeId?: number | null;
+  readonly officeName?: string | null;
   readonly roles: readonly { readonly id: number; readonly name: string }[];
   readonly permissions: readonly string[];
   readonly clients: readonly number[];
@@ -91,6 +93,8 @@ function parseIdentity(data: Record<string, unknown>): CustomerIdentity {
   return Object.freeze({
     userId: data.userId,
     username: data.username,
+    officeId: positiveId(data.officeId) ? data.officeId : null,
+    officeName: nonempty(data.officeName) ? data.officeName : null,
     permissions: Object.freeze([...data.permissions]),
     roles: Object.freeze(
       data.roles.map((role) => Object.freeze({ id: role.id as number, name: role.name as string })),

@@ -7,6 +7,7 @@ import {
   getSelfServiceConfig,
   getSession,
   getStepUpConfig,
+  getUserDetails,
   hasSession,
   login,
   logout,
@@ -308,5 +309,33 @@ describe("step-up client", () => {
       ["POST", "/stepup/challenges/5/verify", '{"otp":"123456"}'],
       ["POST", "/stepup/challenges/5/resend", "{}"],
     ]);
+  });
+});
+
+describe("user details client", () => {
+  it("fetches user details from /userdetails", async () => {
+    const details = {
+      username: "ana",
+      userId: 7,
+      officeId: 1,
+      officeName: "Head Office",
+      roles: [{ id: 1, name: "Admin" }],
+      permissions: ["ALL_FUNCTIONS"],
+      isSelfServiceUser: true,
+      clients: [10],
+    };
+    const fetchImpl = fakeFetch(jsonResponse(details));
+    const result = await getUserDetails({ fetchImpl, config, session });
+    expect(result).toEqual(details);
+    expect(fetchImpl.mock.calls[0][0]).toBe(
+      "https://bank.example/fineract-provider/api/v1/self/userdetails",
+    );
+    expect(fetchImpl.mock.calls[0][1]?.method).toBe("GET");
+  });
+
+  it("returns null when /userdetails responds with 404", async () => {
+    const fetchImpl = fakeFetch(jsonResponse({ defaultUserMessage: "Not found" }, 404));
+    const result = await getUserDetails({ fetchImpl, config, session });
+    expect(result).toBeNull();
   });
 });

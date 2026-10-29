@@ -774,6 +774,9 @@
     "Las contraseñas no coinciden.": "Las contraseñas no coinciden.",
     "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.": "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.",
     "No pudimos cambiar tu contraseña. Inténtalo más tarde.": "No pudimos cambiar tu contraseña. Inténtalo más tarde.",
-    "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.": "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña."
+    "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.": "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.",
+    "Oficina": "Oficina",
+    "Roles": "Roles",
+    "ID de cliente": "ID de cliente"
   }
 }
