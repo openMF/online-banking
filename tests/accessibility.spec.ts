@@ -25,7 +25,8 @@ type Screen = {
   after?: (page: Page) => Promise<void>;
 };
 
-const phone = (page: Page) => (page.viewportSize()?.width ?? 1440) < 800;
+// The header switches to the desktop navigation at 1100 px (responsive.css).
+const phone = (page: Page) => (page.viewportSize()?.width ?? 1440) < 1100;
 const dialog = (page: Page) => page.getByRole("dialog");
 
 /** Animations that fade a section in change its colours while they run: measure after them. */
@@ -187,7 +188,7 @@ async function audit(page: Page, screen: Screen) {
   await checkReflow(page);
   await checkTargetSize(page);
   await checkHeadings(page);
-  if (screen.keyboard && (page.viewportSize()?.width ?? 0) >= 768) await checkKeyboard(page);
+  if (screen.keyboard) await checkKeyboard(page);
 }
 
 // -------------------------------------------------------------------------------------------------
