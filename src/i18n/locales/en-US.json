@@ -763,6 +763,9 @@
     "Las contraseñas no coinciden.": "The passwords do not match.",
     "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.": "Your institution did not accept that password. Use a longer one, with letters, numbers and symbols, that you have not used before.",
     "No pudimos cambiar tu contraseña. Inténtalo más tarde.": "We could not change your password. Try again later.",
-    "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.": "Your password changed. Sign in again with the new password."
+    "Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.": "Your password changed. Sign in again with the new password.",
+    "Oficina": "Office",
+    "Roles": "Roles",
+    "ID de cliente": "Client ID"
   }
 }

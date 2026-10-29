@@ -42,3 +42,4 @@ export {
   type TotpState,
   type TotpStatus,
 } from "./totp";
+export { changePassword, getUserDetails, type UserDetails } from "./user";
