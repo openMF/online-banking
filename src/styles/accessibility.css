@@ -1,0 +1,74 @@
+/*
+ * Accessibility (MX-492, US-E12-06). Loaded last, so it can set a floor without editing every rule.
+ *
+ * Target size: a control is at least 24 x 24 px (WCAG 2.2, 2.5.8) so it can be hit without
+ * touching its neighbour, and at least 44 x 44 px where the main pointer is a finger. The size of
+ * the text and the look of the control stay as they are: only the area that reacts grows.
+ */
+.locale-toggle button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+}
+.icon-button {
+  min-width: 24px;
+  min-height: 24px;
+}
+.mobile-segments button,
+.header-segments button {
+  min-height: 24px;
+}
+.desktop-nav > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+.footer-link-group > a,
+.footer-link-group > button,
+.footer-bottom a,
+.footer-bottom button,
+.back-link,
+.subtle-link {
+  min-height: 24px;
+}
+.subtle-link,
+.footer-bottom a,
+.footer-bottom button {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* A checkbox is hit through its label as well: the label is the target, so it has the height. */
+.savings-review,
+.check-row {
+  min-height: 24px;
+}
+
+@media (pointer: coarse) {
+  .savings-review,
+  .check-row {
+    min-height: 44px;
+  }
+  .locale-toggle button,
+  .mobile-segments button,
+  .header-segments button,
+  .icon-button,
+  .dialog-close,
+  .bank-sidebar nav > button,
+  .back-link,
+  .subtle-link,
+  .footer-link-group > a,
+  .footer-link-group > button,
+  .footer-bottom a,
+  .footer-bottom button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .back-link,
+  .footer-link-group > a,
+  .footer-link-group > button {
+    min-width: 0;
+  }
+}
