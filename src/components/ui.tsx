@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowUpRight, X } from "lucide-react";
 import { LocaleToggle, LocalizedTree } from "../i18n";
+import { NetworkStatus } from "./NetworkStatus";
 
 export function Brand({
   light = false,
@@ -158,6 +159,9 @@ export function Modal({
           }
         }}
       >
+        {/* A modal dialog is in the top layer and makes the rest of the page inert, so the indicator
+            of the page cannot be seen or heard while it is open: this one is its own. */}
+        <NetworkStatus inDialog />
         <motion.div
           className="dialog-content"
           initial={{ opacity: 0, y: 16, scale: 0.985 }}

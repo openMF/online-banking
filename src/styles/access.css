@@ -610,3 +610,35 @@ textarea {
   width: 100%;
   min-width: 0;
 }
+
+/* What the network is doing: loading, trying again, offline (US-E12-04) */
+.network-status-region {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+.network-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: #252624;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+.network-status.offline {
+  background: #7a1b21;
+}
+/* While a modal dialog is open the indicator of the dialog is the one to show and announce. */
+body:has(dialog[open]) .network-status-region:not(.in-dialog) {
+  display: none;
+}

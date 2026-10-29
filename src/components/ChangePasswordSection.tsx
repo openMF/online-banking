@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Check, Eye, EyeOff, KeyRound } from "lucide-react";
 import { LocalizedTree, translate } from "../i18n";
 import { toPasswordError, type PasswordApi, type PasswordErrorCode } from "../lib/password";
+import { PROBLEM_MESSAGES } from "../lib/network";
 import type { StepUpApi } from "../lib/stepup";
 import { StepUpPanel } from "./StepUpPanel";
 
@@ -24,7 +25,10 @@ const MESSAGES: Record<PasswordErrorCode | "empty", string> = {
     "Tu institución no aceptó esa contraseña. Usa una más larga, con letras, números y símbolos, y que no hayas usado antes.",
   stepup: "La verificación ya no es válida. Inténtalo de nuevo.",
   session: "Tu sesión terminó. Inicia sesión de nuevo.",
-  network: "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+  network: PROBLEM_MESSAGES.network,
+  offline: PROBLEM_MESSAGES.offline,
+  timeout: PROBLEM_MESSAGES.timeout,
+  unavailable: PROBLEM_MESSAGES.unavailable,
   unknown: "No pudimos cambiar tu contraseña. Inténtalo más tarde.",
 };
 

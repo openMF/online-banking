@@ -269,6 +269,20 @@ describe("password change", () => {
     expect(error.message).not.toContain("Secret-pass-9");
   });
 
+  it("tells offline, timeout and a restarting service apart", () => {
+    const failed = (reason: string) =>
+      toPasswordError(new SelfServiceError(0, "error.network", "x", { reason })).code;
+    expect(failed("offline")).toBe("offline");
+    expect(failed("timeout")).toBe("timeout");
+    expect(failed("network")).toBe("network");
+    expect(toPasswordError(new SelfServiceError(503, "error.http.503", "x")).code).toBe(
+      "unavailable",
+    );
+    // HTTP 408 is a timeout as well
+    expect(toPasswordError(new SelfServiceError(408, "error.http.408", "x")).code).toBe("timeout");
+    expect(toPasswordError(new SelfServiceError(500, "error.http.500", "x")).code).toBe("unknown");
+  });
+
   it("toPasswordError keeps its own errors and turns anything else into unknown", () => {
     const own = new PasswordError("policy");
     expect(toPasswordError(own)).toBe(own);

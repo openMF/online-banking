@@ -103,7 +103,7 @@ describe("http adapter", () => {
     [401, "session"],
     [403, "session"],
     [400, "invalid"],
-    [500, "unknown"],
+    [500, "server"],
   ])("maps HTTP %i to %s without leaking the server text", async (status, code) => {
     const api = createHttpActivityApi({
       fetchImpl: vi.fn(async () =>
@@ -184,6 +184,34 @@ describe("http adapter", () => {
     });
 
     expect(((await api.list().catch((e) => e)) as ActivityError).code).toBe("network");
+  });
+
+  it("words each kind of problem its own way, and never the text of the server", () => {
+    const of = (status: number, reason?: string) =>
+      toActivityError(
+        new SelfServiceError(
+          status,
+          status === 0 ? "error.network" : `error.http.${status}`,
+          "SECRET",
+          {
+            reason,
+          },
+        ),
+      ).code;
+    expect(of(0, "offline")).toBe("offline");
+    expect(of(0, "timeout")).toBe("timeout");
+    expect(of(0, "network")).toBe("network");
+    expect(of(503)).toBe("unavailable");
+    expect(of(502)).toBe("unavailable");
+    expect(of(429)).toBe("rateLimited");
+    expect(of(500)).toBe("server");
+    expect(of(401)).toBe("session");
+    expect(of(403)).toBe("session");
+    expect(of(400)).toBe("invalid");
+    expect(of(418)).toBe("unknown");
+    expect(toActivityError(new SelfServiceError(503, "x", "SECRET")).message).not.toContain(
+      "SECRET",
+    );
   });
 
   it("maps anything else to unknown", () => {
