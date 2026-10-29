@@ -44,13 +44,13 @@ jobs:
 
       - name: Deploy to github pages
         if: ${{ github.event_name == 'push' }}
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+        uses: JamesIves/github-pages-deploy-action@v4.9.0
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: ./dist/
-          #without preserve it only builds if you have untracked files
-          PRESERVE: true
-          # github user name and email shows up in the logs, 
-          # so it would be better to make it silent. 
-          SILENT: true 
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: gh-pages
+          folder: ./dist/
+          # single-commit resets gh-pages to exactly the latest dist/ contents
+          # (force-push style), so the branch only ever holds the newest build
+          # and never accumulates history.
+          single-commit: true
+          silent: true 
