@@ -246,6 +246,30 @@ export function CustomerHome({
         </h1>
         <p>{t("Usuario verificado por tu institución:")}</p>
         <p data-testid="customer-username">{session.identity.username}</p>
+        <dl className="customer-profile-summary" data-testid="customer-profile">
+          {session.identity.officeName && (
+            <>
+              <dt>{t("Oficina")}</dt>
+              <dd data-testid="customer-office">{session.identity.officeName}</dd>
+            </>
+          )}
+          {session.identity.roles.length > 0 && (
+            <>
+              <dt>{t("Roles")}</dt>
+              <dd data-testid="customer-roles">
+                {session.identity.roles.map((r) => r.name).join(", ")}
+              </dd>
+            </>
+          )}
+          {session.identity.clients.length > 0 && (
+            <>
+              <dt>{t("ID de cliente")}</dt>
+              <dd data-testid="customer-client-id">
+                {session.identity.clients.join(", ")}
+              </dd>
+            </>
+          )}
+        </dl>
       </div>
       <div className="demo-notice" role="status">
         <LockKeyhole size={18} aria-hidden="true" />

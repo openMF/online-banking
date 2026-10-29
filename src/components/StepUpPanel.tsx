@@ -10,6 +10,7 @@ import {
   SmartphoneNfc,
 } from "lucide-react";
 import { LocalizedTree, translateWith } from "../i18n";
+import { PROBLEM_MESSAGES } from "../lib/network";
 import {
   useStepUpChallenge,
   type StepUpAction,
@@ -50,7 +51,10 @@ const MESSAGES: Partial<Record<StepUpErrorCode, string>> = {
   "session.required": "Tu sesión no permite esta verificación. Inicia sesión de nuevo.",
   "totp.not.enrolled":
     "Tu app de autenticación ya no está activa. Inicia la verificación de nuevo.",
-  network: "No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+  network: PROBLEM_MESSAGES.network,
+  offline: PROBLEM_MESSAGES.offline,
+  timeout: PROBLEM_MESSAGES.timeout,
+  unavailable: PROBLEM_MESSAGES.unavailable,
 };
 
 function errorMessage(
