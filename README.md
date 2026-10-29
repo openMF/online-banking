@@ -292,6 +292,22 @@ A customer who signed in through the backend (MX-452) has a "Seguridad de tu cue
 
 The real adapters are still not used inside the demo dialog: they need a real session, which only the customer home has.
 
+## Accessibility and responsive design (MX-492)
+
+The app is mobile-first (`min-width` breakpoints) and is checked against **WCAG 2.1 AA** by one spec, `tests/accessibility.spec.ts`, that opens every screen at **320, 768 and 1440 px** (landing and its simulators, the login and onboarding dialogs, every view of the demo bank including the verification steps and the business approvals, and the real customer screens against a faked backend) and **fails** on:
+
+- any axe violation of WCAG 2.0/2.1 A and AA, measured after the entrance animations have settled (a colour is not measured while it fades in), and any axe best-practice problem (heading order, duplicate landmarks);
+- horizontal scroll (reflow, 1.4.10);
+- a control smaller than 24 x 24 px (2.5.8; a checkbox counts through its label);
+- a control Tab cannot reach, one without a visible focus indicator, or focus leaving an open dialog;
+- a skipped heading level, an empty title, a missing `lang`.
+
+It also checks what axe cannot see: 320 px (400 % zoom) without cut-off content, 200 % text with the WCAG text-spacing override, reduced motion (nothing repeats forever), the skip link, a dialog that closes with Escape and gives the focus back to what opened it, and the `lang` of the page following the language switch. No rule is switched off. To cover a new screen, add it to the `screens` or `customerScreens` list; run one width with `A11Y_WIDTHS=375 npx playwright test tests/accessibility.spec.ts`.
+
+`src/styles/accessibility.css` (loaded last) holds the floors: 24 px for every control, 44 px where the main pointer is a finger (`pointer: coarse`). The look of the text does not change, only the area that reacts.
+
+Not checked by tools and worth a person with a screen reader on real devices (NVDA, VoiceOver, TalkBack): reading order and announcements, and some of the very small text (8-11 px) that WCAG 2.1 does not size but that is hard to read.
+
 ## Verification
 
 Unit and component tests run without a server:
