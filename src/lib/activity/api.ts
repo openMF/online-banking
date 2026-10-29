@@ -18,7 +18,16 @@ export type {
 };
 
 /** Why the history could not be read. The screen shows a fixed, translated message per code. */
-export type ActivityErrorCode = "network" | "session" | "invalid" | "unknown";
+export type ActivityErrorCode =
+  | "network"
+  | "offline"
+  | "timeout"
+  | "unavailable"
+  | "rateLimited"
+  | "server"
+  | "session"
+  | "invalid"
+  | "unknown";
 
 export class ActivityError extends Error {
   readonly code: ActivityErrorCode;
@@ -34,9 +43,21 @@ export class ActivityError extends Error {
 export function toActivityError(error: unknown): ActivityError {
   if (error instanceof ActivityError) return error;
   if (error instanceof SelfServiceError) {
-    if (error.status === 0 || error.code === "error.network") return new ActivityError("network");
-    if (error.status === 401 || error.status === 403) return new ActivityError("session");
-    if (error.status === 400) return new ActivityError("invalid");
+    // The kind of problem decides the words: offline and a restarting service are not the same.
+    switch (error.problem) {
+      case "offline":
+      case "timeout":
+      case "network":
+      case "unavailable":
+      case "rateLimited":
+      case "server":
+        return new ActivityError(error.problem);
+      case "unauthorized":
+      case "forbidden":
+        return new ActivityError("session");
+      case "invalid":
+        return new ActivityError("invalid");
+    }
   }
   return new ActivityError("unknown");
 }

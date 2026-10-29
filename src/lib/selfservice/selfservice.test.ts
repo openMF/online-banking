@@ -186,14 +186,18 @@ describe("selfRequest", () => {
 
   it("copes with non-JSON error pages", async () => {
     const fetchImpl = fakeFetch(new Response("<html>Bad gateway</html>", { status: 502 }));
-    const error = await failure(selfRequest("/x", { fetchImpl, config, session }));
+    const error = await failure(
+      selfRequest("/x", { fetchImpl, config, session, retry: { policy: { retries: 0 } } }),
+    );
     expect(error.code).toBe("error.http.502");
     expect(error.stepUpCode).toBeNull();
   });
 
   it("turns network failures into error.network without leaking the URL or credentials", async () => {
     const fetchImpl = vi.fn().mockRejectedValue(new TypeError("fetch failed https://bank.example"));
-    const error = await failure(selfRequest("/x", { fetchImpl, config, session }));
+    const error = await failure(
+      selfRequest("/x", { fetchImpl, config, session, retry: { env: { sleep: async () => {} } } }),
+    );
     expect(error.code).toBe("error.network");
     expect(error.status).toBe(0);
     expect(error.message).not.toContain("bank.example");

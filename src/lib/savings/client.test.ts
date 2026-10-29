@@ -237,6 +237,21 @@ describe("authenticated savings workflow", () => {
       expect(client.result).toBeUndefined();
     },
   );
+  it('a read that fails offline says so, and a write never says "try again"', async () => {
+    const { client, request } = setup();
+    request.mockRejectedValueOnce(new AuthenticationError("offline"));
+    await expect(client.loadTemplate(clientId)).rejects.toMatchObject({ code: "offline" });
+
+    request.mockRejectedValueOnce(new AuthenticationError("network"));
+    await expect(client.loadTemplate(clientId)).rejects.toMatchObject({ code: "unavailable" });
+
+    const ready2 = await ready();
+    ready2.request.mockResolvedValueOnce({ status: 200, ok: true, data: template(true) });
+    ready2.request.mockRejectedValueOnce(new AuthenticationError("offline"));
+    await expect(ready2.client.submit(clientId, productId, "2026-10-27")).rejects.toMatchObject({
+      code: "uncertain",
+    });
+  });
   it("retains a successful creation when read-back fails and retries only that read", async () => {
     const { client, request } = await ready();
     request.mockResolvedValueOnce({ status: 200, ok: true, data: template(true) });

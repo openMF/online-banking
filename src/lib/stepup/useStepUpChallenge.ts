@@ -155,8 +155,11 @@ export function useStepUpChallenge({
         setPhase("code");
         return;
       case "network":
+      case "offline":
+      case "timeout":
+      case "unavailable":
         // Keep what the user typed and let them retry the same action.
-        setErrorCode("network");
+        setErrorCode(failure.code);
         setPhase(from === "start" ? "unavailable" : "code");
         return;
       default:

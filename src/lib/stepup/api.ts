@@ -39,6 +39,9 @@ export type StepUpErrorCode =
   | "totp.enrollment.missing"
   | "totp.already.enrolled"
   | "network"
+  | "offline"
+  | "timeout"
+  | "unavailable"
   | "unknown";
 
 const KNOWN_CODES: ReadonlySet<string> = new Set<StepUpErrorCode>([
@@ -90,7 +93,11 @@ function numberOrUndefined(value: unknown): number | undefined {
 export function toStepUpError(error: unknown): StepUpError {
   if (error instanceof StepUpError) return error;
   if (error instanceof SelfServiceError) {
-    if (error.code === "error.network") return new StepUpError("network");
+    if (error.code === "error.network") {
+      // Offline and a timeout read differently from "could not connect": say which.
+      const problem = error.problem;
+      return new StepUpError(problem === "offline" || problem === "timeout" ? problem : "network");
+    }
     const suffix = error.stepUpCode;
     if (suffix && KNOWN_CODES.has(suffix)) {
       return new StepUpError(suffix as StepUpErrorCode, {
@@ -98,6 +105,10 @@ export function toStepUpError(error: unknown): StepUpError {
         retryAfterSeconds: numberOrUndefined(error.details.retryAfterSeconds),
       });
     }
+    // A service that is down or restarting (502, 503, 504) answers without a step-up code.
+    if (error.problem === "unavailable") return new StepUpError("unavailable");
+    // HTTP 408 (the server gave up waiting) reads as a timeout, like a request that ran out of time.
+    if (error.problem === "timeout") return new StepUpError("timeout");
   }
   return new StepUpError("unknown");
 }
