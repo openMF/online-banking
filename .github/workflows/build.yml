@@ -1,32 +1,28 @@
 name: github-actions CI
 
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    name: Run Lint and Deploy 
-    runs-on: ubuntu-latest
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+jobs:
+  build:
+    name: Run Lint and Deploy
+    runs-on: ubuntu-latest
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v6
 
       - name: Use Node.js 24
         uses: actions/setup-node@v6
         with:
-          # no support for lts as of now with github actions.
-          # issue link : https://github.com/actions/setup-node/issues/26
           node-version: '24.16.0'
+
       - name: Remove node_modules
         run: rm -rf node_modules
 
@@ -40,7 +36,7 @@ jobs:
         run: npm test
 
       - name: Run build
-        run : npm run build
+        run: npm run build
 
       - name: Deploy to github pages
         if: ${{ github.event_name == 'push' }}
@@ -49,8 +45,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
           folder: ./dist/
-          # single-commit resets gh-pages to exactly the latest dist/ contents
-          # (force-push style), so the branch only ever holds the newest build
-          # and never accumulates history.
           single-commit: true
-          silent: true 
+          silent: true
