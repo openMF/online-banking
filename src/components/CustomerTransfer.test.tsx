@@ -88,17 +88,19 @@ function fakeTransfers(overrides: Partial<TransfersApi> = {}) {
 function setup(transfers = fakeTransfers(), stepUp = fakeStepUp()) {
   const onClose = vi.fn();
   const onExpired = vi.fn();
-  render(
+  const onSend = vi.fn();
+  const { unmount } = render(
     <I18nProvider>
       <CustomerTransfer
         api={transfers}
         stepUpApi={stepUp}
         onClose={onClose}
         onExpired={onExpired}
+        onSend={onSend}
       />
     </I18nProvider>,
   );
-  return { transfers, stepUp, onClose, onExpired, user: userEvent.setup() };
+  return { transfers, stepUp, onClose, onExpired, onSend, unmount, user: userEvent.setup() };
 }
 
 type User = ReturnType<typeof userEvent.setup>;
@@ -124,7 +126,7 @@ async function toReview(
 
 async function verify(user: User) {
   await user.type(await screen.findByLabelText("Código de verificación"), "123456");
-  await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
+  await user.click(screen.getByRole("button", { name: "Verificar y enviar" }));
 }
 
 beforeEach(() => {
@@ -292,7 +294,7 @@ describe("CustomerTransfer: review and verification", () => {
     const { user, transfers, stepUp } = setup();
     await toReview(user);
 
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
 
     // the token is bound to the five fields of the transfer, the amount as text
     await waitFor(() =>
@@ -333,7 +335,7 @@ describe("CustomerTransfer: review and verification", () => {
     const { user, transfers } = setup(fakeTransfers(), stepUp);
     await toReview(user);
 
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
 
     await waitFor(() => expect(transfers.create).toHaveBeenCalledTimes(1));
     expect(transfers.create).toHaveBeenCalledWith("own", expect.anything(), undefined);
@@ -343,12 +345,12 @@ describe("CustomerTransfer: review and verification", () => {
   it("goes back from the verification to the review without sending", async () => {
     const { user, transfers } = setup();
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await screen.findByLabelText("Código de verificación");
 
     await user.click(screen.getByRole("button", { name: /Volver al resumen/ }));
 
-    expect(screen.getByRole("button", { name: "Continuar a verificación" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Confirmar transferencia" })).toBeTruthy();
     expect(transfers.create).not.toHaveBeenCalled();
   });
 });
@@ -357,7 +359,7 @@ describe("CustomerTransfer: the receipt", () => {
   it("shows the receipt with the reference, and starts another transfer from a clean form", async () => {
     const { user } = setup();
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
 
     const receipt = (await screen.findByText("Transferencia realizada")).closest("div")!;
@@ -381,7 +383,7 @@ describe("CustomerTransfer: the receipt", () => {
       }),
     );
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
 
     expect(await screen.findByText("Transferencia realizada")).toBeTruthy();
@@ -391,7 +393,7 @@ describe("CustomerTransfer: the receipt", () => {
   it("takes the person back home", async () => {
     const { user, onClose } = setup();
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
     await screen.findByText("Transferencia realizada");
 
@@ -422,7 +424,7 @@ describe("CustomerTransfer: when the transfer fails", () => {
         .mockImplementation(async (_kind, input) => receiptOf(input));
       const { user, stepUp } = setup(fakeTransfers({ create }));
       await toReview(user);
-      await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+      await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
       await verify(user);
 
       const alert = await screen.findByRole("alert");
@@ -450,7 +452,7 @@ describe("CustomerTransfer: when the transfer fails", () => {
       .mockImplementation(async (_kind, input) => receiptOf(input));
     const { user, stepUp } = setup(fakeTransfers({ create }));
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
     await screen.findByRole("alert");
 
@@ -459,7 +461,7 @@ describe("CustomerTransfer: when the transfer fails", () => {
     await user.clear(amount);
     await user.type(amount, "5");
     await user.click(screen.getByRole("button", { name: "Revisar transferencia" }));
-    await user.click(await screen.findByRole("button", { name: "Continuar a verificación" }));
+    await user.click(await screen.findByRole("button", { name: "Confirmar transferencia" }));
 
     await waitFor(() => expect(stepUp.createChallenge).toHaveBeenCalledTimes(2));
     expect(create).toHaveBeenCalledTimes(1);
@@ -472,7 +474,7 @@ describe("CustomerTransfer: when the transfer fails", () => {
       .mockImplementation(async (_kind, input) => receiptOf(input));
     const { user, stepUp } = setup(fakeTransfers({ create }));
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
 
     expect((await screen.findByRole("alert")).textContent).toContain("ya no es válida");
@@ -488,7 +490,7 @@ describe("CustomerTransfer: when the transfer fails", () => {
     const create = vi.fn().mockRejectedValue(new TransferError("accounts"));
     const { user } = setup(fakeTransfers({ create, getTemplate }));
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
     await screen.findByRole("alert");
 
@@ -503,7 +505,7 @@ describe("CustomerTransfer: when the transfer fails", () => {
     const create = vi.fn().mockRejectedValue(new TransferError("session"));
     const { user, onExpired } = setup(fakeTransfers({ create }));
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
 
     await waitFor(() => expect(onExpired).toHaveBeenCalledTimes(1));
@@ -515,7 +517,7 @@ describe("CustomerTransfer: an answer that did not arrive", () => {
     const create = vi.fn().mockRejectedValue(new TransferError("uncertain"));
     const setupResult = setup(fakeTransfers({ create }));
     await toReview(setupResult.user);
-    await setupResult.user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await setupResult.user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(setupResult.user);
     await screen.findByText(/No pudimos confirmar el resultado de la transferencia/);
     return { ...setupResult, create };
@@ -551,7 +553,7 @@ describe("CustomerTransfer: one send at a time", () => {
     );
     const { user } = setup(fakeTransfers({ create }));
     await toReview(user);
-    await user.click(screen.getByRole("button", { name: "Continuar a verificación" }));
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
     await verify(user);
 
     const status = await screen.findAllByText("Enviando tu transferencia…");
@@ -578,7 +580,7 @@ describe("CustomerTransfer: language", () => {
     await user.type(screen.getByLabelText("Memo"), "October rent");
     await user.click(screen.getByRole("button", { name: "Review transfer" }));
     expect(await screen.findByText("Savings account 00002 · Ana Pérez")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Continue to verification" }));
+    await user.click(screen.getByRole("button", { name: "Confirm transfer" }));
     await screen.findByLabelText(/verification code/i);
 
     expect((window as Window & { __missingI18n?: string[] }).__missingI18n ?? []).toEqual([]);
@@ -598,9 +600,118 @@ describe("CustomerTransfer: language", () => {
     await user.type(screen.getByLabelText("Amount in USD"), "10");
     await user.type(screen.getByLabelText("Memo"), "Rent");
     await user.click(screen.getByRole("button", { name: "Review transfer" }));
-    await user.click(await screen.findByRole("button", { name: "Continue to verification" }));
+    await user.click(await screen.findByRole("button", { name: "Confirm transfer" }));
 
     expect((await screen.findByRole("alert")).textContent).toContain("No money moved");
     expect((window as Window & { __missingI18n?: string[] }).__missingI18n ?? []).toEqual([]);
+  });
+});
+
+describe("CustomerTransfer: what the home is told", () => {
+  it("reports the start, the result and that the receipt was seen", async () => {
+    const { user, onSend } = setup();
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
+    await verify(user);
+    await screen.findByText("Transferencia realizada");
+
+    expect(onSend.mock.calls.map(([event]) => event)).toEqual([
+      { kind: "start" },
+      { kind: "done", reference: 55 },
+      { kind: "seen" },
+    ]);
+  });
+
+  it("reports a refusal as failed and an unknown result as uncertain", async () => {
+    const refused = setup(
+      fakeTransfers({ create: vi.fn().mockRejectedValue(new TransferError("funds")) }),
+    );
+    await toReview(refused.user);
+    await refused.user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
+    await verify(refused.user);
+    await screen.findByRole("alert");
+    expect(refused.onSend.mock.calls.map(([event]) => event.kind)).toEqual(["start", "failed"]);
+    cleanup();
+
+    const unknown = setup(
+      fakeTransfers({ create: vi.fn().mockRejectedValue(new TransferError("uncertain")) }),
+    );
+    await toReview(unknown.user);
+    await unknown.user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
+    await verify(unknown.user);
+    await screen.findByText(/No pudimos confirmar el resultado de la transferencia/);
+    expect(unknown.onSend.mock.calls.map(([event]) => event.kind)).toEqual(["start", "uncertain"]);
+  });
+
+  it("still reports the result when the screen was closed while the transfer was being sent", async () => {
+    let finish: () => void = () => undefined;
+    const create = vi.fn(
+      (_kind, input) =>
+        new Promise<TransferReceipt>((resolve) => {
+          finish = () => resolve(receiptOf(input));
+        }),
+    );
+    const { user, onSend, unmount } = setup(fakeTransfers({ create }));
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
+    await verify(user);
+    await screen.findAllByText("Enviando tu transferencia…");
+
+    unmount();
+    finish();
+
+    await waitFor(() =>
+      expect(onSend.mock.calls.map(([event]) => event)).toEqual([
+        { kind: "start" },
+        { kind: "done", reference: 55 },
+      ]),
+    );
+  });
+
+  it("reports an unknown result even when the screen was closed", async () => {
+    let fail: () => void = () => undefined;
+    const create = vi.fn(
+      () =>
+        new Promise<TransferReceipt>((_resolve, reject) => {
+          fail = () => reject(new TransferError("uncertain"));
+        }),
+    );
+    const { user, onSend, unmount } = setup(fakeTransfers({ create }));
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
+    await verify(user);
+    await screen.findAllByText("Enviando tu transferencia…");
+
+    unmount();
+    fail();
+
+    await waitFor(() =>
+      expect(onSend.mock.calls.map(([event]) => event.kind)).toEqual(["start", "uncertain"]),
+    );
+  });
+});
+
+describe("CustomerTransfer: the currency arrives after the amount was typed", () => {
+  it("goes back to the form, with the problem, and sends nothing, when the decimals change", async () => {
+    let answer: (summary: { currency: { code: string; decimalPlaces: number } }) => void = () =>
+      undefined;
+    const getSummary = vi.fn(
+      () =>
+        new Promise<{ currency: { code: string; decimalPlaces: number } }>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const { user, transfers, stepUp } = setup(fakeTransfers({ getSummary }));
+    // 10.50 is a good amount while the currency is not known yet (2 decimals)
+    await toReview(user);
+    expect(screen.getByRole("button", { name: "Confirmar transferencia" })).toBeTruthy();
+
+    // the account turns out to have no decimals: 10.50 is not an amount of this currency
+    answer({ currency: { code: "JPY", decimalPlaces: 0 } });
+
+    expect((await screen.findByRole("alert")).textContent).toContain("no admite decimales");
+    expect(screen.getByLabelText(/^Importe/)).toBeTruthy();
+    expect(transfers.create).not.toHaveBeenCalled();
+    expect(stepUp.createChallenge).not.toHaveBeenCalled();
   });
 });

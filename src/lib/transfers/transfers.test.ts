@@ -203,7 +203,13 @@ describe("parseSummary", () => {
   it("keeps what is good and drops what is not, without failing", () => {
     expect(parseSummary(null)).toEqual({});
     expect(parseSummary({ currency: { code: "usd", decimalPlaces: 2 } })).toEqual({});
-    expect(parseSummary({ currency: { code: "USD", decimalPlaces: 9 } })).toEqual({});
+    expect(parseSummary({ currency: { code: "USD", decimalPlaces: 7 } })).toEqual({});
+    expect(parseSummary({ currency: { code: "USD", decimalPlaces: 6 } })).toEqual({
+      currency: { code: "USD", decimalPlaces: 6 },
+    });
+    expect(parseSummary({ currency: { code: "USD", decimalPlaces: 0 } })).toEqual({
+      currency: { code: "USD", decimalPlaces: 0 },
+    });
     expect(parseSummary({ summary: { availableBalance: "12" } })).toEqual({});
     expect(parseSummary({ summary: { availableBalance: 12 } })).toEqual({ available: 12 });
   });

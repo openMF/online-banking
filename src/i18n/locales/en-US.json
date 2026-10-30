@@ -782,7 +782,6 @@
     "Estamos cargando tus cuentas.": "We are loading your accounts.",
     "No pudimos cargar tus cuentas.": "We could not load your accounts.",
     "Mueve dinero entre tus cuentas de ahorro.": "Move money between your savings accounts.",
-    "Revisa los datos antes de continuar. Una transferencia no se puede deshacer.": "Check the details before you continue. A transfer cannot be undone.",
     "Antes de enviarla, confirma que eres tú.": "Before sending it, confirm it is you.",
     "Enviando tu transferencia…": "Sending your transfer…",
     "Tu transferencia se realizó.": "Your transfer was made.",
@@ -818,6 +817,12 @@
     "No pudimos verificar la respuesta de tu institución. Inténtalo más tarde.": "We could not verify the answer of your institution. Try again later.",
     "No pudimos completar la transferencia. Inténtalo más tarde.": "We could not complete the transfer. Try again later.",
     "No pudimos confirmar el resultado de la transferencia. No la envíes otra vez: revisa el saldo de tu cuenta o consulta a tu institución antes de intentarlo de nuevo.": "We could not confirm the result of the transfer. Do not send it again: check the balance of your account or ask your institution before you try again.",
-    "La fecha de tu dispositivo no coincide con la de tu institución. Revisa la fecha y la hora de tu dispositivo e inténtalo de nuevo. No se movió dinero.": "The date of your device does not match the date of your institution. Check the date and time of your device and try again. No money moved."
+    "La fecha de tu dispositivo no coincide con la de tu institución. Revisa la fecha y la hora de tu dispositivo e inténtalo de nuevo. No se movió dinero.": "The date of your device does not match the date of your institution. Check the date and time of your device and try again. No money moved.",
+    "Verificar y enviar": "Verify and send",
+    "Revisa los datos. Al confirmar se envía la transferencia y no se puede deshacer. Tu institución puede pedirte antes un código de verificación.": "Check the details. When you confirm, the transfer is sent and cannot be undone. Your institution may ask you for a verification code first.",
+    "Hay una transferencia en curso. Espera su resultado antes de hacer otra.": "A transfer is in progress. Wait for its result before making another.",
+    "No pudimos confirmar tu última transferencia. Revisa el saldo de tu cuenta o consulta a tu institución antes de hacer otra.": "We could not confirm your last transfer. Check the balance of your account or ask your institution before making another.",
+    "Tu última transferencia se realizó. Referencia: {reference}.": "Your last transfer was made. Reference: {reference}.",
+    "Tu última transferencia se realizó.": "Your last transfer was made."
   }
 }

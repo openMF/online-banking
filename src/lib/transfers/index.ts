@@ -208,7 +208,7 @@ export function parseSummary(data: unknown): AccountSummary {
     typeof currency.decimalPlaces === "number" &&
     Number.isInteger(currency.decimalPlaces) &&
     currency.decimalPlaces >= 0 &&
-    currency.decimalPlaces <= 4
+    currency.decimalPlaces <= 6
   ) {
     summary.currency = { code: currency.code, decimalPlaces: currency.decimalPlaces };
   }

@@ -41,6 +41,8 @@ type Options = {
   stepUpOff?: boolean;
   /** What the first `POST /accounttransfers` answers. */
   post?: "ok" | "funds" | "serverError" | "dropped" | "expired";
+  /** The first transfer is answered only after this many milliseconds. */
+  postDelayMs?: number;
   /** Only one savings account. */
   single?: boolean;
   /** The account summary cannot be read. */
@@ -134,6 +136,8 @@ async function configure(page: Page, options: Options = {}): Promise<Seen> {
       attempts += 1;
       seen.posts.push({ body: request.postDataJSON(), headers: request.headers() });
       const mode = attempts === 1 ? (options.post ?? "ok") : "ok";
+      if (attempts === 1 && options.postDelayMs)
+        await new Promise((resolve) => setTimeout(resolve, options.postDelayMs));
       if (mode === "dropped") return route.abort("connectionreset");
       if (mode === "serverError")
         return fulfill(route, { userMessageGlobalisationCode: "error.msg.internal" }, 500);
@@ -199,12 +203,12 @@ async function fillForm(page: Page, amount = "250.5", concept = "Renta de octubr
 }
 
 async function startVerification(page: Page) {
-  await page.getByRole("button", { name: "Continuar a verificación", exact: true }).click();
+  await page.getByRole("button", { name: "Confirmar transferencia", exact: true }).click();
 }
 
 async function verify(page: Page, code = CODE) {
   await page.getByLabel("Código de verificación", { exact: true }).fill(code);
-  await page.getByRole("button", { name: "Confirmar transferencia", exact: true }).click();
+  await page.getByRole("button", { name: "Verificar y enviar", exact: true }).click();
 }
 
 async function noAccessibilityViolations(page: Page) {
@@ -394,6 +398,62 @@ test.describe("transfer between own accounts of a customer", () => {
     });
   }
 
+  test("closing the screen while the transfer is being sent blocks the next one until the result is known", async ({
+    page,
+  }) => {
+    const seen = await configure(page, { postDelayMs: 1500 });
+    await openTransfer(page);
+    await fillForm(page);
+    await startVerification(page);
+    await verify(page);
+    await expect(page.getByText("Enviando tu transferencia…").first()).toBeVisible();
+
+    // the person goes back to the home while the transfer is on its way
+    await page.getByRole("button", { name: "Volver al inicio" }).first().click();
+    const entry = page.getByRole("button", { name: "Transferir entre mis cuentas", exact: true });
+    await expect(entry).toBeDisabled();
+    await expect(page.getByTestId("transfer-track")).toContainText(
+      "Hay una transferencia en curso",
+    );
+
+    // the result arrives with the screen closed: it is told on the home, and the next one is free
+    await expect(page.getByTestId("transfer-track")).toContainText(
+      "se realizó. Referencia: 4242.",
+      {
+        timeout: 10000,
+      },
+    );
+    await expect(entry).toBeEnabled();
+    expect(seen.posts).toHaveLength(1);
+
+    // opening the screen again clears what was told
+    await entry.click();
+    await expect(page.getByRole("heading", { name: "Transferir entre mis cuentas" })).toBeVisible();
+    await page.getByRole("button", { name: "Volver al inicio" }).first().click();
+    await expect(page.getByTestId("transfer-track")).toHaveCount(0);
+  });
+
+  test("a transfer whose result is unknown blocks the next one, even after closing the screen", async ({
+    page,
+  }) => {
+    const seen = await configure(page, { post: "dropped", postDelayMs: 800 });
+    await openTransfer(page);
+    await fillForm(page);
+    await startVerification(page);
+    await verify(page);
+    await page.getByRole("button", { name: "Volver al inicio" }).first().click();
+
+    const entry = page.getByRole("button", { name: "Transferir entre mis cuentas", exact: true });
+    await expect(page.getByTestId("transfer-track")).toContainText(
+      "No pudimos confirmar tu última transferencia",
+      { timeout: 10000 },
+    );
+    await expect(entry).toBeDisabled();
+    await page.waitForTimeout(500);
+    await expect(entry).toBeDisabled();
+    expect(seen.posts).toHaveLength(1);
+  });
+
   test("a double click on the confirmation sends one transfer", async ({ page }) => {
     const seen = await configure(page);
     await openTransfer(page);
@@ -402,7 +462,7 @@ test.describe("transfer between own accounts of a customer", () => {
     await page.getByLabel("Código de verificación", { exact: true }).fill(CODE);
 
     await page
-      .getByRole("button", { name: "Confirmar transferencia", exact: true })
+      .getByRole("button", { name: "Verificar y enviar", exact: true })
       .dblclick({ noWaitAfter: true });
 
     await expect(page.getByRole("heading", { name: "Transferencia realizada" })).toBeVisible();
@@ -447,9 +507,9 @@ test.describe("transfer between own accounts of a customer", () => {
     await page.getByLabel("Memo", { exact: true }).fill("October rent");
     await page.getByRole("button", { name: "Review transfer", exact: true }).click();
     await expect(page.getByText("Savings account SYN-0102 · Synthetic Customer")).toBeVisible();
-    await page.getByRole("button", { name: "Continue to verification", exact: true }).click();
-    await page.getByLabel(/verification code/i).fill(CODE);
     await page.getByRole("button", { name: "Confirm transfer", exact: true }).click();
+    await page.getByLabel(/verification code/i).fill(CODE);
+    await page.getByRole("button", { name: "Verify and send", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Transfer made" })).toBeVisible();
     const missing = await page.evaluate(
@@ -471,7 +531,7 @@ test.describe("transfer between own accounts of a customer", () => {
     await page.keyboard.type("Teclado");
     await page.keyboard.press("Enter");
     await expect(page.getByText("99.99 MXN")).toBeVisible();
-    await page.getByRole("button", { name: "Continuar a verificación", exact: true }).focus();
+    await page.getByRole("button", { name: "Confirmar transferencia", exact: true }).focus();
     await page.keyboard.press("Enter");
     await page.getByLabel("Código de verificación", { exact: true }).focus();
     await page.keyboard.type(CODE);

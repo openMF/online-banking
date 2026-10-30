@@ -16,6 +16,7 @@ import {
   type AmountProblem,
   type TransferAccount,
   type TransferErrorCode,
+  type TransferInput,
   type TransferReceipt,
   type TransferTemplate,
   type TransfersApi,
@@ -30,7 +31,20 @@ type Props = {
   onClose: () => void;
   /** The session ended or cannot be used for this step. */
   onExpired: () => void;
+  /**
+   * What happens to the transfer being sent. It is reported even when this screen was closed
+   * meanwhile, so the home can keep the person from sending a transfer that may still be running.
+   */
+  onSend?: (event: SendEvent) => void;
 };
+
+/** The life of one send. `seen`: the receipt was shown to the person. */
+export type SendEvent =
+  | { kind: "start" }
+  | { kind: "done"; reference?: number }
+  | { kind: "uncertain" }
+  | { kind: "failed" }
+  | { kind: "seen" };
 
 type Phase = "loading" | "failed" | "form" | "review" | "verify" | "sending" | "done" | "uncertain";
 
@@ -100,7 +114,7 @@ function amountProblem(problem: AmountProblem, decimals: number): string {
  * A transfer moves money, so it is sent once and never repeated: one request at a time, and an
  * answer that does not arrive is shown as "uncertain" with no way to send the same transfer again.
  */
-export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) {
+export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [template, setTemplate] = useState<TransferTemplate | null>(null);
   const [loadError, setLoadError] = useState<TransferErrorCode | null>(null);
@@ -232,12 +246,12 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) 
   }
 
   const parsed = parseAmount(amountText, decimals);
-  // A verification already done is for one transfer: only the same one is sent with it.
-  const grantFits =
-    from !== null &&
-    to !== null &&
-    parsed.ok &&
-    grant.current?.key === transferKey({ from, to, amount: parsed.value });
+  // What is sent, or null while the form is not valid. The decimals come from the source account
+  // and can arrive after the person typed, so this is asked again at every step, never assumed.
+  const ready: TransferInput | null =
+    from && to && parsed.ok && description.trim()
+      ? { from, to, amount: parsed.value, description: description.trim() }
+      : null;
 
   function review(event: FormEvent) {
     event.preventDefault();
@@ -250,19 +264,27 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) 
     setPhase("review");
   }
 
-  function input() {
-    // Only called with a valid form: `from`, `to` and `parsed` are checked before the review.
-    return {
-      from: from!,
-      to: to!,
-      amount: parsed.ok ? parsed.value : "",
-      description: description.trim(),
-    };
+  /** Back to the form with what is wrong, when something the transfer needs stopped being valid. */
+  function backToForm() {
+    grant.current = null;
+    setProblem(
+      parsed.ok ? null : { field: "amount", text: amountProblem(parsed.problem, decimals) },
+    );
+    setPhase("form");
   }
 
+  // The review and the verification are only for a valid transfer.
+  const invalidInStep = (phase === "review" || phase === "verify") && ready === null;
+  useEffect(() => {
+    if (invalidInStep) backToForm();
+    // `backToForm` only reads what the flag already depends on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invalidInStep]);
+
   function proceed() {
+    if (!ready) return backToForm();
     const current = grant.current;
-    if (current && current.key === transferKey(input())) {
+    if (current && current.key === transferKey(ready)) {
       void send(current.token);
       return;
     }
@@ -273,18 +295,24 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) 
 
   async function send(token: string | null) {
     if (working.current) return;
+    if (!ready) return backToForm();
     working.current = true;
     setPhase("sending");
     setFailure(null);
+    // The caller keeps track of the transfer even when this screen is closed meanwhile.
+    onSend?.({ kind: "start" });
     try {
-      const done = await api.create("own", input(), token ?? undefined);
+      const done = await api.create("own", ready, token ?? undefined);
       grant.current = null;
+      onSend?.({ kind: "done", reference: done.reference });
       if (!mounted.current) return;
       setReceipt(done);
       setPhase("done");
+      onSend?.({ kind: "seen" });
     } catch (error) {
-      if (!mounted.current) return;
       const code = toTransferError(error, true).code;
+      onSend?.({ kind: code === "uncertain" ? "uncertain" : "failed" });
+      if (!mounted.current) return;
       if (code === "session") {
         onExpired();
         return;
@@ -332,7 +360,8 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) 
     loading: "Estamos cargando tus cuentas.",
     failed: "No pudimos cargar tus cuentas.",
     form: "Mueve dinero entre tus cuentas de ahorro.",
-    review: "Revisa los datos antes de continuar. Una transferencia no se puede deshacer.",
+    review:
+      "Revisa los datos. Al confirmar se envía la transferencia y no se puede deshacer. Tu institución puede pedirte antes un código de verificación.",
     verify: "Antes de enviarla, confirma que eres tú.",
     sending: "Enviando tu transferencia…",
     done: "Tu transferencia se realizó.",
@@ -516,19 +545,19 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) 
           </form>
         )}
 
-        {(phase === "review" || phase === "verify" || phase === "sending") && from && to && (
+        {(phase === "review" || phase === "verify" || phase === "sending") && ready && (
           <div className="authenticator-block">
             <dl className="review-details">
               <div>
                 <dt>Desde</dt>
                 <dd>
-                  <Verbatim text={accountLabel(from)} />
+                  <Verbatim text={accountLabel(ready.from)} />
                 </dd>
               </div>
               <div>
                 <dt>Para</dt>
                 <dd>
-                  <Verbatim text={accountLabel(to)} />
+                  <Verbatim text={accountLabel(ready.to)} />
                 </dd>
               </div>
               <div>
@@ -555,7 +584,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) 
                   </p>
                 )}
                 <button className="button button-primary" type="button" onClick={proceed}>
-                  {grantFits ? "Confirmar transferencia" : "Continuar a verificación"}
+                  Confirmar transferencia
                   <ShieldCheck size={17} aria-hidden="true" />
                 </button>
                 <button
@@ -580,10 +609,10 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired }: Props) 
                   key={round}
                   api={stepUpApi}
                   action="OWN_TRANSFER"
-                  payload={stepUpPayload(input())}
-                  submitLabel="Confirmar transferencia"
+                  payload={stepUpPayload(ready)}
+                  submitLabel="Verificar y enviar"
                   onVerified={(token) => {
-                    grant.current = { token, key: transferKey(input()) };
+                    grant.current = { token, key: transferKey(ready) };
                     void send(token);
                   }}
                   onNotRequired={() => void send(null)}
@@ -677,10 +706,12 @@ export function CustomerTransferArea({
   session,
   onClose,
   onExpired,
+  onSend,
 }: {
   session: CustomerSession;
   onClose: () => void;
   onExpired: () => void;
+  onSend?: (event: SendEvent) => void;
 }) {
   // One set of clients per login screen, so the screen and its verification share the session.
   const [clients] = useState(() => ({
@@ -693,6 +724,7 @@ export function CustomerTransferArea({
       stepUpApi={clients.stepUp}
       onClose={onClose}
       onExpired={onExpired}
+      onSend={onSend}
     />
   );
 }

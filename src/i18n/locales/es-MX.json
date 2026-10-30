@@ -782,7 +782,6 @@
     "Estamos cargando tus cuentas.": "Estamos cargando tus cuentas.",
     "No pudimos cargar tus cuentas.": "No pudimos cargar tus cuentas.",
     "Mueve dinero entre tus cuentas de ahorro.": "Mueve dinero entre tus cuentas de ahorro.",
-    "Revisa los datos antes de continuar. Una transferencia no se puede deshacer.": "Revisa los datos antes de continuar. Una transferencia no se puede deshacer.",
     "Antes de enviarla, confirma que eres tú.": "Antes de enviarla, confirma que eres tú.",
     "Enviando tu transferencia…": "Enviando tu transferencia…",
     "Tu transferencia se realizó.": "Tu transferencia se realizó.",
@@ -818,6 +817,12 @@
     "No pudimos verificar la respuesta de tu institución. Inténtalo más tarde.": "No pudimos verificar la respuesta de tu institución. Inténtalo más tarde.",
     "No pudimos completar la transferencia. Inténtalo más tarde.": "No pudimos completar la transferencia. Inténtalo más tarde.",
     "No pudimos confirmar el resultado de la transferencia. No la envíes otra vez: revisa el saldo de tu cuenta o consulta a tu institución antes de intentarlo de nuevo.": "No pudimos confirmar el resultado de la transferencia. No la envíes otra vez: revisa el saldo de tu cuenta o consulta a tu institución antes de intentarlo de nuevo.",
-    "La fecha de tu dispositivo no coincide con la de tu institución. Revisa la fecha y la hora de tu dispositivo e inténtalo de nuevo. No se movió dinero.": "La fecha de tu dispositivo no coincide con la de tu institución. Revisa la fecha y la hora de tu dispositivo e inténtalo de nuevo. No se movió dinero."
+    "La fecha de tu dispositivo no coincide con la de tu institución. Revisa la fecha y la hora de tu dispositivo e inténtalo de nuevo. No se movió dinero.": "La fecha de tu dispositivo no coincide con la de tu institución. Revisa la fecha y la hora de tu dispositivo e inténtalo de nuevo. No se movió dinero.",
+    "Verificar y enviar": "Verificar y enviar",
+    "Revisa los datos. Al confirmar se envía la transferencia y no se puede deshacer. Tu institución puede pedirte antes un código de verificación.": "Revisa los datos. Al confirmar se envía la transferencia y no se puede deshacer. Tu institución puede pedirte antes un código de verificación.",
+    "Hay una transferencia en curso. Espera su resultado antes de hacer otra.": "Hay una transferencia en curso. Espera su resultado antes de hacer otra.",
+    "No pudimos confirmar tu última transferencia. Revisa el saldo de tu cuenta o consulta a tu institución antes de hacer otra.": "No pudimos confirmar tu última transferencia. Revisa el saldo de tu cuenta o consulta a tu institución antes de hacer otra.",
+    "Tu última transferencia se realizó. Referencia: {reference}.": "Tu última transferencia se realizó. Referencia: {reference}.",
+    "Tu última transferencia se realizó.": "Tu última transferencia se realizó."
   }
 }
