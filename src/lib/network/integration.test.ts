@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAuthenticationClient } from "../authentication/client";
 import { SelfServiceError, selfRequest } from "../selfservice";
-import { createSelfServiceConfigLoader } from "../self-service-config";
+import { createSelfServiceConfigLoader } from "../self-service-config-loader";
 import { networkSnapshot, resetNetworkActivity } from "./index";
 
 // The retry and the indicator as the typed clients use them: what is repeated, what never is.

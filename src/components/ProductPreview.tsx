@@ -114,10 +114,10 @@ export default function ProductPreview({
                   <div className="mini-greeting">
                     <div>
                       <p>QUÉ BUENO TENERTE AQUÍ</p>
-                      <h4>
+                      <h3>
                         Hola,{" "}
                         {segment === "empresas" ? "Estudio Norte" : "Mariana"}.
-                      </h4>
+                      </h3>
                     </div>
                     <span className="mini-avatar">
                       {segment === "empresas" ? "EN" : "ML"}
@@ -190,11 +190,11 @@ export default function ProductPreview({
                     </>
                   )}
                   <div className="mini-activity-title">
-                    <h5>
+                    <h4>
                       {previewTab === "overview"
                         ? "Últimos movimientos"
                         : "Tus movimientos"}
-                    </h5>
+                    </h4>
                     <button
                       className="mini-transfer"
                       onClick={() => onDemo("transfer")}
@@ -264,11 +264,11 @@ export default function ProductPreview({
               ) : (
                 <div className="preview-calculator">
                   <p className="calculator-eyebrow">SIMULADOR ILUSTRATIVO</p>
-                  <h4>
+                  <h3>
                     {product === "inversion"
                       ? "Tu próximo logro empieza hoy."
                       : "Dale forma a ese gran proyecto."}
-                  </h4>
+                  </h3>
                   <label className="range-label" htmlFor="preview-amount">
                     {product === "inversion"
                       ? "¿Cuánto te gustaría invertir?"

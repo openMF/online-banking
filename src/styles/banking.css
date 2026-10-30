@@ -379,7 +379,7 @@
   white-space: nowrap;
   padding: 10px 0;
   border-bottom: 2px solid transparent;
-  color: #8f7452;
+  color: #876c4c;
 }
 .account-filter > button.active {
   color: var(--brand);
@@ -913,7 +913,7 @@
     white-space: nowrap;
   }
   .bank-user .icon-button {
-    min-width: 23px;
+    min-width: 24px;
     min-height: 28px;
     margin-left: auto;
   }

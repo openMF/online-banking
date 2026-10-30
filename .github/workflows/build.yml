@@ -39,6 +39,11 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      # Loads the configuration generator the way the container does (plain Node, only the files the
+      # Dockerfile copies) and checks nginx.conf.
+      - name: Run configuration tests
+        run: npm run test:config
+
       - name: Run build
         run : npm run build
 

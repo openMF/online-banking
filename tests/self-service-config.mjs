@@ -9,10 +9,10 @@ import viteConfig from "../vite.config.ts";
 import {
   buildSelfServiceUrl,
   configFromEnvironment,
-  createSelfServiceConfigLoader,
   SelfServiceConfigError,
   validateSelfServiceConfig,
 } from "../src/lib/self-service-config.ts";
+import { createSelfServiceConfigLoader } from "../src/lib/self-service-config-loader.ts";
 
 const valid = {
   baseUrl: "https://bank.example/fineract-provider/api/v1/self",
@@ -282,7 +282,16 @@ test("Nginx configuration keeps runtime JSON uncached and separate from SPA fall
   assert.match(location, /add_header Cache-Control "no-store" always/);
   assert.match(location, /try_files \$uri =404/);
   assert.match(location, /X-Content-Type-Options "nosniff"/);
-  assert.match(nginx, /Cache-Control "public, immutable"/);
+  assert.match(nginx, /Cache-Control "public, max-age=604800, immutable"/);
+  // `expires` would add a second Cache-Control, and a location-level add_header drops the
+  // security headers of the server block, so the asset location repeats them.
+  assert.doesNotMatch(nginx, /^\s*expires\b/m);
+  const assets = nginx.match(/location ~\* [^{]*\{([^}]+)\}/)?.[1];
+  assert.ok(assets);
+  for (const header of ["X-Frame-Options", "X-Content-Type-Options", "Referrer-Policy"]) {
+    assert.match(assets, new RegExp(`add_header ${header} `));
+  }
+  assert.match(nginx, /location = \/health \{[^}]*default_type text\/plain/);
   assert.match(nginx, /try_files \$uri \$uri\/ \/index.html/);
 });
 

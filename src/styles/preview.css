@@ -129,7 +129,7 @@
   color: #756b5e;
   margin-bottom: 4px;
 }
-.mini-greeting h4 {
+.mini-greeting h3 {
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.5px;
@@ -156,8 +156,8 @@
   color: #74695c;
 }
 .mini-balance .icon-button {
-  min-width: 23px;
-  min-height: 23px;
+  min-width: 24px;
+  min-height: 24px;
 }
 .mini-balance > div {
   display: flex;
@@ -243,7 +243,7 @@
   justify-content: space-between;
   margin: 21px 0 8px;
 }
-.mini-activity-title h5 {
+.mini-activity-title h4 {
   font-size: 9px;
   font-weight: 600;
 }
@@ -325,7 +325,7 @@
   letter-spacing: 1.1px;
   color: var(--brand);
 }
-.preview-calculator h4 {
+.preview-calculator h3 {
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.5px;
@@ -357,8 +357,9 @@
 input[type="range"] {
   display: block;
   width: 100%;
-  height: 4px;
-  margin: 20px 0 9px;
+  /* as tall as the thumb, so it can be hit: the 4 px track is only the look of it */
+  height: 24px;
+  margin: 10px 0 0;
   accent-color: var(--brand);
   cursor: pointer;
 }

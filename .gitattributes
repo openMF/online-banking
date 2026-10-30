@@ -1,0 +1,9 @@
+# Files the container runs or reads must keep LF on every checkout. A CRLF shell script has the
+# interpreter "/bin/sh\r": the Nginx entrypoint answers "not found" (exit 127) and the container
+# never starts. This matters on Windows, where core.autocrlf rewrites a checkout to CRLF.
+*.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+docker-compose.yml text eol=lf
+nginx.conf text eol=lf
+docker/** text eol=lf

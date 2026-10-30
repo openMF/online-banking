@@ -1,10 +1,10 @@
-import {
-  trackRequest,
-  transientStatus,
-  withRetry,
-  type RetryEnv,
-  type RetryPolicy,
-} from "./network";
+/**
+ * Validation of the public Self Service settings, shared by the browser and by the container start
+ * (docker/generate-runtime-config.mjs loads this file with plain Node, from a Dockerfile that
+ * copies only this file). It must stay free of imports: anything it imports is not in the image,
+ * and Node does not resolve extension-less or directory imports. The loader that reads the JSON
+ * lives in self-service-config-loader.ts.
+ */
 /** Public deployment settings only. Never add credentials or tokens here. */
 export interface SelfServiceConfig {
   readonly baseUrl: string;
@@ -122,76 +122,4 @@ export function buildSelfServiceUrl(config: SelfServiceConfig, resource: string)
     );
   }
   return new URL(`${config.baseUrl}/${resource}`);
-}
-
-/** Shared promise: every consumer waits for the same validated configuration. */
-export function createSelfServiceConfigLoader(
-  options: ConfigValidationOptions = {},
-  fetcher: typeof fetch = fetch,
-  pagePath = "/",
-  /** Test seam: the retry policy and what it waits with. */
-  retry?: { policy?: Partial<RetryPolicy>; env?: Partial<RetryEnv> },
-): () => Promise<SelfServiceConfig> {
-  let pending: Promise<SelfServiceConfig> | undefined;
-  return () => {
-    pending ??= (async () => {
-      // This application uses root-relative UI assets and has no path-based routes.
-      // Do not read another application's root configuration from a nested mount.
-      if (pagePath !== "/" && pagePath !== "/index.html") {
-        throw new SelfServiceConfigError(
-          "Self Service configuration requires this application to be hosted at / (or /index.html). Subpath deployments are unsupported.",
-        );
-      }
-      let response: Response;
-      try {
-        // A read: repeated when the network fails or the service is restarting.
-        response = await trackRequest((handle) =>
-          withRetry(
-            () =>
-              fetcher("/runtime-config.json", {
-                cache: "no-store",
-                credentials: "omit",
-                redirect: "error",
-                signal: AbortSignal.timeout(5000),
-              }),
-            {
-              idempotent: true,
-              transientError: () => true,
-              transientResult: (result) =>
-                transientStatus(result.status, result.headers.get("Retry-After")),
-              policy: retry?.policy,
-              env: retry?.env,
-              onRetry: () => handle.retrying(),
-            },
-          ),
-        );
-      } catch {
-        throw new SelfServiceConfigError(
-          "Could not load /runtime-config.json. Check deployment configuration.",
-          true,
-        );
-      }
-      if (!response.ok) {
-        throw new SelfServiceConfigError(
-          `Could not load /runtime-config.json (HTTP ${response.status}). Check SELF_SERVICE_BASE_URL and SELF_SERVICE_TENANT_ID.`,
-          response.status >= 500 || response.status === 408 || response.status === 429,
-        );
-      }
-      let data: unknown;
-      try {
-        data = await response.json();
-      } catch {
-        throw new SelfServiceConfigError(
-          "/runtime-config.json must contain valid configuration JSON.",
-        );
-      }
-      return validateSelfServiceConfig(data, options);
-    })().catch((error: unknown) => {
-      // A configuration that is wrong stays wrong, so its error is kept. One that could not be
-      // reached is forgotten: the next login asks again instead of failing until the page reloads.
-      if (error instanceof SelfServiceConfigError && error.transient) pending = undefined;
-      throw error;
-    });
-    return pending;
-  };
 }

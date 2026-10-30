@@ -82,8 +82,9 @@ docker compose up -d --no-build --force-recreate web
 
 `docker compose restart` alone does **not** reload Compose environment changes. Reload browser tabs
 after recreating the container; each page session retains its validated configuration. Nginx serves
-`/runtime-config.json` as JSON with `Cache-Control: no-store`, never an SPA fallback. Existing static
-asset caching, SPA routing, and `/health` remain unchanged.
+`/runtime-config.json` as JSON with `Cache-Control: no-store`, never an SPA fallback. Static assets get one
+`Cache-Control` (7 days) and the same security headers as the page, SPA routing falls back to
+`index.html`, and `/health` answers `ok` as `text/plain`.
 
 For two harmless runtime checks, reuse the built image with
 `https://localhost:8443/fineract-provider/api/v1/self` and
@@ -91,6 +92,26 @@ For two harmless runtime checks, reuse the built image with
 `curl -i http://localhost:8080/runtime-config.json`. No backend request is needed. Verify both the
 JSON and `no-store` response header. The image ID should stay the same. With plain Docker, pass the
 same settings using `docker run -e SELF_SERVICE_BASE_URL=... -e SELF_SERVICE_TENANT_ID=...`.
+
+#### Checking the image
+
+The unit tests load the configuration generator with plain Node; the container is what a deployment
+runs, so it is checked as well. `docker/smoke-test.sh` starts the image three times (no settings, a
+valid pair, a wrong pair) and checks `/health`, the app and its client-side routes, the headers, the
+written `runtime-config.json` and that a wrong configuration stops the container. CI runs it on every
+pull request (`.github/workflows/docker-build.yml`):
+
+```sh
+docker build -t online-banking:smoke . && sh docker/smoke-test.sh online-banking:smoke
+```
+
+`src/lib/self-service-config.ts` is copied alone into the image and run by plain Node, so it must not
+import anything (the loader that fetches the JSON is `self-service-config-loader.ts`). The container
+also reports a health status (`docker ps`), from the `HEALTHCHECK` of the Dockerfile.
+
+Files the container runs keep LF line endings on every checkout (`.gitattributes`): a shell script with
+CRLF makes the Nginx entrypoint answer "not found" and the container exits with 127, which is what a
+build from a Windows checkout used to produce.
 
 For another static host (including `npm run preview`), generate the resource after the build with
 exported environment settings and Node 24:
@@ -313,6 +334,22 @@ A customer who signed in through the backend (MX-452) has a "Transferir entre mi
 - **A transfer is sent once and never repeated.** One request at a time (a double click sends one), and no retry: a failure to get the answer, a timeout or a server error is shown as *uncertain*: the money may have moved, so the screen offers no way to send the same transfer again and tells the person to check the balance or ask the institution. The step-up grant is dropped at that point. There is no server idempotency key for this endpoint. The customer home keeps track of the send, so closing the screen cannot make the person send the transfer again: while a transfer is being sent, and after one whose result is unknown, the entry button is disabled and says why (until the next sign-in). A transfer that finished while the screen was closed is told on the home, with its reference.
 - `src/lib/selfservice/transfers.ts` is the thin typed client; `src/lib/transfers/` reads the answers with care (a template that is not a template is `malformed`) and maps every failure to one code; `src/components/CustomerTransfer.tsx` is the screen.
 - Not in this ticket: transfers to a beneficiary (MX-480) and their management (MX-479), the history and a printable receipt (MX-481), and the second signature of business clients (MX-489).
+
+## Accessibility and responsive design (MX-492)
+
+The app is mobile-first (`min-width` breakpoints) and is checked against **WCAG 2.1 AA** by one spec, `tests/accessibility.spec.ts`, that opens every screen at **320, 768 and 1440 px** (landing and its simulators, the login and onboarding dialogs, every view of the demo bank including the verification steps and the business approvals, and the real customer screens against a faked backend) and **fails** on:
+
+- any axe violation of WCAG 2.0/2.1 A and AA, measured after the entrance animations have settled (a colour is not measured while it fades in), and any axe best-practice problem (heading order, duplicate landmarks);
+- horizontal scroll (reflow, 1.4.10);
+- a control smaller than 24 x 24 px (2.5.8; a checkbox counts through its label, and only a link inside a sentence is exempt, not one that stands alone);
+- a control Tab cannot reach, one whose focus indicator is missing, transparent or under 3:1 against what is behind it (2.4.7, 1.4.11), or focus leaving an open dialog;
+- a skipped heading level, an empty title, a missing `lang`.
+
+It also checks what axe cannot see: 320 px (400 % zoom) without content cut off by the viewport or by an `overflow: hidden` parent (a strip that scrolls, like the tabs of the demo bank, is fine), 200 % text with the WCAG text-spacing override, reduced motion (nothing repeats forever), the skip link, a dialog that closes with Escape and gives the focus back to what opened it, and the `lang` of the page following the language switch. No rule is switched off. To cover a new screen, add it to the `screens` or `customerScreens` list; run one width with `A11Y_WIDTHS=375 npx playwright test tests/accessibility.spec.ts`.
+
+`src/styles/accessibility.css` (loaded last) holds the floors: 24 px for every control, 44 px where the main pointer is a finger (`pointer: coarse`). The look of the text does not change, only the area that reacts.
+
+Not checked by tools and worth a person with a screen reader on real devices (NVDA, VoiceOver, TalkBack): reading order and announcements, and some of the very small text (8-11 px) that WCAG 2.1 does not size but that is hard to read.
 
 ## Verification
 

@@ -939,7 +939,7 @@ export default function DemoBank({
   return (
     <LocalizedTree>
       <div className="bank-app">
-        <aside className="bank-sidebar">
+        <div className="bank-sidebar">
           <Brand compact />
           <span className="bank-segment-label">
             {segment === "empresas" ? "BANCA EMPRESARIAL" : "BANCA PERSONAL"}
@@ -988,7 +988,7 @@ export default function DemoBank({
               </button>
             </div>
           </div>
-        </aside>
+        </div>
         <div className="bank-main">
           <div className="bank-demo-bar">
             <span>
