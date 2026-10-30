@@ -415,11 +415,37 @@ describe("the http api", () => {
     expect(calls[0].options.stepUpToken).toBeUndefined();
   });
 
-  it("is a done transfer even when the server gives no reference", async () => {
-    const { customer } = fakeCustomer({ data: {} });
-    const receipt = await createHttpTransfersApi({ customer, now }).create("own", input);
-    expect(receipt.reference).toBeUndefined();
-    expect(receipt.amount).toBe("10.50");
+  it.each([
+    ["an empty object", {}],
+    ["null", null],
+    ["no body at all", undefined],
+    ["text", "ok"],
+    ["a list", [{ resourceId: 5 }]],
+    ["a reference that is not a number", { resourceId: "55", savingsId: 1 }],
+    ["a reference of zero", { resourceId: 0, savingsId: 1 }],
+    ["a negative reference", { resourceId: -4, savingsId: 1 }],
+    ["a fractional reference", { resourceId: 5.5, savingsId: 1 }],
+    ["the savings account of another transfer", { resourceId: 55, savingsId: 9 }],
+    ["a rolled back transaction", { resourceId: 55, savingsId: 1, rollbackTransaction: true }],
+  ])("is uncertain, not done, when the server answers 2xx with %s", async (_label, data) => {
+    const { customer, calls } = fakeCustomer({ data }, { data: { resourceId: 1 } });
+    const error = await rejected(createHttpTransfersApi({ customer, now }).create("own", input));
+    expect(error.code).toBe("uncertain");
+    expect(calls).toHaveLength(1); // and it is not sent again
+  });
+
+  it("is done when the answer confirms the transfer, with or without the optional parts", async () => {
+    const api = (data: unknown) =>
+      createHttpTransfersApi({ customer: fakeCustomer({ data }).customer, now });
+    expect((await api({ resourceId: 55 }).create("own", input)).reference).toBe(55);
+    expect(
+      (
+        await api({ resourceId: 56, savingsId: 1, changes: {}, rollbackTransaction: false }).create(
+          "own",
+          input,
+        )
+      ).reference,
+    ).toBe(56);
   });
 
   it.each([500, 502, 503, 504, 408])(

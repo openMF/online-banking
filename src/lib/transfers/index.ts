@@ -143,7 +143,7 @@ export interface TransferInput {
 }
 
 export interface TransferReceipt {
-  /** The id the server gave the transfer, when it gave one. */
+  /** The id the server gave the transfer. The http api never reports success without one. */
   reference?: number;
   from: TransferAccount;
   to: TransferAccount;
@@ -309,6 +309,21 @@ function isOffline(): boolean {
   return typeof navigator !== "undefined" && navigator.onLine === false;
 }
 
+/**
+ * The reference of the transfer an answer confirms. The request already went out, so an answer that
+ * does not confirm it (not an object, no transfer id, another account, rolled back) is not an
+ * error to retry but a result we cannot know: the money may have moved. It is `uncertain`, never a
+ * success and never sent again.
+ */
+function readReference(answer: unknown, fromAccountId: number): number {
+  if (!record(answer) || !positiveId(answer.resourceId)) throw new TransferError("uncertain");
+  if (answer.savingsId !== undefined && answer.savingsId !== fromAccountId) {
+    throw new TransferError("uncertain");
+  }
+  if (answer.rollbackTransaction === true) throw new TransferError("uncertain");
+  return answer.resourceId;
+}
+
 export function createHttpTransfersApi(seams: Seams = {}): TransfersApi {
   const { now, ...transport } = seams;
   return {
@@ -359,8 +374,7 @@ export function createHttpTransfersApi(seams: Seams = {}): TransfersApi {
       } catch (error) {
         throw toTransferError(error, true);
       }
-      const reference =
-        record(answer) && positiveId(answer.resourceId) ? answer.resourceId : undefined;
+      const reference = readReference(answer, input.from.accountId);
       return {
         reference,
         from: input.from,
