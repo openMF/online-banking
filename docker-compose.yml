@@ -2,8 +2,8 @@
 #
 # Usage:
 #   docker compose up --build -d  # standalone demo, no .env required
-#   To configure a future API integration, set both variables from .env.example.
 #   open http://localhost:8080
+#   To configure a Self Service integration, set both variables from .env.example.
 #
 # Stop:
 #   docker compose down
@@ -13,11 +13,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: banking-landing-page:latest
-    container_name: banking-landing-page
+    image: online-banking:latest
+    container_name: online-banking
     ports:
       - "8080:80"
     restart: unless-stopped
+    # The health check is the HEALTHCHECK of the Dockerfile (GET /health).
     environment:
       SELF_SERVICE_BASE_URL: "${SELF_SERVICE_BASE_URL:-}"
       SELF_SERVICE_TENANT_ID: "${SELF_SERVICE_TENANT_ID:-}"

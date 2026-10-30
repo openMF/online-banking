@@ -1,4 +1,5 @@
-import { buildSelfServiceUrl, createSelfServiceConfigLoader } from "./self-service-config";
+import { buildSelfServiceUrl } from "./self-service-config";
+import { createSelfServiceConfigLoader } from "./self-service-config-loader";
 
 export type { SelfServiceConfig } from "./self-service-config";
 

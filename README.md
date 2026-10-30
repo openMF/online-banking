@@ -82,8 +82,9 @@ docker compose up -d --no-build --force-recreate web
 
 `docker compose restart` alone does **not** reload Compose environment changes. Reload browser tabs
 after recreating the container; each page session retains its validated configuration. Nginx serves
-`/runtime-config.json` as JSON with `Cache-Control: no-store`, never an SPA fallback. Existing static
-asset caching, SPA routing, and `/health` remain unchanged.
+`/runtime-config.json` as JSON with `Cache-Control: no-store`, never an SPA fallback. Static assets get one
+`Cache-Control` (7 days) and the same security headers as the page, SPA routing falls back to
+`index.html`, and `/health` answers `ok` as `text/plain`.
 
 For two harmless runtime checks, reuse the built image with
 `https://localhost:8443/fineract-provider/api/v1/self` and
@@ -91,6 +92,26 @@ For two harmless runtime checks, reuse the built image with
 `curl -i http://localhost:8080/runtime-config.json`. No backend request is needed. Verify both the
 JSON and `no-store` response header. The image ID should stay the same. With plain Docker, pass the
 same settings using `docker run -e SELF_SERVICE_BASE_URL=... -e SELF_SERVICE_TENANT_ID=...`.
+
+#### Checking the image
+
+The unit tests load the configuration generator with plain Node; the container is what a deployment
+runs, so it is checked as well. `docker/smoke-test.sh` starts the image three times (no settings, a
+valid pair, a wrong pair) and checks `/health`, the app and its client-side routes, the headers, the
+written `runtime-config.json` and that a wrong configuration stops the container. CI runs it on every
+pull request (`.github/workflows/docker-build.yml`):
+
+```sh
+docker build -t online-banking:smoke . && sh docker/smoke-test.sh online-banking:smoke
+```
+
+`src/lib/self-service-config.ts` is copied alone into the image and run by plain Node, so it must not
+import anything (the loader that fetches the JSON is `self-service-config-loader.ts`). The container
+also reports a health status (`docker ps`), from the `HEALTHCHECK` of the Dockerfile.
+
+Files the container runs keep LF line endings on every checkout (`.gitattributes`): a shell script with
+CRLF makes the Nginx entrypoint answer "not found" and the container exits with 127, which is what a
+build from a Windows checkout used to produce.
 
 For another static host (including `npm run preview`), generate the resource after the build with
 exported environment settings and Node 24:

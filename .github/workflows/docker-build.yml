@@ -1,0 +1,27 @@
+name: Docker image
+
+# The image is published from master (create-docker-hub-image.yml), but nothing else builds or starts
+# it. A change that only breaks the container start (the configuration generator is run by plain Node
+# there, not by Vite) passed every other check and took the deployment down. This job builds the image
+# and starts it the way a deployment does.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  docker:
+    name: Build and smoke-test the image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build the image
+        run: docker build -t online-banking:smoke .
+
+      - name: Start it and check it (docker/smoke-test.sh)
+        run: sh docker/smoke-test.sh online-banking:smoke
+
+      - name: Check docker compose
+        run: docker compose config -q
