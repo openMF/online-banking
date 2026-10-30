@@ -303,6 +303,17 @@ One place decides how a request is repeated, counted and worded, so every screen
 - The runtime configuration is read again when the service is restarting, and a failure to **reach** it is no longer remembered until the page is reloaded (a configuration that is wrong still is).
 - Not repeated on purpose: anything that writes. If a write gets no answer the screen says the result is uncertain and points to the place to check.
 
+## Transfer between own accounts (MX-478)
+
+A customer who signed in through the backend (MX-452) has a "Transferir entre mis cuentas" / "Transfer between my accounts" screen in the customer home (US-E07-01). It moves money between the savings accounts of the customer against the real self-service API; it is not demo data, and the demo dialog is unchanged.
+
+- Steps: form, review, verification, receipt. The accounts come from `GET /v1/self/accounttransfers/template` (the loans are not offered), the transfer is `POST /v1/self/accounttransfers`. The currency and the available balance of the source account come from `GET /v1/self/savingsaccounts/{id}`; they are advice only: if that read fails the screen still works and the **server** decides whether the money is there and which limits apply. Its answer is shown as a fixed, translated message (not enough money, limit, accounts that changed, ...), never its own text.
+- The verification is the step-up of MX-488 (`OWN_TRANSFER`). The one-time token is bound by the server to five fields (source account and type, destination account and type, amount); `src/lib/transfers` builds them once for the verification and for the transfer, with the amount as exact text (`"250.50"`, never a float). If the transfer is refused without moving money, the same token is used again for the same transfer (no second code); if anything it is bound to changes, a new verification is asked for. When the tenant does not protect the action, the transfer goes without a token.
+- Amounts: digits and a decimal point (`1250.50`), or thousands with commas (`1,250.50`). `1,5` is refused instead of guessed. The decimals follow the currency of the account (2 when unknown).
+- **A transfer is sent once and never repeated.** One request at a time (a double click sends one), and no retry: a failure to get the answer, a timeout or a server error is shown as *uncertain*: the money may have moved, so the screen offers no way to send the same transfer again and tells the person to check the balance or ask the institution. The step-up grant is dropped at that point. There is no server idempotency key for this endpoint.
+- `src/lib/selfservice/transfers.ts` is the thin typed client; `src/lib/transfers/` reads the answers with care (a template that is not a template is `malformed`) and maps every failure to one code; `src/components/CustomerTransfer.tsx` is the screen.
+- Not in this ticket: transfers to a beneficiary (MX-480) and their management (MX-479), the history and a printable receipt (MX-481), and the second signature of business clients (MX-489).
+
 ## Verification
 
 Unit and component tests run without a server:
@@ -324,7 +335,7 @@ Visual and accessibility reports are written to `artifacts/`. Automated checks s
 
 ## Production Integration Boundary
 
-This frontend builds for production hosting, but it is **not an operational banking channel**. Configured customer authentication can call Self Service, but live integration has not been verified. Real financial operations remain unavailable. The browser-side demo password and the demo verification code must never authorize real operations; with a backend, the code is checked by the server only.
+This frontend builds for production hosting, but it is **not an operational banking channel**. Configured customer authentication can call Self Service, but live integration has not been verified. Of the financial operations, only the transfer between own accounts (MX-478) reaches a real backend; the others remain unavailable. The browser-side demo password and the demo verification code must never authorize real operations; with a backend, the code is checked by the server only.
 
 Before launching live banking, implement a reviewed backend integration with reviewed session management (including secure HttpOnly sessions where appropriate), authorization, genuine MFA, rate limiting, audit logging, idempotent ledger operations, and independently authenticated business approvers. Handle account balances and transaction validation exclusively on the server. Never place banking API secrets in Vite environment variables exposed to the browser.
 
