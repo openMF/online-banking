@@ -74,7 +74,14 @@ async function checkTargetSize(page: Page) {
         const r = el.getBoundingClientRect();
         const cs = getComputedStyle(el);
         if (r.width === 0 || r.height === 0 || cs.visibility === "hidden") return false;
-        if (el.hasAttribute("disabled") || cs.display === "inline") return false; // in a sentence
+        if (el.hasAttribute("disabled")) return false;
+        // Inline is exempt only inside a sentence: text shares its parent (WCAG 2.5.8, inline exception).
+        const inSentence =
+          cs.display === "inline" &&
+          [...(el.parentNode?.childNodes ?? [])].some(
+            (n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? "").trim() !== "",
+          );
+        if (inSentence) return false;
         if (r.width >= 24 && r.height >= 24) return false;
         // A checkbox or a radio is hit through its label as well: that is its target.
         if (el instanceof HTMLInputElement && ["checkbox", "radio"].includes(el.type)) {
@@ -115,6 +122,72 @@ async function checkHeadings(page: Page) {
 }
 
 /** Tab through the page (or the open dialog): all of it reachable, a visible indicator on each. */
+/**
+ * The focus indicator of the focused element: an outline or a shadow whose colour is drawn (not
+ * transparent) and has 3:1 against what is behind it (WCAG 1.4.11, 2.4.7).
+ */
+async function focusIndicator(page: Page) {
+  return page.evaluate(() => {
+    const el = document.activeElement as HTMLElement | null;
+    if (!el) return { indicator: false, detail: "nothing focused" };
+    const cs = getComputedStyle(el);
+    // rgb(), rgba() and color(srgb ...) as Chrome reports a computed colour: [r, g, b, alpha]
+    const parse = (value: string): [number, number, number, number] | null => {
+      const m = value.match(/^(?:rgba?|color)\(\s*(?:srgb\s+)?([^)]*)\)/);
+      if (!m) return null;
+      const n = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+      if (n.length < 3 || n.some(Number.isNaN)) return null;
+      const scale = value.startsWith("color(") ? 255 : 1;
+      return [n[0] * scale, n[1] * scale, n[2] * scale, n[3] ?? 1];
+    };
+    const luminance = ([r, g, b]: number[]) => {
+      const f = (c: number) => ((c /= 255) <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    // What is behind the indicator: the nearest opaque background (the outline is drawn outside
+    // the box, so start at the parent). null: a gradient or an image, which is not measured.
+    const behind = (): [number, number, number] | null => {
+      for (let a: HTMLElement | null = el.parentElement; a; a = a.parentElement) {
+        const s = getComputedStyle(a);
+        if (s.backgroundImage !== "none") return null;
+        const c = parse(s.backgroundColor);
+        if (c && c[3] >= 0.99) return [c[0], c[1], c[2]];
+        if (c && c[3] > 0) return null; // translucent layers: not measured
+      }
+      return [255, 255, 255];
+    };
+    const contrastOf = (colour: [number, number, number, number]) => {
+      if (colour[3] === 0) return 0; // transparent: nothing is drawn
+      const bg = behind();
+      if (!bg) return 21; // not measurable: do not fail on it
+      const [hi, lo] = [luminance(colour), luminance(bg)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    const outline =
+      cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0
+        ? parse(cs.outlineColor)
+        : undefined;
+    const shadows =
+      cs.boxShadow === "none"
+        ? []
+        : (cs.boxShadow.match(/(?:rgba?|color)\([^)]*\)/g) ?? []).map((c) => parse(c));
+    const colours = [outline, ...shadows].filter((c): c is [number, number, number, number] => !!c);
+    // an unparsable colour is given the benefit of the doubt; a transparent or faint one is not
+    const unparsed = (outline === null) || shadows.some((c) => c === null);
+    const worst = colours.length ? Math.max(...colours.map(contrastOf)) : 0;
+    const indicator =
+      worst >= 3 ||
+      unparsed ||
+      // a text field shows its focus with the border and the caret
+      el.matches("input:not([type=checkbox]):not([type=radio]), select, textarea");
+    return {
+      indicator,
+      // what the check saw, so a failure says why (outline colour, shadow, best contrast)
+      detail: `outline ${cs.outlineStyle} ${cs.outlineWidth} ${cs.outlineColor}; shadow ${cs.boxShadow}; contrast ${worst.toFixed(2)}`,
+    };
+  });
+}
+
 async function checkKeyboard(page: Page) {
   await page.evaluate(() => {
     (document.activeElement as HTMLElement | null)?.blur();
@@ -148,16 +221,9 @@ async function checkKeyboard(page: Page) {
         );
         el.setAttribute("data-a11y-id", mark);
       }
-      const cs = getComputedStyle(el);
-      const indicator =
-        (cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0) ||
-        cs.boxShadow !== "none" ||
-        // a text field shows its focus with the border and the caret
-        el.matches("input:not([type=checkbox]):not([type=radio]), select, textarea");
       return {
         mark: Number(mark),
         fresh,
-        indicator,
         name: `${el.tagName.toLowerCase()} "${(el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 28)}"`,
         escaped: Boolean(document.querySelector("dialog[open]")) && !el.closest("dialog"),
       };
@@ -169,7 +235,13 @@ async function checkKeyboard(page: Page) {
     previous = info.mark;
     if (!info.fresh) break; // round again: everything has been visited
     reached.add(info.mark);
-    if (!info.indicator) withoutIndicator.push(info.name);
+    let focus = await focusIndicator(page);
+    if (!focus.indicator) {
+      // the first frame of a focus can still be the start of a style change: look again
+      await page.waitForTimeout(500);
+      focus = await focusIndicator(page);
+    }
+    if (!focus.indicator) withoutIndicator.push(`${info.name} (${focus.detail})`);
   }
   expect(withoutIndicator, "focused without a visible indicator").toEqual([]);
   // Everything that can be focused is reached (a few extra stops, like the page, are allowed).
@@ -361,6 +433,7 @@ const screens: Screen[] = [
       await dialog(p).getByRole("button", { name: "Confirmar transferencia demo" }).click();
       await dialog(p).getByRole("heading", { name: "Transferencia simulada." }).waitFor();
     },
+    keyboard: true,
   },
   {
     name: "demo: movements",
@@ -567,15 +640,29 @@ test.describe("zoom, text size and motion", () => {
       await screen.open(page);
       await settle(page);
       await checkReflow(page);
-      const cut = await page.evaluate(() =>
-        [...document.querySelectorAll<HTMLElement>("h1,h2,h3,p,button,a[href],label")]
-          .filter((el) => {
+      const cut = await page.evaluate(() => {
+        const describe = (el: Element) =>
+          `${el.tagName.toLowerCase()}${el.className ? "." + String(el.className).trim().split(/\s+/).join(".") : ""}`;
+        return [...document.querySelectorAll<HTMLElement>("h1,h2,h3,p,button,a[href],label")].flatMap(
+          (el) => {
             const r = el.getBoundingClientRect();
-            return r.width > 0 && r.left < -1;
-          })
-          .map((el) => el.textContent?.trim().slice(0, 30)),
-      );
-      expect(cut, `${screen.name}: content cut off on the left`).toEqual([]);
+            if (r.width === 0) return [];
+            const text = `"${(el.textContent ?? "").trim().slice(0, 30)}"`;
+            for (let a = el.parentElement; a; a = a.parentElement) {
+              const overflow = getComputedStyle(a).overflowX;
+              // a strip that scrolls (the tabs of the demo bank) is reached by scrolling it
+              if (overflow === "auto" || overflow === "scroll") return [];
+              // past the edge of an ancestor that clips: the part beyond it cannot be seen
+              if ((overflow === "hidden" || overflow === "clip") && r.right > a.getBoundingClientRect().right + 1)
+                return [`${text} (${describe(el)}) is cut off by ${describe(a)}`];
+            }
+            if (r.left < -1 || r.right > window.innerWidth + 1)
+              return [`${text} is outside the viewport and nothing scrolls to it`];
+            return [];
+          },
+        );
+      });
+      expect(cut, `${screen.name}: content cut off or clipped`).toEqual([]);
     }
   });
 

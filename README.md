@@ -309,11 +309,11 @@ The app is mobile-first (`min-width` breakpoints) and is checked against **WCAG 
 
 - any axe violation of WCAG 2.0/2.1 A and AA, measured after the entrance animations have settled (a colour is not measured while it fades in), and any axe best-practice problem (heading order, duplicate landmarks);
 - horizontal scroll (reflow, 1.4.10);
-- a control smaller than 24 x 24 px (2.5.8; a checkbox counts through its label);
-- a control Tab cannot reach, one without a visible focus indicator, or focus leaving an open dialog;
+- a control smaller than 24 x 24 px (2.5.8; a checkbox counts through its label, and only a link inside a sentence is exempt, not one that stands alone);
+- a control Tab cannot reach, one whose focus indicator is missing, transparent or under 3:1 against what is behind it (2.4.7, 1.4.11), or focus leaving an open dialog;
 - a skipped heading level, an empty title, a missing `lang`.
 
-It also checks what axe cannot see: 320 px (400 % zoom) without cut-off content, 200 % text with the WCAG text-spacing override, reduced motion (nothing repeats forever), the skip link, a dialog that closes with Escape and gives the focus back to what opened it, and the `lang` of the page following the language switch. No rule is switched off. To cover a new screen, add it to the `screens` or `customerScreens` list; run one width with `A11Y_WIDTHS=375 npx playwright test tests/accessibility.spec.ts`.
+It also checks what axe cannot see: 320 px (400 % zoom) without content cut off by the viewport or by an `overflow: hidden` parent (a strip that scrolls, like the tabs of the demo bank, is fine), 200 % text with the WCAG text-spacing override, reduced motion (nothing repeats forever), the skip link, a dialog that closes with Escape and gives the focus back to what opened it, and the `lang` of the page following the language switch. No rule is switched off. To cover a new screen, add it to the `screens` or `customerScreens` list; run one width with `A11Y_WIDTHS=375 npx playwright test tests/accessibility.spec.ts`.
 
 `src/styles/accessibility.css` (loaded last) holds the floors: 24 px for every control, 44 px where the main pointer is a finger (`pointer: coarse`). The look of the text does not change, only the area that reacts.
 

@@ -39,6 +39,12 @@
   display: inline-flex;
   align-items: center;
 }
+/* The logo link of the footer stands alone (it is not in a sentence), so it is measured: 17 px high. */
+.footer-brand > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
 
 /* A checkbox is hit through its label as well: the label is the target, so it has the height. */
 .savings-review,
@@ -66,6 +72,9 @@
   .footer-bottom a,
   .footer-bottom button {
     min-width: 44px;
+    min-height: 44px;
+  }
+  .footer-brand > a {
     min-height: 44px;
   }
   .back-link,
