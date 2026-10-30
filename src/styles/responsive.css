@@ -23,7 +23,7 @@
   .mini-main {
     padding: 24px;
   }
-  .mini-greeting h4 {
+  .mini-greeting h3 {
     font-size: 20px;
   }
   .mini-balance > div > strong {
@@ -267,7 +267,7 @@
   .mini-sidebar {
     width: 36px;
   }
-  .mini-greeting h4 {
+  .mini-greeting h3 {
     font-size: 15px;
   }
   .mini-balance > div > strong {
@@ -842,7 +842,7 @@
     font-size: 22px;
     margin-bottom: 12px;
   }
-  .mini-greeting h4 {
+  .mini-greeting h3 {
     font-size: 20px;
     letter-spacing: -0.6px;
   }
@@ -896,7 +896,7 @@
   .mini-activity-title {
     margin-top: 23px;
   }
-  .mini-activity-title h5 {
+  .mini-activity-title h4 {
     font-size: 10px;
   }
   .mini-transfer {
@@ -925,7 +925,7 @@
     font-size: 8px;
     padding-top: 15px;
   }
-  .preview-calculator h4 {
+  .preview-calculator h3 {
     font-size: 20px;
     margin-top: 9px;
   }
@@ -1273,7 +1273,7 @@
   .mini-main {
     padding: 25px 27px 20px;
   }
-  .mini-greeting h4 {
+  .mini-greeting h3 {
     font-size: 21px;
   }
   .mini-balance > div > strong {

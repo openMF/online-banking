@@ -321,7 +321,7 @@ test("mobile navigation and banking are usable without horizontal overflow", asy
   await expect(
     page.getByRole("button", { name: "Abrir menú" }),
   ).toHaveAttribute("aria-expanded", "false");
-  await expect(page.locator(".mini-greeting h4")).toContainText(
+  await expect(page.locator(".mini-greeting h3")).toContainText(
     "Estudio Norte",
   );
   expect(
