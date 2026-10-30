@@ -11,6 +11,7 @@ import {
 import { authenticationMessages } from "../lib/authentication/messages";
 import { Login } from "./Access";
 import { CustomerSecurity } from "./CustomerSecurity";
+import { CustomerTransferArea } from "./CustomerTransfer";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
 import type { Segment } from "../lib/demo";
@@ -197,6 +198,8 @@ export function CustomerHome({
   const [savingsOpen, setSavingsOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const securityEntry = useRef<HTMLButtonElement>(null);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const transferEntry = useRef<HTMLButtonElement>(null);
   const [savingsClient] = useState(() => createSavingsClient(session));
   const savingsEntry = useRef<HTMLButtonElement>(null);
   const endRef = useRef(onEnd);
@@ -312,8 +315,28 @@ export function CustomerHome({
             requestAnimationFrame(() => savingsEntry.current?.focus());
           }}
         />
+      ) : transferOpen ? (
+        <CustomerTransferArea
+          session={session}
+          onExpired={() => {
+            if (ended.current) return;
+            ended.current = true;
+            onEnd(true, session.logout());
+          }}
+          onClose={() => {
+            setTransferOpen(false);
+            requestAnimationFrame(() => transferEntry.current?.focus());
+          }}
+        />
       ) : (
         <>
+          <button
+            ref={transferEntry}
+            className="button button-primary"
+            onClick={() => setTransferOpen(true)}
+          >
+            {t("Transferir entre mis cuentas")}
+          </button>
           <button
             ref={savingsEntry}
             className="button button-primary"
