@@ -1,0 +1,143 @@
+{
+  "template": {
+    "fromAccountOptions": [
+      {
+        "accountId": 1,
+        "accountNo": "000000001",
+        "accountType": {
+          "id": 2,
+          "code": "accountType.savings",
+          "value": "Savings Account"
+        },
+        "clientId": 1,
+        "clientName": "probe fad4867e",
+        "officeId": 1,
+        "officeName": "Head Office"
+      },
+      {
+        "accountId": 2,
+        "accountNo": "000000002",
+        "accountType": {
+          "id": 2,
+          "code": "accountType.savings",
+          "value": "Savings Account"
+        },
+        "clientId": 1,
+        "clientName": "probe fad4867e",
+        "officeId": 1,
+        "officeName": "Head Office"
+      }
+    ],
+    "toAccountOptions": [
+      {
+        "accountId": 1,
+        "accountNo": "000000001",
+        "accountType": {
+          "id": 2,
+          "code": "accountType.savings",
+          "value": "Savings Account"
+        },
+        "clientId": 1,
+        "clientName": "probe fad4867e",
+        "officeId": 1,
+        "officeName": "Head Office"
+      },
+      {
+        "accountId": 2,
+        "accountNo": "000000002",
+        "accountType": {
+          "id": 2,
+          "code": "accountType.savings",
+          "value": "Savings Account"
+        },
+        "clientId": 1,
+        "clientName": "probe fad4867e",
+        "officeId": 1,
+        "officeName": "Head Office"
+      }
+    ]
+  },
+  "funds": {
+    "developerMessage": "Request was understood but caused a domain rule violation.",
+    "httpStatusCode": "403",
+    "defaultUserMessage": "Errors contain reason for domain rule violation.",
+    "userMessageGlobalisationCode": "validation.msg.domain.rule.violation",
+    "errors": [
+      {
+        "developerMessage": "Insufficient account balance.",
+        "defaultUserMessage": "Insufficient account balance.",
+        "userMessageGlobalisationCode": "error.msg.savingsaccount.transaction.insufficient.account.balance",
+        "parameterName": "id",
+        "args": [
+          {
+            "value": "transactionAmount"
+          },
+          {
+            "value": -999009.5
+          },
+          {},
+          {
+            "value": 999999
+          }
+        ]
+      }
+    ]
+  },
+  "same": {
+    "developerMessage": "The request was invalid. This typically will happen due to validation errors which are provided.",
+    "httpStatusCode": "400",
+    "defaultUserMessage": "Validation errors exist.",
+    "userMessageGlobalisationCode": "validation.msg.validation.errors.exist",
+    "errors": [
+      {
+        "developerMessage": "Failed data validation due to: same.from.to.account.details.",
+        "defaultUserMessage": "Failed data validation due to: same.from.to.account.details.",
+        "userMessageGlobalisationCode": "validation.msg.accounttransfer.null.same.from.to.account.details",
+        "args": [
+          {},
+          {
+            "value": [
+              "Source and Destination account details are same."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "future": {
+    "developerMessage": "The request was invalid. This typically will happen due to validation errors which are provided.",
+    "httpStatusCode": "400",
+    "defaultUserMessage": "Validation errors exist.",
+    "userMessageGlobalisationCode": "validation.msg.validation.errors.exist",
+    "errors": [
+      {
+        "developerMessage": "Transaction date cannot be in the future.",
+        "defaultUserMessage": "transactionDate",
+        "userMessageGlobalisationCode": "error.msg.savingsaccount.transaction.in.the.future",
+        "parameterName": "2026-11-02",
+        "args": []
+      }
+    ]
+  },
+  "ok": {
+    "savingsId": 1,
+    "resourceId": 1,
+    "changes": {},
+    "rollbackTransaction": false
+  },
+  "summary": {
+    "currency": {
+      "code": "USD",
+      "name": "US Dollar",
+      "decimalPlaces": 4,
+      "inMultiplesOf": 0,
+      "displaySymbol": "$",
+      "nameCode": "currency.USD",
+      "displayLabel": "US Dollar ($)"
+    },
+    "summary": {
+      "accountBalance": 989.5,
+      "availableBalance": 989.5
+    }
+  }
+}

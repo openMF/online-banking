@@ -1,0 +1,19 @@
+/* Transfer between own accounts of a logged-in customer (MX-478). Builds on the security view. */
+.customer-transfer .transfer-title {
+  margin: 0;
+}
+/* The hints under a field belong to the field: left, close to it. */
+.customer-transfer form .stepup-meta {
+  text-align: left;
+  margin: -6px 0 0;
+}
+.customer-transfer .transfer-receipt {
+  align-items: flex-start;
+}
+.customer-transfer .transfer-receipt h3 {
+  margin: 0;
+  font-size: 22px;
+}
+.customer-transfer .transfer-receipt .review-details {
+  margin: 8px 0;
+}

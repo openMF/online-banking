@@ -43,3 +43,9 @@ export {
   type TotpStatus,
 } from "./totp";
 export { changePassword, getUserDetails, type UserDetails } from "./user";
+export {
+  createTransfer,
+  getTransferTemplate,
+  type CreateTransferBody,
+  type TransferKind,
+} from "./transfers";

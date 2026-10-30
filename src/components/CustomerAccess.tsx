@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { Brand } from "./ui";
-import { LocaleToggle, useI18n } from "../i18n";
+import { LocaleToggle, translateWith, useI18n } from "../i18n";
 import { getSelfServiceConfig } from "../lib/self-service";
 import {
   AuthenticationError,
@@ -11,6 +11,7 @@ import {
 import { authenticationMessages } from "../lib/authentication/messages";
 import { Login } from "./Access";
 import { CustomerSecurity } from "./CustomerSecurity";
+import { CustomerTransferArea, type SendEvent } from "./CustomerTransfer";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
 import type { Segment } from "../lib/demo";
@@ -197,6 +198,30 @@ export function CustomerHome({
   const [savingsOpen, setSavingsOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const securityEntry = useRef<HTMLButtonElement>(null);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const transferEntry = useRef<HTMLButtonElement>(null);
+  // The transfer being sent, kept here (not in its screen) so that closing the screen cannot make
+  // the person send it again: a transfer that is running or whose result is unknown blocks the next.
+  const [transfer, setTransfer] = useState<
+    { kind: "idle" } | { kind: "sending" } | { kind: "uncertain" } | { kind: "done"; reference?: number }
+  >({ kind: "idle" });
+  function onSend(event: SendEvent) {
+    setTransfer((current) => {
+      switch (event.kind) {
+        case "start":
+          return { kind: "sending" };
+        case "done":
+          return { kind: "done", reference: event.reference };
+        case "uncertain":
+          return { kind: "uncertain" };
+        case "failed":
+          return { kind: "idle" };
+        case "seen":
+          return current.kind === "done" ? { kind: "idle" } : current;
+      }
+    });
+  }
+  const transferBlocked = transfer.kind === "sending" || transfer.kind === "uncertain";
   const [savingsClient] = useState(() => createSavingsClient(session));
   const savingsEntry = useRef<HTMLButtonElement>(null);
   const endRef = useRef(onEnd);
@@ -312,8 +337,49 @@ export function CustomerHome({
             requestAnimationFrame(() => savingsEntry.current?.focus());
           }}
         />
+      ) : transferOpen ? (
+        <CustomerTransferArea
+          session={session}
+          onSend={onSend}
+          onExpired={() => {
+            if (ended.current) return;
+            ended.current = true;
+            onEnd(true, session.logout());
+          }}
+          onClose={() => {
+            setTransferOpen(false);
+            requestAnimationFrame(() => transferEntry.current?.focus());
+          }}
+        />
       ) : (
         <>
+          <button
+            ref={transferEntry}
+            className="button button-primary"
+            disabled={transferBlocked}
+            onClick={() => {
+              // A receipt that was never seen is told on the home: opening the screen clears it.
+              setTransfer((current) => (current.kind === "done" ? { kind: "idle" } : current));
+              setTransferOpen(true);
+            }}
+          >
+            {t("Transferir entre mis cuentas")}
+          </button>
+          {transfer.kind !== "idle" && (
+            <p className="form-note" role="status" data-testid="transfer-track">
+              {transfer.kind === "sending"
+                ? t("Hay una transferencia en curso. Espera su resultado antes de hacer otra.")
+                : transfer.kind === "uncertain"
+                  ? t(
+                      "No pudimos confirmar tu última transferencia. Revisa el saldo de tu cuenta o consulta a tu institución antes de hacer otra.",
+                    )
+                  : transfer.reference !== undefined
+                    ? translateWith("Tu última transferencia se realizó. Referencia: {reference}.", {
+                        reference: transfer.reference,
+                      })
+                    : t("Tu última transferencia se realizó.")}
+            </p>
+          )}
           <button
             ref={savingsEntry}
             className="button button-primary"
