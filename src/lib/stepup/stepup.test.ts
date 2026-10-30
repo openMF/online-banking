@@ -55,6 +55,24 @@ describe("toStepUpError", () => {
     expect(error.retryAfterSeconds).toBe(900);
   });
 
+  it("tells offline, timeout and a restarting service apart", () => {
+    const failed = (reason: string) =>
+      toStepUpError(new SelfServiceError(0, "error.network", "x", { reason })).code;
+    expect(failed("offline")).toBe("offline");
+    expect(failed("timeout")).toBe("timeout");
+    expect(failed("network")).toBe("network");
+    expect(failed("cancelled")).toBe("network");
+    for (const status of [502, 503, 504]) {
+      expect(toStepUpError(new SelfServiceError(status, `error.http.${status}`, "x")).code).toBe(
+        "unavailable",
+      );
+    }
+    // HTTP 408 (the server gave up waiting) is a timeout too, whatever the code of the body
+    expect(toStepUpError(new SelfServiceError(408, "error.http.408", "x")).code).toBe("timeout");
+    // a plain 500 and a 404 stay unknown: nothing the user can do differently
+    expect(toStepUpError(new SelfServiceError(500, "error.http.500", "x")).code).toBe("unknown");
+  });
+
   it("maps network failures and never leaks unknown server text", () => {
     expect(toStepUpError(new SelfServiceError(0, "error.network", "boom")).code).toBe("network");
     const unknown = toStepUpError(new SelfServiceError(500, "error.http.500", "stack trace…"));

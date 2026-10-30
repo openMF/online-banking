@@ -1,3 +1,10 @@
+import {
+  trackRequest,
+  transientStatus,
+  withRetry,
+  type RetryEnv,
+  type RetryPolicy,
+} from "../network";
 import { buildSelfServiceUrl, type SelfServiceConfig } from "../self-service-config";
 import { getSelfServiceConfig } from "../self-service";
 
@@ -8,6 +15,7 @@ export type AuthenticationFailure =
   | "passwordRenewal"
   | "expired"
   | "network"
+  | "offline"
   | "server"
   | "timeout"
   | "configuration"
@@ -26,6 +34,8 @@ export class AuthenticationError extends Error {
 export interface CustomerIdentity {
   readonly userId: number;
   readonly username: string;
+  readonly officeId?: number | null;
+  readonly officeName?: string | null;
   readonly roles: readonly { readonly id: number; readonly name: string }[];
   readonly permissions: readonly string[];
   readonly clients: readonly number[];
@@ -83,6 +93,8 @@ function parseIdentity(data: Record<string, unknown>): CustomerIdentity {
   return Object.freeze({
     userId: data.userId,
     username: data.username,
+    officeId: positiveId(data.officeId) ? data.officeId : null,
+    officeName: nonempty(data.officeName) ? data.officeName : null,
     permissions: Object.freeze([...data.permissions]),
     roles: Object.freeze(
       data.roles.map((role) => Object.freeze({ id: role.id as number, name: role.name as string })),
@@ -108,13 +120,19 @@ export function createAuthenticationClient({
   transport = fetch,
   timeoutMs = 15_000,
   now = Date.now,
+  retry,
 }: {
   configuration?: () => Promise<SelfServiceConfig>;
   transport?: typeof fetch;
   timeoutMs?: number;
   now?: () => number;
+  /** Test seam: the retry policy and what it waits with. */
+  retry?: { policy?: Partial<RetryPolicy>; env?: Partial<RetryEnv> };
 } = {}) {
-  async function request(
+  type Answer = { status: number; ok: boolean; data: unknown; retryAfter: string | null };
+
+  /** One try. */
+  async function attempt(
     config: SelfServiceConfig,
     resource: string,
     body: unknown,
@@ -123,7 +141,7 @@ export function createAuthenticationClient({
     method: CustomerMethod = "POST",
     query?: Record<string, string | number>,
     stepUpToken?: string,
-  ): Promise<{ status: number; ok: boolean; data: unknown }> {
+  ): Promise<Answer> {
     const controller = new AbortController();
     let timedOut = false;
     const cancel = () => controller.abort();
@@ -162,16 +180,60 @@ export function createAuthenticationClient({
       }
       if (controller.signal.aborted)
         throw new AuthenticationError(timedOut ? "timeout" : "cancelled");
-      return { status: response.status, ok: response.ok, data };
+      return {
+        status: response.status,
+        ok: response.ok,
+        data,
+        retryAfter: response.headers?.get("Retry-After") ?? null,
+      };
     } catch (error) {
       if (controller.signal.aborted)
         throw new AuthenticationError(timedOut ? "timeout" : "cancelled");
       if (error instanceof AuthenticationError) throw error;
-      throw new AuthenticationError("network");
+      // No answer at all: say whether the device is offline, which is not the bank's fault.
+      throw new AuthenticationError(
+        typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "network",
+      );
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener("abort", cancel);
     }
+  }
+
+  /**
+   * The request, counted as in flight for the indicator of the app. A read is repeated when the
+   * network fails or the service says it is restarting; a POST (login, logout, every write) never
+   * is: it may have run on the server.
+   */
+  function request(
+    config: SelfServiceConfig,
+    resource: string,
+    body: unknown,
+    key?: string,
+    signal?: AbortSignal,
+    method: CustomerMethod = "POST",
+    query?: Record<string, string | number>,
+    stepUpToken?: string,
+  ): Promise<{ status: number; ok: boolean; data: unknown }> {
+    return trackRequest((handle) =>
+      withRetry(() => attempt(config, resource, body, key, signal, method, query, stepUpToken), {
+        idempotent: method === "GET",
+        transientError: (error) =>
+          error instanceof AuthenticationError &&
+          (error.code === "network" || error.code === "timeout" || error.code === "offline"),
+        transientResult: (result) => transientStatus(result.status, result.retryAfter),
+        signal,
+        policy: retry?.policy,
+        env: retry?.env,
+        onRetry: () => handle.retrying(),
+      }).catch((error) => {
+        // Cancelled while waiting to try again: the same error as a cancelled single request.
+        if (!(error instanceof AuthenticationError) && signal?.aborted) {
+          throw new AuthenticationError("cancelled");
+        }
+        throw error;
+      }),
+    );
   }
 
   return {

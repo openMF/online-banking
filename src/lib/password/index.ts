@@ -15,6 +15,9 @@ export type PasswordErrorCode =
   /** The session ended or cannot be used for this step. */
   | "session"
   | "network"
+  | "offline"
+  | "timeout"
+  | "unavailable"
   | "unknown";
 
 export class PasswordError extends Error {
@@ -34,7 +37,15 @@ const MISMATCH = /do\.not\.match$/;
 export function toPasswordError(error: unknown): PasswordError {
   if (error instanceof PasswordError) return error;
   if (error instanceof SelfServiceError) {
-    if (error.code === "error.network" || error.status === 0) return new PasswordError("network");
+    if (error.code === "error.network" || error.status === 0) {
+      const problem = error.problem;
+      return new PasswordError(
+        problem === "offline" || problem === "timeout" ? problem : "network",
+      );
+    }
+    if (error.problem === "unavailable") return new PasswordError("unavailable");
+    // HTTP 408 (the server gave up waiting) reads as a timeout, like a request that ran out of time.
+    if (error.problem === "timeout") return new PasswordError("timeout");
     const stepUp = error.stepUpCode;
     if (stepUp === "required" || stepUp === "invalid") return new PasswordError("stepup");
     if (stepUp === "session.required" || error.status === 401) return new PasswordError("session");

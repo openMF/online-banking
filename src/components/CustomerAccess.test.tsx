@@ -19,7 +19,15 @@ const login = vi.mocked(customerAuthentication.login);
 const configuration = vi.mocked(getSelfServiceConfig);
 function session(): CustomerSession {
   return {
-    identity: { userId: 12, username: "backend-customer", roles: [], permissions: [], clients: [] },
+    identity: {
+      userId: 12,
+      username: "backend-customer",
+      officeId: null,
+      officeName: null,
+      roles: [],
+      permissions: [],
+      clients: [],
+    },
     expiresAt: Date.now() + 900000,
     request: vi.fn(),
     logout: vi.fn(async () => true),
@@ -245,4 +253,41 @@ it("enforces the absolute lifetime despite activity and checks expiry on return 
   vi.setSystemTime(verified.expiresAt + 1);
   fireEvent.focus(window);
   expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise));
+});
+
+it("displays office name, roles, and client ID from the session identity", () => {
+  const customSession: CustomerSession = {
+    ...session(),
+    identity: {
+      userId: 3,
+      username: "tomas",
+      officeId: 2,
+      officeName: "SAN JUAN OZOLOTEPEC",
+      roles: [{ id: 3, name: "Self Service User" }],
+      permissions: ["READ_CLIENT"],
+      clients: [3181],
+    },
+  };
+
+  render(
+    <I18nProvider>
+      <CustomerHome session={customSession} onEnd={vi.fn()} />
+    </I18nProvider>,
+  );
+
+  expect(screen.getByTestId("customer-office").textContent).toBe("SAN JUAN OZOLOTEPEC");
+  expect(screen.getByTestId("customer-roles").textContent).toBe("Self Service User");
+  expect(screen.getByTestId("customer-client-id").textContent).toBe("3181");
+});
+
+it("hides profile summary fields when office, roles, or clients are absent", () => {
+  render(
+    <I18nProvider>
+      <CustomerHome session={session()} onEnd={vi.fn()} />
+    </I18nProvider>,
+  );
+
+  expect(screen.queryByTestId("customer-office")).toBeNull();
+  expect(screen.queryByTestId("customer-roles")).toBeNull();
+  expect(screen.queryByTestId("customer-client-id")).toBeNull();
 });

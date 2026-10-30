@@ -10,6 +10,8 @@ const success = () => ({
   authenticated: true,
   username: "server-identity",
   userId: 42,
+  officeId: 5,
+  officeName: "CENTRAL",
   base64EncodedAuthenticationKey: key,
   refreshToken: "discard-this-refresh-secret",
   roles: [{ id: 3, name: "Customer", description: "unnecessary" }],
@@ -65,6 +67,8 @@ describe("customer authentication", () => {
     expect(session.identity).toEqual({
       username: "server-identity",
       userId: 42,
+      officeId: 5,
+      officeName: "CENTRAL",
       roles: [{ id: 3, name: "Customer" }],
       permissions: ["READ_CLIENT"],
       clients: [81],
@@ -72,6 +76,15 @@ describe("customer authentication", () => {
     expect(session.expiresAt).toBe(900100);
     expect(JSON.stringify(session)).not.toMatch(/discard-this|base64|synthetic-pass|accessKey/);
     expect(Object.isFrozen(session.identity.permissions)).toBe(true);
+  });
+
+  it("accepts a login response without officeName/officeId and sets them to null", async () => {
+    const data = success();
+    delete (data as Record<string, unknown>).officeName;
+    delete (data as Record<string, unknown>).officeId;
+    const session = await fake(data).client.login("user", "pass");
+    expect(session.identity.officeName).toBeNull();
+    expect(session.identity.officeId).toBeNull();
   });
 
   it.each([

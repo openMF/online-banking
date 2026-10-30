@@ -292,6 +292,17 @@ A customer who signed in through the backend (MX-452) has a "Seguridad de tu cue
 
 The real adapters are still not used inside the demo dialog: they need a real session, which only the customer home has.
 
+## Loading, errors and retry (MX-490)
+
+One place decides how a request is repeated, counted and worded, so every screen behaves the same (US-E12-04).
+
+- `src/lib/network/retry.ts`: retry with exponential backoff and jitter (2 retries, 0.2-4 s). **Only a read (GET) is ever repeated.** A POST, PUT or DELETE that failed in transit may have run on the server, so it is sent once and the person is told it is uncertain (the savings application already did this and still does); the login and the logout are never repeated. A `Retry-After` is honoured up to 8 s: a longer one is not waited for, the person is told to try later. Nothing is retried while the device is offline (the browser says so), and cancelling stops the waiting at once.
+- What is repeated: a failure to reach the server, a timeout (reads give up after 15 s a try, writes after 30 s), and 408, 429, 502, 503, 504. A 4xx refusal or a plain 500 is answered once: the same request would get the same answer.
+- `src/lib/network/problem.ts`: one classification (offline, timeout, network, unauthorized, forbidden, not found, invalid, conflict, rate limited, unavailable, server) and one set of messages, in es-MX and en-US. The text of the server is never shown. `SelfServiceError.problem` gives the kind; the activity history, step-up, authenticator and savings screens word it from there, so "no internet" and "the service is restarting" read differently.
+- `src/lib/network/activity.ts` and `src/components/NetworkStatus.tsx`: every typed client (`selfRequest`, the customer login client and the runtime configuration) reports to one store of counters (no URL, no body, no header). One indicator shows "Cargando…" only after 400 ms (no flicker), "the connection is slow, trying again" at once, and "no internet connection" after a failure while offline. It is a polite live region without a `role`, so it never collides with the status of a screen.
+- The runtime configuration is read again when the service is restarting, and a failure to **reach** it is no longer remembered until the page is reloaded (a configuration that is wrong still is).
+- Not repeated on purpose: anything that writes. If a write gets no answer the screen says the result is uncertain and points to the place to check.
+
 ## Accessibility and responsive design (MX-492)
 
 The app is mobile-first (`min-width` breakpoints) and is checked against **WCAG 2.1 AA** by one spec, `tests/accessibility.spec.ts`, that opens every screen at **320, 768 and 1440 px** (landing and its simulators, the login and onboarding dialogs, every view of the demo bank including the verification steps and the business approvals, and the real customer screens against a faked backend) and **fails** on:
