@@ -169,6 +169,19 @@ for (const en of [false, true])
     await expect(entry).toBeFocused();
     expect(errors).toEqual([]);
   });
+test("long unbroken guarantor names wrap within mobile list rows", async ({ page }) => {
+  const name = "G".repeat(500);
+  await configure(page, { data: [{ ...guarantors[0], firstname: name, lastname: null }] });
+  await signIn(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Ver garantes", exact: true }).click();
+  const label = page.locator(".loan-guarantors li span");
+  await expect(label).toContainText(name);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const box = await label.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+});
 test("empty collection is explicit and no creation action is offered", async ({ page }) => {
   await configure(page, { data: [] });
   await signIn(page);

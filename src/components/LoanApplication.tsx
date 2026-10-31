@@ -369,6 +369,10 @@ export function LoanApplication({
             <LoanGuarantors
               key={loan.id}
               client={guarantors}
+              loanId={loan.id}
+              onExpired={onExpired}
+            />
+          )}
           {chargesClient && (
             <LoanCharges
               key={loan.id}

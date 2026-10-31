@@ -732,6 +732,7 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
   min-width: 0;
 }
 .loan-guarantors li {
+  overflow-wrap: anywhere;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -740,6 +741,7 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
 }
 .loan-guarantors .guarantor-detail > .button {
   justify-self: start;
+}
 .loan-charges {
   margin-block: 1.5rem;
   padding-block: 1.25rem;
