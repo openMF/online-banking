@@ -11,18 +11,22 @@ import {
   type Values,
 } from "../lib/loans/client";
 import { loanMessages, statusLabel } from "../lib/loans/messages";
+import type { GuarantorClient } from "../lib/loans/guarantors";
+import { LoanGuarantors } from "./LoanGuarantors";
 
 import { LoanCharges } from "./LoanCharges";
 import type { LoanChargesClient } from "../lib/loans/charges";
 
 export function LoanApplication({
   client,
+  guarantors,
   chargesClient,
   clients,
   onExpired,
   onClose,
 }: {
   client: LoanClient;
+  guarantors?: GuarantorClient;
   chargesClient?: LoanChargesClient;
   clients: readonly number[];
   onExpired: () => void;
@@ -361,6 +365,14 @@ export function LoanApplication({
               </>
             )}
           </dl>
+          {guarantors && (
+            <LoanGuarantors
+              key={loan.id}
+              client={guarantors}
+              loanId={loan.id}
+              onExpired={onExpired}
+            />
+          )}
           {chargesClient && (
             <LoanCharges
               key={loan.id}
