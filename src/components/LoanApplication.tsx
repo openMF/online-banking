@@ -11,14 +11,18 @@ import {
   type Values,
 } from "../lib/loans/client";
 import { loanMessages, statusLabel } from "../lib/loans/messages";
+import type { GuarantorClient } from "../lib/loans/guarantors";
+import { LoanGuarantors } from "./LoanGuarantors";
 
 export function LoanApplication({
   client,
+  guarantors,
   clients,
   onExpired,
   onClose,
 }: {
   client: LoanClient;
+  guarantors?: GuarantorClient;
   clients: readonly number[];
   onExpired: () => void;
   onClose: () => void;
@@ -356,6 +360,14 @@ export function LoanApplication({
               </>
             )}
           </dl>
+          {guarantors && (
+            <LoanGuarantors
+              key={loan.id}
+              client={guarantors}
+              loanId={loan.id}
+              onExpired={onExpired}
+            />
+          )}
           {loan.pending && (
             <p>{t("Tu institución debe revisar y aprobar la solicitud antes del desembolso.")}</p>
           )}

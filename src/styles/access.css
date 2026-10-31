@@ -712,3 +712,32 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
 .loan-application .savings-summary .loan-actions {
   justify-content: flex-start;
 }
+
+.loan-guarantors {
+  display: grid;
+  gap: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+  min-width: 0;
+}
+.loan-guarantors h4,
+.loan-guarantors h5 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.loan-guarantors .guarantor-detail,
+.loan-guarantors ul {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.loan-guarantors li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.loan-guarantors .guarantor-detail > .button {
+  justify-self: start;
+}
