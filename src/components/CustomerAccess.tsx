@@ -14,6 +14,7 @@ import { CustomerSecurity } from "./CustomerSecurity";
 import { CustomerTransferArea, type SendEvent } from "./CustomerTransfer";
 import { LoanApplication } from "./LoanApplication";
 import { createGuarantorClient } from "../lib/loans/guarantors";
+import { createLoanChargesClient } from "../lib/loans/charges";
 import { createLoanClient } from "../lib/loans/client";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
@@ -201,6 +202,7 @@ export function CustomerHome({
   const [loanOpen, setLoanOpen] = useState(false);
   const [loanClient] = useState(() => createLoanClient(session));
   const [guarantorClient] = useState(() => createGuarantorClient(session));
+  const [chargesClient] = useState(() => createLoanChargesClient(session));
   const loanEntry = useRef<HTMLButtonElement>(null);
   const [savingsOpen, setSavingsOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
@@ -332,6 +334,7 @@ export function CustomerHome({
         />
       ) : loanOpen ? (
         <LoanApplication
+          chargesClient={chargesClient}
           client={loanClient}
           guarantors={guarantorClient}
           clients={session.identity.clients}

@@ -740,4 +740,33 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
 }
 .loan-guarantors .guarantor-detail > .button {
   justify-self: start;
+.loan-charges {
+  margin-block: 1.5rem;
+  padding-block: 1.25rem;
+  border-block: 1px solid #e5e5e5;
+}
+.loan-charges h4 {
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.loan-charge-list {
+  display: grid;
+  gap: 1.25rem;
+  margin-block: 1rem;
+  padding: 0;
+  list-style: none;
+}
+.loan-charge-list > li {
+  padding: 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.loan-charge-list h5 {
+  font-weight: 600;
+}
+.loan-charge-list p {
+  margin-block: 0.5rem 1rem;
 }
