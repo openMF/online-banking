@@ -28,8 +28,12 @@ export function LoanGuarantors({
   const expired = useRef(onExpired);
   expired.current = onExpired;
   const heading = useRef<HTMLHeadingElement>(null);
+  const panelHeading = useRef<HTMLHeadingElement>(null);
   const entry = useRef<HTMLButtonElement>(null);
   const buttons = useRef(new Map<number, HTMLButtonElement>());
+  useEffect(() => {
+    if (open) panelHeading.current?.focus();
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
@@ -61,7 +65,9 @@ export function LoanGuarantors({
   const detail = selected == null || !list ? undefined : selectGuarantor(list, loanId, selected);
   return (
     <section className="loan-guarantors" aria-label={t("Garantes del préstamo")}>
-      <h4>{t("Garantes del préstamo")}</h4>
+      <h4 ref={panelHeading} tabIndex={-1}>
+        {t("Garantes del préstamo")}
+      </h4>
       {!open ? (
         <button ref={entry} className="button button-outline" onClick={() => setOpen(true)}>
           {t("Ver garantes")}

@@ -88,12 +88,8 @@ export function createGuarantorClient(session: CustomerSession) {
       if (!positiveId(loanId)) throw new GuarantorError("denied");
       // Revalidate with the server on every load/refresh. Browser loan IDs confer no access.
       const data = await read(`loans/${loanId}`, signal);
-      if (
-        !record(data) ||
-        !positiveId(data.clientId) ||
-        !session.identity.clients.includes(data.clientId)
-      )
-        throw new GuarantorError("denied");
+      if (!record(data) || !positiveId(data.clientId)) throw new GuarantorError("malformed");
+      if (!session.identity.clients.includes(data.clientId)) throw new GuarantorError("denied");
       try {
         parseLoan(data, session.identity.clients, loanId);
       } catch {

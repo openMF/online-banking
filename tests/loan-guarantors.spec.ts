@@ -93,6 +93,12 @@ for (const en of [false, true])
     });
     await entry.focus();
     await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("heading", {
+        name: en ? "Loan guarantors" : "Garantes del préstamo",
+        exact: true,
+      }),
+    ).toBeFocused();
     const region = page.getByRole("region", {
       name: en ? "Loan guarantors" : "Garantes del préstamo",
       exact: true,

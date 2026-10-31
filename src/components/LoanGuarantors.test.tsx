@@ -17,6 +17,17 @@ function setup(
   fireEvent.click(screen.getByRole("button", { name: "Ver garantes" }));
   return { ...view, client, expired };
 }
+it("focuses the panel heading when opened, including while loading and after reopening", async () => {
+  setup({ list: vi.fn().mockReturnValue(new Promise(() => {})) });
+  const heading = screen.getByRole("heading", { name: "Garantes del préstamo" });
+  expect(document.activeElement).toBe(heading);
+  expect(screen.getByRole("status").textContent).toBe("Cargando garantes...");
+  fireEvent.click(screen.getByRole("button", { name: "Volver al detalle del préstamo" }));
+  const entry = screen.getByRole("button", { name: "Ver garantes" });
+  await waitFor(() => expect(document.activeElement).toBe(entry));
+  fireEvent.click(entry);
+  expect(document.activeElement).toBe(heading);
+});
 it("shows list, keyboard-focusable details, returns focus and never persists PII", async () => {
   const persist = vi.spyOn(Storage.prototype, "setItem");
   setup();

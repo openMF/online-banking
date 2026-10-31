@@ -50,6 +50,25 @@ it("rejects a different customer before retrieving any guarantors", async () => 
   await expect(s.client.list(473)).rejects.toMatchObject({ code: "denied" });
   expect(s.request).toHaveBeenCalledTimes(1);
 });
+it.each([
+  null,
+  [],
+  "invalid",
+  {},
+  { clientId: null },
+  { clientId: "9001" },
+  { clientId: 0 },
+  { clientId: -1 },
+  { clientId: 1.5 },
+])(
+  "classifies invalid loan client data as malformed before retrieving guarantors: %j",
+  async (data) => {
+    const s = setup();
+    s.request.mockResolvedValueOnce({ status: 200, ok: true, data });
+    await expect(s.client.list(473)).rejects.toMatchObject({ code: "malformed" });
+    expect(s.request).toHaveBeenCalledTimes(1);
+  },
+);
 it("rejects loan ID mismatches", async () => {
   const s = setup();
   s.request.mockResolvedValueOnce({ status: 200, ok: true, data: { ...loan(), id: 474 } });
