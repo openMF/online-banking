@@ -185,3 +185,30 @@ it("passes cancellation to the real session transport and cancels an in-flight G
   await expect(result).rejects.toMatchObject({ code: "cancelled" });
   expect(transport).toHaveBeenCalledTimes(2);
 });
+
+it.each([
+  { amount: 100, amountPaid: 90, amountOutstanding: 90 },
+  { amount: 100, amountPaid: 40, amountOutstanding: 40, amountWaived: 21 },
+  { amount: 100, amountPaid: 40, amountOutstanding: 40, amountWrittenOff: 21 },
+  { amount: 100, amountPaid: 40, amountOutstanding: 40, amountWaived: 10, amountWrittenOff: 11 },
+  { amount: 100, amountPaid: 90, amountOutstanding: undefined, amountWaived: 11 },
+  { amount: 0.3, amountPaid: 0.1, amountOutstanding: 0.2000000001 },
+  { amount: 100, amountPaid: 90, amountOutstanding: 0, amountWaived: 11, waived: true },
+])("marks an excessive combined balance unknown: %j", (fields) => {
+  expect(parseLoanCharges([charge(fields)])[0].status).toBe("unknown");
+});
+it.each([
+  { amount: 0.3, amountPaid: 0.1, amountOutstanding: 0.2 },
+  { amount: 100, amountPaid: 40, amountOutstanding: 40, amountWaived: 10, amountWrittenOff: 10 },
+  {
+    amount: 100,
+    amountPaid: 40,
+    amountOutstanding: 40,
+    amountWaived: undefined,
+    amountWrittenOff: undefined,
+  },
+  { amount: 3e-7, amountPaid: 1e-7, amountOutstanding: 2e-7 },
+  { amount: 3e-20, amountPaid: 1e-20, amountOutstanding: 2e-20 },
+])("preserves valid partial balances with exact decimal arithmetic: %j", (fields) => {
+  expect(parseLoanCharges([charge(fields)])[0].status).toBe("partial");
+});

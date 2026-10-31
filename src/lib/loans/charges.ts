@@ -55,13 +55,34 @@ function flag(value: unknown): boolean | undefined {
   if (value == null) return undefined;
   return typeof value === "boolean" ? value : malformed();
 }
+/** Compare the known nonnegative balance components without floating-point addition.
+ * Missing components remain unknown; their known subtotal is still a lower bound.
+ * Align decimal strings exactly so 0.1 + 0.2 does not need a rounding tolerance.
+ */
+function balanceExceedsAmount(total: number, components: readonly (number | undefined)[]): boolean {
+  const decimals = [total, ...components.filter((value): value is number => value != null)].map(
+    (value) => {
+      const [mantissa, exponent = "0"] = String(value).split("e");
+      const [whole, fraction = ""] = mantissa.split(".");
+      return { coefficient: BigInt(whole + fraction), scale: fraction.length - Number(exponent) };
+    },
+  );
+  const scale = Math.max(...decimals.map((value) => value.scale));
+  const [amount, ...balances] = decimals.map(
+    (value) => value.coefficient * 10n ** BigInt(scale - value.scale),
+  );
+  return balances.reduce((sum, value) => sum + value, 0n) > amount;
+}
 function status(c: ChargeDto): ChargeStatus {
   if (c.paid == null || c.waived == null || (c.paid && c.waived)) return "unknown";
   if (
     c.amount != null &&
-    [c.amountPaid, c.amountWaived, c.amountWrittenOff, c.amountOutstanding].some(
-      (value) => value != null && value > c.amount!,
-    )
+    balanceExceedsAmount(c.amount, [
+      c.amountPaid,
+      c.amountWaived,
+      c.amountWrittenOff,
+      c.amountOutstanding,
+    ])
   )
     return "unknown";
   if (c.paid)
