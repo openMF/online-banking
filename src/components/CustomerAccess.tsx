@@ -13,6 +13,7 @@ import { Login } from "./Access";
 import { CustomerSecurity } from "./CustomerSecurity";
 import { CustomerTransferArea, type SendEvent } from "./CustomerTransfer";
 import { LoanApplication } from "./LoanApplication";
+import { createLoanChargesClient } from "../lib/loans/charges";
 import { createLoanClient } from "../lib/loans/client";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
@@ -199,6 +200,7 @@ export function CustomerHome({
   const ended = useRef(false);
   const [loanOpen, setLoanOpen] = useState(false);
   const [loanClient] = useState(() => createLoanClient(session));
+  const [chargesClient] = useState(() => createLoanChargesClient(session));
   const loanEntry = useRef<HTMLButtonElement>(null);
   const [savingsOpen, setSavingsOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
@@ -330,6 +332,7 @@ export function CustomerHome({
         />
       ) : loanOpen ? (
         <LoanApplication
+          chargesClient={chargesClient}
           client={loanClient}
           clients={session.identity.clients}
           onExpired={() => {

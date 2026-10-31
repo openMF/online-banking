@@ -12,13 +12,18 @@ import {
 } from "../lib/loans/client";
 import { loanMessages, statusLabel } from "../lib/loans/messages";
 
+import { LoanCharges } from "./LoanCharges";
+import type { LoanChargesClient } from "../lib/loans/charges";
+
 export function LoanApplication({
   client,
+  chargesClient,
   clients,
   onExpired,
   onClose,
 }: {
   client: LoanClient;
+  chargesClient?: LoanChargesClient;
   clients: readonly number[];
   onExpired: () => void;
   onClose: () => void;
@@ -356,6 +361,14 @@ export function LoanApplication({
               </>
             )}
           </dl>
+          {chargesClient && (
+            <LoanCharges
+              key={loan.id}
+              client={chargesClient}
+              loanId={loan.id}
+              onExpired={onExpired}
+            />
+          )}
           {loan.pending && (
             <p>{t("Tu institución debe revisar y aprobar la solicitud antes del desembolso.")}</p>
           )}
