@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ShareAccounts } from "./ShareAccounts";
+import { createShareClient } from "../lib/shares/client";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { Brand } from "./ui";
 import { LocaleToggle, translateWith, useI18n } from "../i18n";
@@ -199,6 +201,9 @@ export function CustomerHome({
 }) {
   const { t } = useI18n();
   const ended = useRef(false);
+  const [sharesOpen, setSharesOpen] = useState(false);
+  const shareClient = useMemo(() => createShareClient(session), [session]);
+  const sharesEntry = useRef<HTMLButtonElement>(null);
   const [loanOpen, setLoanOpen] = useState(false);
   const [loanClient] = useState(() => createLoanClient(session));
   const [guarantorClient] = useState(() => createGuarantorClient(session));
@@ -313,7 +318,21 @@ export function CustomerHome({
           )}
         </p>
       </div>
-      {securityOpen ? (
+      {sharesOpen ? (
+        <ShareAccounts
+          client={shareClient}
+          clients={session.identity.clients}
+          onExpired={() => {
+            if (ended.current) return;
+            ended.current = true;
+            onEnd(true, session.logout());
+          }}
+          onClose={() => {
+            setSharesOpen(false);
+            requestAnimationFrame(() => sharesEntry.current?.focus());
+          }}
+        />
+      ) : securityOpen ? (
         <CustomerSecurity
           session={session}
           onClose={() => {
@@ -405,6 +424,13 @@ export function CustomerHome({
                     : t("Tu última transferencia se realizó.")}
             </p>
           )}
+          <button
+            ref={sharesEntry}
+            className="button button-primary"
+            onClick={() => setSharesOpen(true)}
+          >
+            {t("Mis cuentas de acciones")}
+          </button>
           <button
             ref={loanEntry}
             className="button button-primary"
