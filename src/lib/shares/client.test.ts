@@ -84,7 +84,7 @@ it("uses exact decimal multiplication and currency precision without combining c
   expect(formatMoney("0.3", { code: "MXN", decimalPlaces: 2 }, "en-US")).toBe("0.30 MXN");
   expect(formatMoney("0.123456", { code: "ZZZ", decimalPlaces: 2 }, "en-US")).toBe("0.123456 ZZZ");
   expect(decimal(1234567890123456)).toBeUndefined();
-  expect(decimal(1e-21)).toBeUndefined();
+  expect(decimal(1e-21)).toBe("0.000000000000000000001");
   expect(parseShare(share({ currency: undefined }), clientId, 476).value).toBeUndefined();
 });
 it.each([
@@ -172,4 +172,59 @@ it("rejects duplicate discovery IDs and mismatched detail IDs", async () => {
   await expect(client.list(clientId)).rejects.toMatchObject({ code: "malformed" });
   transport.mockResolvedValueOnce(new Response(JSON.stringify(share({ id: 477 }))));
   await expect(client.detail(clientId, 476)).rejects.toMatchObject({ code: "malformed" });
+});
+
+it.each([
+  [0, "0"],
+  [1e-6, "0.000001"],
+  [1e-7, "0.0000001"],
+  [1.25e-7, "0.000000125"],
+  [1e-21, "0.000000000000000000001"],
+  [Number.MIN_VALUE, `0.${"0".repeat(323)}5`],
+  [1.23456789012345e-7, "0.000000123456789012345"],
+  [1.234567890123456e-7, undefined],
+  [1e21, undefined],
+  [Number.MAX_VALUE, undefined],
+  [-1e-7, undefined],
+  [Infinity, undefined],
+  [NaN, undefined],
+])("expands exponent-form decimals before checking precision: %s", (input, expected) => {
+  expect(decimal(input)).toBe(expected);
+});
+it("keeps small exponent-form prices available through parsing, valuation and display", () => {
+  const account = parseShare(share({ currentMarketPrice: 1e-7 }), clientId, 476);
+  expect(account.unitPrice).toBe("0.0000001");
+  expect(account.value).toBe("0.0000007");
+  expect(formatMoney(account.value, account.currency, "en-US")).toBe("0.0000007 MXN");
+});
+it.each([clientId + 1, null, "wrong-client"])(
+  "rejects discovery clientId %s before detail enrichment or summary fallback",
+  async (foreignClient) => {
+    const { client, transport } = await setup({ status: 500 });
+    transport.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          shareAccounts: [{ ...discovery().shareAccounts[0], clientId: foreignClient }],
+        }),
+      ),
+    );
+    await expect(client.list(clientId)).rejects.toMatchObject({ code: "malformed" });
+    expect(transport).toHaveBeenCalledTimes(2); // Login and discovery only.
+  },
+);
+it.each([true, false])(
+  "accepts discovery summaries with matching or omitted clientId (present: %s)",
+  async (present) => {
+    const { client, transport } = await setup({ status: 500 });
+    const summary: Record<string, unknown> = { ...discovery().shareAccounts[0] };
+    if (!present) delete summary.clientId;
+    transport.mockResolvedValueOnce(new Response(JSON.stringify({ shareAccounts: [summary] })));
+    expect(await client.list(clientId)).toMatchObject([{ id: 476, detailUnavailable: true }]);
+    expect(transport).toHaveBeenCalledTimes(3);
+  },
+);
+it("continues to require clientId in account details", () => {
+  const detail = share();
+  const { clientId: _client, ...withoutClient } = detail;
+  expect(() => parseShare(withoutClient, clientId, 476)).toThrow();
 });

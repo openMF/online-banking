@@ -21,11 +21,24 @@ function count(v: unknown): number | undefined {
   return typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : bad();
 }
 /** JSON has already been decoded by CustomerSession. Refuse unsafe precision rather than
- * presenting rounded binary numbers as authoritative money. No arithmetic uses Number. */
+ * presenting rounded binary numbers as authoritative money. No monetary arithmetic uses Number. */
 export function decimal(v: unknown): string | undefined {
   if (v == null) return undefined;
   if (typeof v !== "number" || !Number.isFinite(v) || v < 0) return undefined;
-  const s = String(v);
+  let s = String(v);
+  if (s.includes("e")) {
+    const [coefficient, exponent] = s.split("e");
+    const [whole, fraction = ""] = coefficient.split(".");
+    const digits = whole + fraction;
+    // Only the decimal point position uses Number; monetary digits stay strings.
+    const point = whole.length + Number(exponent);
+    s =
+      point <= 0
+        ? `0.${"0".repeat(-point)}${digits}`
+        : point >= digits.length
+          ? digits + "0".repeat(point - digits.length)
+          : `${digits.slice(0, point)}.${digits.slice(point)}`;
+  }
   return /^\d+(\.\d+)?$/.test(s) && s.replace(/[^0-9]/g, "").replace(/^0+/, "").length <= 15
     ? s
     : undefined;
@@ -82,7 +95,7 @@ export function parseShare(data: unknown, clientId: number, accountId?: number):
     !record(data) ||
     !positiveId(data.id) ||
     (accountId != null && data.id !== accountId) ||
-    (accountId != null && data.clientId !== clientId)
+    ((accountId != null || "clientId" in data) && data.clientId !== clientId)
   )
     return bad();
   const statuses: Record<number, ShareAccount["status"]> = {
