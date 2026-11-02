@@ -150,6 +150,8 @@ async function configure(page: Page, options: Options = {}): Promise<Seen> {
       }
       return fulfill(route, { officeId: 1, resourceId: 452, changes: { password: true } });
     }
+    // The home lists the savings accounts (MX-466); this test is not about them.
+    if (path === `clients/${login.clients[0]}/accounts`) return fulfill(route, {});
     throw new Error(`Unexpected mocked request: ${method} ${path}`);
   });
   return seen;

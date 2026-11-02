@@ -822,3 +822,103 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
 .share-accounts .loan-actions {
   margin-top: 1rem;
 }
+
+/* The savings accounts of the signed-in customer (US-E04-01) */
+.savings-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  min-width: 0;
+}
+.savings-accounts h2,
+.savings-accounts h3 {
+  margin: 0;
+}
+.savings-accounts h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+.savings-accounts h3 {
+  font-size: 15px;
+  font-weight: 500;
+}
+.savings-accounts-status,
+.savings-accounts-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+/* Out of the layout while empty, but still present, so the next loading message is announced. */
+.savings-accounts-status:empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+.savings-accounts-error,
+.savings-accounts-client {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.savings-accounts-client {
+  align-items: stretch;
+}
+.account-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.account-item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+.account-item-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.account-item-heading strong {
+  font-weight: 600;
+  min-width: 0;
+}
+.account-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.account-item-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.account-item-balance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin: 0;
+}
+.account-item-balance dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+.account-item-balance dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

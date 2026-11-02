@@ -51,7 +51,18 @@ test("real login uses runtime endpoint and tenant, isolates demo data and clears
   await fill(page);
   await page.getByLabel("Contraseña", { exact: true }).press("Enter");
   await expect(page.getByRole("heading", { name: "Acceso verificado", exact: true })).toBeVisible();
-  expect(requests).toHaveLength(1);
+  // The answer here has no savings list: the home says so instead of showing demo accounts.
+  await expect(page.getByText("Aún no tienes cuentas de ahorro.", { exact: true })).toBeVisible();
+  // Besides the login, only the savings accounts of the linked client are read (MX-466). The dev
+  // server runs effects twice (React StrictMode), so that read can be sent once more and cancelled.
+  const reads = requests.slice(1);
+  expect(reads.length).toBeGreaterThanOrEqual(1);
+  expect(reads.length).toBeLessThanOrEqual(2);
+  for (const read of reads)
+    expect(read).toMatchObject({
+      url: `${baseUrl}/clients/9001/accounts?fields=savingsAccounts`,
+      headers: { "fineract-platform-tenantid": "mx452-synthetic", authorization: `Basic ${key}` },
+    });
   expect(requests[0]).toMatchObject({
     url: `${baseUrl}/authentication`,
     headers: {
@@ -62,9 +73,9 @@ test("real login uses runtime endpoint and tenant, isolates demo data and clears
   });
   expect(requests[0].headers.authorization).toBeUndefined();
   await expect(page.getByTestId("customer-username")).toHaveText("synthetic-customer");
-  await expect(page.getByRole("status")).toContainText(
-    "Las consultas de saldos y movimientos aún no están integradas",
-  );
+  await expect(
+    page.getByText("Los movimientos de tus cuentas aún no están integrados.", { exact: true }),
+  ).toBeVisible();
   await expect(page.locator("body")).not.toContainText(
     /Mariana|344988355|Mifos#26|Saldo disponible/,
   );
@@ -91,8 +102,8 @@ test("real login uses runtime endpoint and tenant, isolates demo data and clears
     0,
   );
   await expect(page.getByLabel("Usuario", { exact: true })).toBeVisible();
-  await expect.poll(() => requests.length).toBe(2);
-  expect(requests[1]).toMatchObject({
+  await expect.poll(() => requests.length).toBe(reads.length + 2);
+  expect(requests.at(-1)).toMatchObject({
     url: `${baseUrl}/authentication/logout`,
     headers: { authorization: `Basic ${key}`, "fineract-platform-tenantid": "mx452-synthetic" },
   });
