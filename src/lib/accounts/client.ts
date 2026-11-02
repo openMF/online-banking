@@ -36,6 +36,19 @@ const depositTypes: Record<number, DepositType> = {
   300: "recurring",
   400: "current",
 };
+// The code Fineract pairs with each status id (SavingsAccountStatusType).
+const statusCodes: Record<number, string> = {
+  100: "submitted.and.pending.approval",
+  200: "approved",
+  300: "active",
+  303: "transfer.in.progress",
+  304: "transfer.on.hold",
+  400: "withdrawn.by.applicant",
+  500: "rejected",
+  600: "closed",
+  700: "pre.mature.closure",
+  800: "matured",
+};
 // Active, transfer in progress or on hold, closed, closed early, matured.
 const everActive = new Set([300, 303, 304, 600, 700, 800]);
 // Active first, then applications, then finished accounts, then refused applications.
@@ -58,6 +71,9 @@ export function parseSavingsAccount(data: unknown): SavingsSummary {
   const status = data.status;
   if (!record(status) || !positiveId(status.id) || !text(status.code) || !text(status.value))
     return malformed();
+  // The id decides the label and the balance, so it must agree with the code it came with.
+  const known = statusCodes[status.id];
+  if (known && status.code !== `savingsAccountStatusType.${known}`) return malformed();
   const type = record(data.depositType) ? data.depositType.id : undefined;
   const depositType = positiveId(type) ? depositTypes[type] : undefined;
   if (!depositType) return malformed();
@@ -124,7 +140,8 @@ export function createAccountsClient(session: CustomerSession) {
   return {
     /** One request per linked client. Any failure fails the whole list: a partial one looks complete. */
     async listSavings(signal?: AbortSignal): Promise<ClientSavings[]> {
-      const clients = session.identity.clients;
+      // A client listed twice by the login is still read, and shown, once.
+      const clients = [...new Set(session.identity.clients)];
       if (!clients.every(positiveId)) throw new AccountsError("denied");
       return Promise.all(
         clients.map(async (clientId) => ({

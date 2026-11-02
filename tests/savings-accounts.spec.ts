@@ -34,7 +34,9 @@ async function configure(page: Page, options: Partial<State> = {}): Promise<Stat
       state.reads.push({ url, headers: request.headers() });
       if (state.status)
         return fulfill(route, { developerMessage: "SECRET_INTERNAL_STACK" }, state.status);
-      return fulfill(route, state.malformed ? { savingsAccounts: [{}] } : accounts());
+      // Each linked client has its own accounts: 42, 43, 57 for the first, 1042... for the second.
+      const offset = state.clients.indexOf(Number(linked[1])) * 1000;
+      return fulfill(route, state.malformed ? { savingsAccounts: [{}] } : accounts(offset));
     }
     throw new Error(`Unexpected mocked request: ${request.method()} ${path}`);
   });
@@ -92,6 +94,15 @@ test("names each client when the login is linked to more than one", async ({ pag
     "Cliente 9001",
     "Cliente 9002",
   ]);
+  // Each account is listed under its own client, never under the other one.
+  const client = (heading: string) =>
+    list(page).locator(".savings-accounts-client").filter({ hasText: heading });
+  await expect(client("Cliente 9001").getByRole("listitem")).toHaveCount(3);
+  await expect(client("Cliente 9001").getByTestId("savings-account-42")).toBeVisible();
+  await expect(client("Cliente 9001").getByTestId("savings-account-1042")).toHaveCount(0);
+  await expect(client("Cliente 9002").getByRole("listitem")).toHaveCount(3);
+  await expect(client("Cliente 9002").getByTestId("savings-account-1042")).toBeVisible();
+  await expect(client("Cliente 9002").getByTestId("savings-account-42")).toHaveCount(0);
 });
 
 test("a service that stays down is explained, and trying again shows the accounts", async ({

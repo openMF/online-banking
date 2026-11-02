@@ -80,6 +80,9 @@ describe("SavingsAccountSummaryData adapter", () => {
       { accountNo: " " },
       { status: undefined },
       { status: { id: 300, code: "savingsAccountStatusType.active" } },
+      // An id that disagrees with its code would show the wrong label and a balance.
+      { status: { id: 300, code: "savingsAccountStatusType.rejected", value: "Active" } },
+      { status: { id: 100, code: "savingsAccountStatusType.active", value: "Active" } },
       { currency: undefined },
       { currency: { code: "mxn", decimalPlaces: 2 } },
       { currency: { code: "MXN", decimalPlaces: 2.5 } },
@@ -140,6 +143,15 @@ describe("authenticated accounts client", () => {
     ]);
     expect(groups.map((group) => group.clientId)).toEqual([9001, 9002]);
     expect(groups[0].accounts.map((account) => account.id)).toEqual([42, 43, 57]);
+  });
+  it("reads a client listed twice by the login only once", async () => {
+    const { request, client } = setup([9001, 9002, 9001]);
+    const groups = await client.listSavings();
+    expect(request.mock.calls.map(([resource]) => resource)).toEqual([
+      "clients/9001/accounts",
+      "clients/9002/accounts",
+    ]);
+    expect(groups.map((group) => group.clientId)).toEqual([9001, 9002]);
   });
   it("sends nothing without a linked client, or for an identifier that is not one", async () => {
     const none = setup([]);

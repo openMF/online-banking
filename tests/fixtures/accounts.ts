@@ -54,11 +54,14 @@ export const summary = (
     ...extra,
   };
 };
-/** The answer for one client: an active wallet with money, an empty one, and an application. */
-export const accounts = () => ({
+/**
+ * The answer for one client: an active wallet with money, an empty one, and an application. A
+ * second client gets an `offset`, so its accounts have their own ids.
+ */
+export const accounts = (offset = 0) => ({
   savingsAccounts: [
-    summary(57, "pending", {}, "recurring"),
-    summary(42, "active", { availableBalance: 1250.5, accountBalance: 1250.5 }),
-    summary(43, "active"),
+    summary(offset + 57, "pending", {}, "recurring"),
+    summary(offset + 42, "active", { availableBalance: 1250.5, accountBalance: 1250.5 }),
+    summary(offset + 43, "active"),
   ],
 });

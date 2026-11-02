@@ -171,3 +171,26 @@ it("cancels its request when it closes and ignores a late answer", async () => {
   await act(async () => answer(one()));
   expect(client.listSavings).toHaveBeenCalledOnce();
 });
+
+it("never lets a late answer for an earlier client replace the current list", async () => {
+  let late!: (groups: ClientSavings[]) => void;
+  const earlier: AccountsClient = {
+    listSavings: () => new Promise((resolve) => (late = resolve)),
+  };
+  const current: AccountsClient = {
+    listSavings: async () => [
+      { clientId: 9002, accounts: parseSavingsAccounts({ savingsAccounts: [summary(7)] }) },
+    ],
+  };
+  const view = (client: AccountsClient) => (
+    <I18nProvider>
+      <SavingsAccounts client={client} onExpired={vi.fn()} />
+    </I18nProvider>
+  );
+  const { rerender } = render(view(earlier));
+  rerender(view(current));
+  await screen.findByTestId("savings-account-7");
+  await act(async () => late(one()));
+  expect(screen.queryByTestId("savings-account-42")).toBeNull();
+  expect(screen.getByTestId("savings-account-7")).toBeTruthy();
+});

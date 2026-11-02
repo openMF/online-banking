@@ -95,8 +95,12 @@ async function configure(page: Page, options: Options = {}) {
           }),
         ],
       });
-    // The home lists the savings accounts of every linked client (MX-466).
-    if (/\/clients\/\d+\/accounts$/.test(url.pathname)) return fulfill(route, {});
+    // The home lists the savings accounts of every linked client (MX-466), and only of those.
+    const linked = /\/clients\/(\d+)\/accounts$/.exec(url.pathname);
+    if (linked) {
+      expect((options.clients ?? login.clients).map(String)).toContain(linked[1]);
+      return fulfill(route, {});
+    }
     throw new Error(`Unexpected mocked banking request: ${url.pathname}`);
   });
   return posts;
