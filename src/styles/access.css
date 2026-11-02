@@ -772,3 +772,53 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
 .loan-charge-list p {
   margin-block: 0.5rem 1rem;
 }
+
+.share-accounts {
+  margin-top: 2rem;
+}
+.share-accounts select {
+  display: block;
+  width: 100%;
+  max-width: 22rem;
+  padding: 0.75rem;
+  margin: 0.5rem 0 1rem;
+  border: 1px solid #64748b;
+  border-radius: 0.5rem;
+  background: white;
+  color: #172b40;
+}
+.share-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+.share-list > li {
+  border: 1px solid #64748b;
+  border-radius: 1rem;
+  padding: 1rem;
+  min-width: 0;
+}
+.share-accounts dd,
+.share-accounts button {
+  overflow-wrap: anywhere;
+}
+.share-accounts button {
+  white-space: normal;
+}
+.share-accounts h2 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  margin-bottom: 1rem;
+}
+.share-accounts h3 {
+  font-size: 1.125rem;
+  font-weight: 650;
+  margin: 1rem 0 0.75rem;
+}
+.share-accounts .loan-details {
+  margin: 1rem 0;
+  row-gap: 0.625rem;
+}
+.share-accounts .loan-actions {
+  margin-top: 1rem;
+}

@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ShareAccounts } from "./ShareAccounts";
+import { createShareClient } from "../lib/shares/client";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { Brand } from "./ui";
 import { LocaleToggle, translateWith, useI18n } from "../i18n";
@@ -209,326 +211,351 @@ export function CustomerLogin({
 }
 
 export function CustomerHome({
-  session,
-  onEnd,
+session,
+onEnd,
 }: {
-  session: CustomerSession;
-  onEnd: (
-    expired: boolean,
-    revocation: Promise<boolean>,
-    reason?: "passwordChanged",
-  ) => void;
+session: CustomerSession;
+onEnd: (
+expired: boolean,
+revocation: Promise<boolean>,
+reason?: "passwordChanged",
+) => void;
 }) {
-  const { t } = useI18n();
-  const ended = useRef(false);
+const { t } = useI18n();
+const ended = useRef(false);
 
-  const [loanOpen, setLoanOpen] = useState(false);
-  const [loanClient] = useState(() => createLoanClient(session));
-  const [guarantorClient] = useState(() => createGuarantorClient(session));
-  const [chargesClient] = useState(() => createLoanChargesClient(session));
-  const loanEntry = useRef<HTMLButtonElement>(null);
+const [sharesOpen, setSharesOpen] = useState(false);
+const shareClient = useMemo(() => createShareClient(session), [session]);
+const sharesEntry = useRef<HTMLButtonElement>(null);
 
-  const [savingsOpen, setSavingsOpen] = useState(false);
-  const [savingsClient] = useState(() => createSavingsClient(session));
-  const savingsEntry = useRef<HTMLButtonElement>(null);
+const [loanOpen, setLoanOpen] = useState(false);
+const [loanClient] = useState(() => createLoanClient(session));
+const [guarantorClient] = useState(() => createGuarantorClient(session));
+const [chargesClient] = useState(() => createLoanChargesClient(session));
+const loanEntry = useRef<HTMLButtonElement>(null);
 
-  // Survey participation
-  const [surveyOpen, setSurveyOpen] = useState(false);
-  const [surveyClient] = useState(() => createSurveyClient(session));
-  const surveyEntry = useRef<HTMLButtonElement>(null);
+const [savingsOpen, setSavingsOpen] = useState(false);
+const [savingsClient] = useState(() => createSavingsClient(session));
+const savingsEntry = useRef<HTMLButtonElement>(null);
 
-  const [securityOpen, setSecurityOpen] = useState(false);
-  const securityEntry = useRef<HTMLButtonElement>(null);
+const [surveyOpen, setSurveyOpen] = useState(false);
+const [surveyClient] = useState(() => createSurveyClient(session));
+const surveyEntry = useRef<HTMLButtonElement>(null);
 
-  const [transferOpen, setTransferOpen] = useState(false);
-  const transferEntry = useRef<HTMLButtonElement>(null);
+const [securityOpen, setSecurityOpen] = useState(false);
+const securityEntry = useRef<HTMLButtonElement>(null);
 
-  // The transfer being sent, kept here (not in its screen) so that closing the screen cannot make
-  // the person send it again: a transfer that is running or whose result is unknown blocks the next.
-  const [transfer, setTransfer] = useState<
-    | { kind: "idle" }
-    | { kind: "sending" }
-    | { kind: "uncertain" }
-    | { kind: "done"; reference?: number }
-  >({ kind: "idle" });
+const [transferOpen, setTransferOpen] = useState(false);
+const transferEntry = useRef<HTMLButtonElement>(null);
 
-  function onSend(event: SendEvent) {
-    setTransfer((current) => {
-      switch (event.kind) {
-        case "start":
-          return { kind: "sending" };
-        case "done":
-          return { kind: "done", reference: event.reference };
-        case "uncertain":
-          return { kind: "uncertain" };
-        case "failed":
-          return { kind: "idle" };
-        case "seen":
-          return current.kind === "done" ? { kind: "idle" } : current;
-      }
-    });
+const [transfer, setTransfer] = useState<
+| { kind: "idle" }
+| { kind: "sending" }
+| { kind: "uncertain" }
+| { kind: "done"; reference?: number }
+
+> ({ kind: "idle" });
+
+function onSend(event: SendEvent) {
+setTransfer((current) => {
+switch (event.kind) {
+case "start":
+return { kind: "sending" };
+case "done":
+return { kind: "done", reference: event.reference };
+case "uncertain":
+return { kind: "uncertain" };
+case "failed":
+return { kind: "idle" };
+case "seen":
+return current.kind === "done" ? { kind: "idle" } : current;
+}
+});
+}
+
+const transferBlocked =
+transfer.kind === "sending" || transfer.kind === "uncertain";
+
+const endRef = useRef(onEnd);
+endRef.current = onEnd;
+
+useEffect(() => {
+let lastActivity = Date.now();
+
+const activity = () => {
+  check();
+  if (!ended.current) lastActivity = Date.now();
+};
+
+const end = () => {
+  if (ended.current) return;
+  ended.current = true;
+  endRef.current(true, session.logout());
+};
+
+const check = () => {
+  if (
+    Date.now() >= session.expiresAt ||
+    Date.now() - lastActivity >= 10 * 60_000
+  ) {
+    end();
   }
+};
 
-  const transferBlocked = transfer.kind === "sending" || transfer.kind === "uncertain";
+const interval = setInterval(check, 1000);
+window.addEventListener("pointerdown", activity);
+window.addEventListener("keydown", activity);
+window.addEventListener("focus", check);
+document.addEventListener("visibilitychange", check);
 
-  const endRef = useRef(onEnd);
-  endRef.current = onEnd;
+check();
 
-  useEffect(() => {
-    let lastActivity = Date.now();
+return () => {
+  clearInterval(interval);
+  window.removeEventListener("pointerdown", activity);
+  window.removeEventListener("keydown", activity);
+  window.removeEventListener("focus", check);
+  document.removeEventListener("visibilitychange", check);
+};
 
-    const activity = () => {
-      check();
-      if (!ended.current) lastActivity = Date.now();
-    };
 
-    const end = () => {
-      if (ended.current) return;
-      ended.current = true;
-      endRef.current(true, session.logout());
-    };
+}, [session]);
 
-    const check = () => {
-      if (Date.now() >= session.expiresAt || Date.now() - lastActivity >= 10 * 60_000) {
-        end();
-      }
-    };
+const heading = useRef<HTMLHeadingElement>(null);
 
-    const interval = setInterval(check, 1000);
-    window.addEventListener("pointerdown", activity);
-    window.addEventListener("keydown", activity);
-    window.addEventListener("focus", check);
-    document.addEventListener("visibilitychange", check);
+useEffect(() => {
+heading.current?.focus();
+}, []);
 
-    check();
+return ( <main className="access-content customer-home" aria-labelledby="customer-heading"> <div className="customer-home-header"> <Brand compact /> <LocaleToggle /> </div>
 
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("pointerdown", activity);
-      window.removeEventListener("keydown", activity);
-      window.removeEventListener("focus", check);
-      document.removeEventListener("visibilitychange", check);
-    };
-  }, [session]);
+  <div className="modal-heading">
+    <p className="eyebrow">{t("ACCESO DE CLIENTES")}</p>
+    <h1 id="customer-heading" ref={heading} tabIndex={-1}>
+      {t("Acceso verificado")}
+    </h1>
+    <p>{t("Usuario verificado por tu institución:")}</p>
+    <p data-testid="customer-username">{session.identity.username}</p>
 
-  const heading = useRef<HTMLHeadingElement>(null);
+    <dl className="customer-profile-summary" data-testid="customer-profile">
+      {session.identity.officeName && (
+        <>
+          <dt>{t("Oficina")}</dt>
+          <dd data-testid="customer-office">{session.identity.officeName}</dd>
+        </>
+      )}
 
-  useEffect(() => {
-    heading.current?.focus();
-  }, []);
+      {session.identity.roles.length > 0 && (
+        <>
+          <dt>{t("Roles")}</dt>
+          <dd data-testid="customer-roles">
+            {session.identity.roles.map((r) => r.name).join(", ")}
+          </dd>
+        </>
+      )}
 
-  return (
-    <main className="access-content customer-home" aria-labelledby="customer-heading">
-      <div className="customer-home-header">
-        <Brand compact />
-        <LocaleToggle />
-      </div>
+      {session.identity.clients.length > 0 && (
+        <>
+          <dt>{t("ID de cliente")}</dt>
+          <dd data-testid="customer-client-id">
+            {session.identity.clients.join(", ")}
+          </dd>
+        </>
+      )}
+    </dl>
+  </div>
 
-      <div className="modal-heading">
-        <p className="eyebrow">{t("ACCESO DE CLIENTES")}</p>
-        <h1 id="customer-heading" ref={heading} tabIndex={-1}>
-          {t("Acceso verificado")}
-        </h1>
-        <p>{t("Usuario verificado por tu institución:")}</p>
-        <p data-testid="customer-username">{session.identity.username}</p>
+  <div className="demo-notice" role="status">
+    <LockKeyhole size={18} aria-hidden="true" />
+    <p>
+      {t(
+        "Las consultas de saldos y movimientos aún no están integradas. No se muestran datos de demostración en esta sesión.",
+      )}
+    </p>
+  </div>
 
-        <dl className="customer-profile-summary" data-testid="customer-profile">
-          {session.identity.officeName && (
-            <>
-              <dt>{t("Oficina")}</dt>
-              <dd data-testid="customer-office">{session.identity.officeName}</dd>
-            </>
-          )}
-
-          {session.identity.roles.length > 0 && (
-            <>
-              <dt>{t("Roles")}</dt>
-              <dd data-testid="customer-roles">
-                {session.identity.roles.map((r) => r.name).join(", ")}
-              </dd>
-            </>
-          )}
-
-          {session.identity.clients.length > 0 && (
-            <>
-              <dt>{t("ID de cliente")}</dt>
-              <dd data-testid="customer-client-id">
-                {session.identity.clients.join(", ")}
-              </dd>
-            </>
-          )}
-        </dl>
-      </div>
-
-      <div className="demo-notice" role="status">
-        <LockKeyhole size={18} aria-hidden="true" />
-        <p>
-          {t(
-            "Las consultas de saldos y movimientos aún no están integradas. No se muestran datos de demostración en esta sesión.",
-          )}
-        </p>
-      </div>
-
-      {securityOpen ? (
-        <CustomerSecurity
-          session={session}
-          onClose={() => {
-            setSecurityOpen(false);
-            requestAnimationFrame(() => securityEntry.current?.focus());
-          }}
-          onPasswordChanged={() => {
-            if (ended.current) return;
-            ended.current = true;
-            // The server already ended every session; the logout only forgets the local credential.
-            onEnd(false, session.logout(), "passwordChanged");
-          }}
-          onExpired={() => {
-            if (ended.current) return;
-            ended.current = true;
-            onEnd(true, session.logout());
-          }}
-        />
-      ) : loanOpen ? (
-        <LoanApplication
-          chargesClient={chargesClient}
-          client={loanClient}
-          guarantors={guarantorClient}
-          clients={session.identity.clients}
-          onExpired={() => {
-            if (ended.current) return;
-            ended.current = true;
-            onEnd(true, session.logout());
-          }}
-          onClose={() => {
-            setLoanOpen(false);
-            requestAnimationFrame(() => loanEntry.current?.focus());
-          }}
-        />
-      ) : savingsOpen ? (
-        <SavingsApplication
-          client={savingsClient}
-          clients={session.identity.clients}
-          onExpired={() => {
-            if (ended.current) return;
-            ended.current = true;
-            onEnd(true, session.logout());
-          }}
-          onClose={() => {
-            setSavingsOpen(false);
-            requestAnimationFrame(() => savingsEntry.current?.focus());
-          }}
-        />
+  {sharesOpen ? (
+    <ShareAccounts
+      client={shareClient}
+      clients={session.identity.clients}
+      onExpired={() => {
+        if (ended.current) return;
+        ended.current = true;
+        onEnd(true, session.logout());
+      }}
+      onClose={() => {
+        setSharesOpen(false);
+        requestAnimationFrame(() => sharesEntry.current?.focus());
+      }}
+    />
+  ) : securityOpen ? (
+    <CustomerSecurity
+      session={session}
+      onClose={() => {
+        setSecurityOpen(false);
+        requestAnimationFrame(() => securityEntry.current?.focus());
+      }}
+      onPasswordChanged={() => {
+        if (ended.current) return;
+        ended.current = true;
+        onEnd(false, session.logout(), "passwordChanged");
+      }}
+      onExpired={() => {
+        if (ended.current) return;
+        ended.current = true;
+        onEnd(true, session.logout());
+      }}
+    />
+  ) : loanOpen ? (
+    <LoanApplication
+      chargesClient={chargesClient}
+      client={loanClient}
+      guarantors={guarantorClient}
+      clients={session.identity.clients}
+      onExpired={() => {
+        if (ended.current) return;
+        ended.current = true;
+        onEnd(true, session.logout());
+      }}
+      onClose={() => {
+        setLoanOpen(false);
+        requestAnimationFrame(() => loanEntry.current?.focus());
+      }}
+    />
+  ) : savingsOpen ? (
+    <SavingsApplication
+      client={savingsClient}
+      clients={session.identity.clients}
+      onExpired={() => {
+        if (ended.current) return;
+        ended.current = true;
+        onEnd(true, session.logout());
+      }}
+      onClose={() => {
+        setSavingsOpen(false);
+        requestAnimationFrame(() => savingsEntry.current?.focus());
+      }}
+    />
       ) : surveyOpen ? (
         <SurveyParticipation
           client={surveyClient}
           clients={session.identity.clients}
-          onExpired={() => {
-            if (ended.current) return;
-            ended.current = true;
-            onEnd(true, session.logout());
-          }}
-          onClose={() => {
-            setSurveyOpen(false);
-            requestAnimationFrame(() => surveyEntry.current?.focus());
-          }}
-        />
-      ) : transferOpen ? (
-        <CustomerTransferArea
-          session={session}
-          onSend={onSend}
-          onExpired={() => {
-            if (ended.current) return;
-            ended.current = true;
-            onEnd(true, session.logout());
-          }}
-          onClose={() => {
-            setTransferOpen(false);
-            requestAnimationFrame(() => transferEntry.current?.focus());
-          }}
-        />
-      ) : (
-        <>
-          <button
-            ref={transferEntry}
-            className="button button-primary"
-            disabled={transferBlocked}
-            onClick={() => {
-              // A receipt that was never seen is told on the home: opening the screen clears it.
-              setTransfer((current) =>
-                current.kind === "done" ? { kind: "idle" } : current,
-              );
-              setTransferOpen(true);
-            }}
-          >
-            {t("Transferir entre mis cuentas")}
-          </button>
-
-          {transfer.kind !== "idle" && (
-            <p className="form-note" role="status" data-testid="transfer-track">
-              {transfer.kind === "sending"
-                ? t("Hay una transferencia en curso. Espera su resultado antes de hacer otra.")
-                : transfer.kind === "uncertain"
-                  ? t(
-                      "No pudimos confirmar tu última transferencia. Revisa el saldo de tu cuenta o consulta a tu institución antes de hacer otra.",
-                    )
-                  : transfer.reference !== undefined
-                    ? translateWith("Tu última transferencia se realizó. Referencia: {reference}.", {
-                        reference: transfer.reference,
-                      })
-                    : t("Tu última transferencia se realizó.")}
-            </p>
-          )}
-
-          <button
-            ref={loanEntry}
-            className="button button-primary"
-            onClick={() => setLoanOpen(true)}
-          >
-            {t("Solicitar un préstamo")}
-          </button>
-
-          <button
-            ref={savingsEntry}
-            className="button button-primary"
-            onClick={() => setSavingsOpen(true)}
-          >
-            {t("Solicitar una cuenta de ahorro")}
-          </button>
-
-          <button
-            ref={surveyEntry}
-            className="button button-primary"
-            onClick={() => setSurveyOpen(true)}
-          >
-            {t("Participar en encuestas")}
-          </button>
-
-          <button
-            ref={securityEntry}
-            className="button button-outline"
-            onClick={() => setSecurityOpen(true)}
-          >
-            {t("Seguridad de tu cuenta")}
-          </button>
-        </>
-      )}
-
-      <p className="form-note">
-        {t(
-          "La sesión se conserva solo en esta página y termina al recargar, tras 10 minutos de inactividad o después de 15 minutos.",
-        )}
-      </p>
-
+      onExpired={() => {
+        if (ended.current) return;
+        ended.current = true;
+        onEnd(true, session.logout());
+      }}
+      onClose={() => {
+        setSurveyOpen(false);
+        requestAnimationFrame(() => surveyEntry.current?.focus());
+      }}
+    />
+  ) : transferOpen ? (
+    <CustomerTransferArea
+      session={session}
+      onSend={onSend}
+      onExpired={() => {
+        if (ended.current) return;
+        ended.current = true;
+        onEnd(true, session.logout());
+      }}
+      onClose={() => {
+        setTransferOpen(false);
+        requestAnimationFrame(() => transferEntry.current?.focus());
+      }}
+    />
+  ) : (
+    <>
       <button
+        ref={transferEntry}
         className="button button-primary"
+        disabled={transferBlocked}
         onClick={() => {
-          if (ended.current) return;
-          ended.current = true;
-          onEnd(false, session.logout());
+          setTransfer((current) =>
+            current.kind === "done" ? { kind: "idle" } : current,
+          );
+          setTransferOpen(true);
         }}
       >
-        {t("Cerrar sesión")}
+        {t("Transferir entre mis cuentas")}
       </button>
-    </main>
-  );
+
+      {transfer.kind !== "idle" && (
+        <p className="form-note" role="status" data-testid="transfer-track">
+          {transfer.kind === "sending"
+            ? t("Hay una transferencia en curso. Espera su resultado antes de hacer otra.")
+            : transfer.kind === "uncertain"
+              ? t(
+                  "No pudimos confirmar tu última transferencia. Revisa el saldo de tu cuenta o consulta a tu institución antes de hacer otra.",
+                )
+              : transfer.reference !== undefined
+                ? translateWith("Tu última transferencia se realizó. Referencia: {reference}.", {
+                    reference: transfer.reference,
+                  })
+                : t("Tu última transferencia se realizó.")}
+        </p>
+      )}
+
+      <button
+        ref={sharesEntry}
+        className="button button-primary"
+        onClick={() => setSharesOpen(true)}
+      >
+        {t("Mis cuentas de acciones")}
+      </button>
+
+      <button
+        ref={loanEntry}
+        className="button button-primary"
+        onClick={() => setLoanOpen(true)}
+      >
+        {t("Solicitar un préstamo")}
+      </button>
+
+      <button
+        ref={savingsEntry}
+        className="button button-primary"
+        onClick={() => setSavingsOpen(true)}
+      >
+        {t("Solicitar una cuenta de ahorro")}
+      </button>
+
+      <button
+        ref={surveyEntry}
+        className="button button-primary"
+        onClick={() => setSurveyOpen(true)}
+      >
+        {t("Participar en encuestas")}
+      </button>
+
+      <button
+        ref={securityEntry}
+        className="button button-outline"
+        onClick={() => setSecurityOpen(true)}
+      >
+        {t("Seguridad de tu cuenta")}
+      </button>
+    </>
+  )}
+
+  <p className="form-note">
+    {t(
+      "La sesión se conserva solo en esta página y termina al recargar, tras 10 minutos de inactividad o después de 15 minutos.",
+    )}
+  </p>
+
+  <button
+    className="button button-primary"
+    onClick={() => {
+      if (ended.current) return;
+      ended.current = true;
+      onEnd(false, session.logout());
+    }}
+  >
+    {t("Cerrar sesión")}
+  </button>
+</main>
+
+
+);
 }
