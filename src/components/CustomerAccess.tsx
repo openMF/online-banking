@@ -18,6 +18,8 @@ import { LoanApplication } from "./LoanApplication";
 import { createGuarantorClient } from "../lib/loans/guarantors";
 import { createLoanChargesClient } from "../lib/loans/charges";
 import { createLoanClient } from "../lib/loans/client";
+import { SavingsAccounts } from "./SavingsAccounts";
+import { createAccountsClient } from "../lib/accounts/client";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
 import type { Segment } from "../lib/demo";
@@ -209,6 +211,7 @@ export function CustomerHome({
   const [guarantorClient] = useState(() => createGuarantorClient(session));
   const [chargesClient] = useState(() => createLoanChargesClient(session));
   const loanEntry = useRef<HTMLButtonElement>(null);
+  const [accountsClient] = useState(() => createAccountsClient(session));
   const [savingsOpen, setSavingsOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const securityEntry = useRef<HTMLButtonElement>(null);
@@ -310,14 +313,6 @@ export function CustomerHome({
           )}
         </dl>
       </div>
-      <div className="demo-notice" role="status">
-        <LockKeyhole size={18} aria-hidden="true" />
-        <p>
-          {t(
-            "Las consultas de saldos y movimientos aún no están integradas. No se muestran datos de demostración en esta sesión.",
-          )}
-        </p>
-      </div>
       {sharesOpen ? (
         <ShareAccounts
           client={shareClient}
@@ -397,6 +392,19 @@ export function CustomerHome({
         />
       ) : (
         <>
+          {/* Unmounted while a screen is open, so it reads the balances again when that closes. */}
+          <SavingsAccounts
+            client={accountsClient}
+            onExpired={() => {
+              if (ended.current) return;
+              ended.current = true;
+              onEnd(true, session.logout());
+            }}
+          />
+          <div className="demo-notice" role="status">
+            <LockKeyhole size={18} aria-hidden="true" />
+            <p>{t("Los movimientos de tus cuentas aún no están integrados.")}</p>
+          </div>
           <button
             ref={transferEntry}
             className="button button-primary"

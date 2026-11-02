@@ -83,6 +83,8 @@ async function configure(page: Page, options: Options = {}) {
     if (path === `clients/${clientId}/accounts`)
       return fulfill(r, { loanAccounts: [{ id: 473, productName: "Synthetic Loan" }] });
     if (path === "loans/473") return fulfill(r, current, options.readFailure ? 403 : 200);
+    // The home lists the savings accounts of every linked client (MX-466).
+    if (/^clients\/\d+\/accounts$/.test(path)) return fulfill(r, {});
     throw new Error(`Unexpected loan mock route: ${path}`);
   });
   return mutations;

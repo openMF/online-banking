@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { accounts } from "./fixtures/accounts";
 import { account, clientId, login, productId, template } from "./fixtures/savings";
 
 // US-E12-04 (MX-490): loading indicators, human-readable errors and retry of transient failures,
@@ -109,8 +110,7 @@ async function configure(page: Page, options: Options = {}): Promise<Seen> {
       );
     }
     if (url.pathname.endsWith("/savingsaccounts/469")) return fulfill(route, account());
-    if (url.pathname.endsWith(`/clients/${clientId}/accounts`))
-      return fulfill(route, { savingsAccounts: [account()] });
+    if (url.pathname.endsWith(`/clients/${clientId}/accounts`)) return fulfill(route, accounts());
     throw new Error(`Unexpected mocked request: ${request.method()} ${url.pathname}`);
   });
   return seen;

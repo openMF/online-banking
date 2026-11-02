@@ -10,6 +10,8 @@ import {
   type CustomerSession,
 } from "../lib/authentication/client";
 import { getSelfServiceConfig } from "../lib/self-service";
+import { accounts } from "../../tests/fixtures/accounts";
+import { clientId, template } from "../../tests/fixtures/savings";
 vi.mock("../lib/self-service", () => ({ getSelfServiceConfig: vi.fn() }));
 vi.mock("../lib/authentication/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../lib/authentication/client")>()),
@@ -205,9 +207,10 @@ it("shows server identity and unavailable data, then clears the authenticated vi
     </I18nProvider>,
   );
   expect(screen.getByTestId("customer-username").textContent).toBe("backend-customer");
-  expect(screen.getByRole("status").textContent).toContain(
-    "Las consultas de saldos y movimientos aún no están integradas",
-  );
+  expect(screen.getByText("Los movimientos de tus cuentas aún no están integrados.")).toBeTruthy();
+  // Without a linked client there is nothing to ask the server.
+  expect(await screen.findByText("Aún no tienes cuentas de ahorro.")).toBeTruthy();
+  expect(verified.request).not.toHaveBeenCalled();
   expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Acceso verificado" }));
   fireEvent.click(screen.getByRole("button", { name: "Cerrar sesión" }));
   expect(screen.queryByTestId("customer-username")).toBeNull();
@@ -290,4 +293,68 @@ it("hides profile summary fields when office, roles, or clients are absent", () 
   expect(screen.queryByTestId("customer-office")).toBeNull();
   expect(screen.queryByTestId("customer-roles")).toBeNull();
   expect(screen.queryByTestId("customer-client-id")).toBeNull();
+});
+
+function linked() {
+  const verified = session();
+  const request = vi.mocked(verified.request);
+  request.mockImplementation(async (resource, options) => ({
+    status: 200,
+    ok: true,
+    data: resource.endsWith("/accounts") ? accounts() : template(Boolean(options.query?.productId)),
+  }));
+  return { ...verified, identity: { ...verified.identity, clients: [clientId] } };
+}
+const accountReads = (verified: CustomerSession) =>
+  vi.mocked(verified.request).mock.calls.filter(([resource]) => resource.endsWith("/accounts"));
+
+it("lists the linked client's savings accounts on the home, above its actions", async () => {
+  const verified = linked();
+  render(
+    <I18nProvider>
+      <CustomerHome session={verified} onEnd={vi.fn()} />
+    </I18nProvider>,
+  );
+  const list = await screen.findByRole("list");
+  expect(list.closest("section")?.getAttribute("aria-labelledby")).toBe("savings-accounts-heading");
+  expect(screen.getByTestId("savings-account-42").textContent).toContain("1,250.50 MXN");
+  expect(
+    list.compareDocumentPosition(
+      screen.getByRole("button", { name: "Solicitar una cuenta de ahorro" }),
+    ) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(accountReads(verified)).toEqual([
+    [
+      `clients/${clientId}/accounts`,
+      expect.objectContaining({ method: "GET", query: { fields: "savingsAccounts" } }),
+    ],
+  ]);
+});
+
+it("hides the list while a screen is open and reads the balances again when it closes", async () => {
+  const verified = linked();
+  render(
+    <I18nProvider>
+      <CustomerHome session={verified} onEnd={vi.fn()} />
+    </I18nProvider>,
+  );
+  await screen.findByTestId("savings-account-42");
+  fireEvent.click(screen.getByRole("button", { name: "Solicitar una cuenta de ahorro" }));
+  expect(screen.queryByTestId("savings-accounts")).toBeNull();
+  fireEvent.click(await screen.findByRole("button", { name: "Volver a mi sesión" }));
+  await screen.findByTestId("savings-account-42");
+  expect(accountReads(verified)).toHaveLength(2);
+});
+
+it("ends the session when the server says it expired while reading the accounts", async () => {
+  const verified = linked(),
+    onEnd = vi.fn();
+  vi.mocked(verified.request).mockResolvedValue({ status: 401, ok: false, data: {} });
+  render(
+    <I18nProvider>
+      <CustomerHome session={verified} onEnd={onEnd} />
+    </I18nProvider>,
+  );
+  await waitFor(() => expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise)));
+  expect(verified.logout).toHaveBeenCalledOnce();
 });

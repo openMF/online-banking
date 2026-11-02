@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
-import { account, clientId, login, productId, template } from "./fixtures/savings";
+import { accounts } from "./fixtures/accounts";
+import { clientId, login, productId, template } from "./fixtures/savings";
 
 // MX-492 (US-E12-06): the whole app, screen by screen, at three widths. It FAILS on:
 //   - any WCAG 2.1 A / AA violation found by axe (after the animations have settled),
@@ -545,7 +546,7 @@ async function customerBackend(page: Page) {
         ],
       });
     if (path.startsWith(`clients/${clientId}/accounts`))
-      return fulfill(route, { savingsAccounts: [account()] });
+      return fulfill(route, accounts());
     return fulfill(route, {});
   });
 }
