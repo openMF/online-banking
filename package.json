@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:config": "node --experimental-strip-types --test tests/self-service-config.mjs"
+    "test": "node --no-experimental-webstorage ./node_modules/vitest/vitest.mjs run",
   },
   "dependencies": {
     "clsx": "2.1.1",

@@ -9,8 +9,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
-  test: {
+    test: {
     environment: "jsdom",
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost",
+      },
+    },
     include: ["src/**/*.test.{ts,tsx}"],
     restoreMocks: true,
     unstubGlobals: true,

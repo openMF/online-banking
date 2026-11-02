@@ -18,6 +18,8 @@ import { createLoanChargesClient } from "../lib/loans/charges";
 import { createLoanClient } from "../lib/loans/client";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
+import { SurveyParticipation } from "./SurveyParticipation";
+import { createSurveyClient } from "../lib/surveys/client";
 import type { Segment } from "../lib/demo";
 
 /** Configuration chooses an explicit customer login; demo remains a separate opt-in. */
@@ -32,6 +34,7 @@ export function CustomerAccess({
 }) {
   const { t } = useI18n();
   const [mode, setMode] = useState<"loading" | "customer" | "demo" | "unavailable">("loading");
+
   useEffect(() => {
     let active = true;
     void getSelfServiceConfig().then(
@@ -46,7 +49,9 @@ export function CustomerAccess({
       active = false;
     };
   }, []);
+
   if (mode === "loading") return <p role="status">{t("Preparando acceso...")}</p>;
+
   return (
     <>
       {mode === "customer" ? (
@@ -86,6 +91,7 @@ export function CustomerLogin({
   const [state, setState] = useState<"idle" | "submitting" | "error">("idle");
   const [error, setError] = useState("");
   const pending = useRef<AbortController | null>(null);
+
   useEffect(
     () => () => {
       pending.current?.abort();
@@ -96,40 +102,50 @@ export function CustomerLogin({
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (pending.current) return;
+
     if (!username.trim() || !password.trim()) {
       setError("Ingresa tu usuario y contraseña.");
       setState("error");
       return;
     }
+
     const controller = new AbortController();
     pending.current = controller;
     setState("submitting");
     setError("");
+
     const submittedPassword = password;
     setPassword("");
+
     try {
       const session = await customerAuthentication.login(
         username,
         submittedPassword,
         controller.signal,
       );
+
       if (controller.signal.aborted) {
         void session.logout();
         return;
       }
+
       onAuthenticated(session);
     } catch (failure) {
       if (!controller.signal.aborted) {
         setState("error");
         setError(
-          authenticationMessages[failure instanceof AuthenticationError ? failure.code : "server"],
+          authenticationMessages[
+            failure instanceof AuthenticationError ? failure.code : "server"
+          ],
         );
       }
     } finally {
       if (pending.current === controller) pending.current = null;
     }
   }
+
   const busy = state === "submitting";
+
   return (
     <div className="access-content">
       <Brand compact />
@@ -138,6 +154,7 @@ export function CustomerLogin({
         <h3>{t("Inicia sesión con tu institución.")}</h3>
         <p>{t("Acceso mediante Self Service. Usa el usuario asignado por tu institución.")}</p>
       </div>
+
       <form className="form-stack" onSubmit={submit} aria-busy={busy}>
         <label>
           {t("Usuario")}
@@ -152,6 +169,7 @@ export function CustomerLogin({
             aria-describedby={error ? "customer-login-error" : undefined}
           />
         </label>
+
         <label>
           {t("Contraseña")}
           <input
@@ -166,19 +184,23 @@ export function CustomerLogin({
             aria-describedby={error ? "customer-login-error" : undefined}
           />
         </label>
+
         {error && (
           <p id="customer-login-error" className="form-error" role="alert">
             {t(error)}
           </p>
         )}
+
         <button type="submit" className="button button-primary" disabled={busy}>
           {busy && <LoaderCircle className="spin" size={18} aria-hidden="true" />}
           {t(busy ? "Verificando acceso..." : "Iniciar sesión")}
         </button>
+
         <span role="status" className="sr-only">
           {busy ? t("Verificando acceso...") : ""}
         </span>
       </form>
+
       <p className="form-note">
         {t("La demostración utiliza datos ficticios y tiene un acceso separado.")}
       </p>
@@ -199,21 +221,37 @@ export function CustomerHome({
 }) {
   const { t } = useI18n();
   const ended = useRef(false);
+
   const [loanOpen, setLoanOpen] = useState(false);
   const [loanClient] = useState(() => createLoanClient(session));
   const [guarantorClient] = useState(() => createGuarantorClient(session));
   const [chargesClient] = useState(() => createLoanChargesClient(session));
   const loanEntry = useRef<HTMLButtonElement>(null);
+
   const [savingsOpen, setSavingsOpen] = useState(false);
+  const [savingsClient] = useState(() => createSavingsClient(session));
+  const savingsEntry = useRef<HTMLButtonElement>(null);
+
+  // Survey participation
+  const [surveyOpen, setSurveyOpen] = useState(false);
+  const [surveyClient] = useState(() => createSurveyClient(session));
+  const surveyEntry = useRef<HTMLButtonElement>(null);
+
   const [securityOpen, setSecurityOpen] = useState(false);
   const securityEntry = useRef<HTMLButtonElement>(null);
+
   const [transferOpen, setTransferOpen] = useState(false);
   const transferEntry = useRef<HTMLButtonElement>(null);
+
   // The transfer being sent, kept here (not in its screen) so that closing the screen cannot make
   // the person send it again: a transfer that is running or whose result is unknown blocks the next.
   const [transfer, setTransfer] = useState<
-    { kind: "idle" } | { kind: "sending" } | { kind: "uncertain" } | { kind: "done"; reference?: number }
+    | { kind: "idle" }
+    | { kind: "sending" }
+    | { kind: "uncertain" }
+    | { kind: "done"; reference?: number }
   >({ kind: "idle" });
+
   function onSend(event: SendEvent) {
     setTransfer((current) => {
       switch (event.kind) {
@@ -230,31 +268,40 @@ export function CustomerHome({
       }
     });
   }
+
   const transferBlocked = transfer.kind === "sending" || transfer.kind === "uncertain";
-  const [savingsClient] = useState(() => createSavingsClient(session));
-  const savingsEntry = useRef<HTMLButtonElement>(null);
+
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
+
   useEffect(() => {
     let lastActivity = Date.now();
+
     const activity = () => {
       check();
       if (!ended.current) lastActivity = Date.now();
     };
+
     const end = () => {
       if (ended.current) return;
       ended.current = true;
       endRef.current(true, session.logout());
     };
+
     const check = () => {
-      if (Date.now() >= session.expiresAt || Date.now() - lastActivity >= 10 * 60_000) end();
+      if (Date.now() >= session.expiresAt || Date.now() - lastActivity >= 10 * 60_000) {
+        end();
+      }
     };
+
     const interval = setInterval(check, 1000);
     window.addEventListener("pointerdown", activity);
     window.addEventListener("keydown", activity);
     window.addEventListener("focus", check);
     document.addEventListener("visibilitychange", check);
+
     check();
+
     return () => {
       clearInterval(interval);
       window.removeEventListener("pointerdown", activity);
@@ -263,16 +310,20 @@ export function CustomerHome({
       document.removeEventListener("visibilitychange", check);
     };
   }, [session]);
+
   const heading = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
     heading.current?.focus();
   }, []);
+
   return (
     <main className="access-content customer-home" aria-labelledby="customer-heading">
       <div className="customer-home-header">
         <Brand compact />
         <LocaleToggle />
       </div>
+
       <div className="modal-heading">
         <p className="eyebrow">{t("ACCESO DE CLIENTES")}</p>
         <h1 id="customer-heading" ref={heading} tabIndex={-1}>
@@ -280,6 +331,7 @@ export function CustomerHome({
         </h1>
         <p>{t("Usuario verificado por tu institución:")}</p>
         <p data-testid="customer-username">{session.identity.username}</p>
+
         <dl className="customer-profile-summary" data-testid="customer-profile">
           {session.identity.officeName && (
             <>
@@ -287,6 +339,7 @@ export function CustomerHome({
               <dd data-testid="customer-office">{session.identity.officeName}</dd>
             </>
           )}
+
           {session.identity.roles.length > 0 && (
             <>
               <dt>{t("Roles")}</dt>
@@ -295,6 +348,7 @@ export function CustomerHome({
               </dd>
             </>
           )}
+
           {session.identity.clients.length > 0 && (
             <>
               <dt>{t("ID de cliente")}</dt>
@@ -305,6 +359,7 @@ export function CustomerHome({
           )}
         </dl>
       </div>
+
       <div className="demo-notice" role="status">
         <LockKeyhole size={18} aria-hidden="true" />
         <p>
@@ -313,6 +368,7 @@ export function CustomerHome({
           )}
         </p>
       </div>
+
       {securityOpen ? (
         <CustomerSecurity
           session={session}
@@ -362,6 +418,20 @@ export function CustomerHome({
             requestAnimationFrame(() => savingsEntry.current?.focus());
           }}
         />
+      ) : surveyOpen ? (
+        <SurveyParticipation
+          client={surveyClient}
+          clients={session.identity.clients}
+          onExpired={() => {
+            if (ended.current) return;
+            ended.current = true;
+            onEnd(true, session.logout());
+          }}
+          onClose={() => {
+            setSurveyOpen(false);
+            requestAnimationFrame(() => surveyEntry.current?.focus());
+          }}
+        />
       ) : transferOpen ? (
         <CustomerTransferArea
           session={session}
@@ -384,12 +454,15 @@ export function CustomerHome({
             disabled={transferBlocked}
             onClick={() => {
               // A receipt that was never seen is told on the home: opening the screen clears it.
-              setTransfer((current) => (current.kind === "done" ? { kind: "idle" } : current));
+              setTransfer((current) =>
+                current.kind === "done" ? { kind: "idle" } : current,
+              );
               setTransferOpen(true);
             }}
           >
             {t("Transferir entre mis cuentas")}
           </button>
+
           {transfer.kind !== "idle" && (
             <p className="form-note" role="status" data-testid="transfer-track">
               {transfer.kind === "sending"
@@ -405,6 +478,7 @@ export function CustomerHome({
                     : t("Tu última transferencia se realizó.")}
             </p>
           )}
+
           <button
             ref={loanEntry}
             className="button button-primary"
@@ -412,6 +486,7 @@ export function CustomerHome({
           >
             {t("Solicitar un préstamo")}
           </button>
+
           <button
             ref={savingsEntry}
             className="button button-primary"
@@ -419,6 +494,15 @@ export function CustomerHome({
           >
             {t("Solicitar una cuenta de ahorro")}
           </button>
+
+          <button
+            ref={surveyEntry}
+            className="button button-primary"
+            onClick={() => setSurveyOpen(true)}
+          >
+            {t("Participar en encuestas")}
+          </button>
+
           <button
             ref={securityEntry}
             className="button button-outline"
@@ -428,11 +512,13 @@ export function CustomerHome({
           </button>
         </>
       )}
+
       <p className="form-note">
         {t(
           "La sesión se conserva solo en esta página y termina al recargar, tras 10 minutos de inactividad o después de 15 minutos.",
         )}
       </p>
+
       <button
         className="button button-primary"
         onClick={() => {
