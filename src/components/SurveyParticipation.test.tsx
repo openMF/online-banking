@@ -142,7 +142,7 @@ fireEvent.click(
 expect(
   screen.getByText((_, element) =>
     element?.tagName === "STRONG" &&
-    element.textContent?.includes("How was our service?") === true
+    element.textContent?.includes("1. How was our service?") === true
   ),
 ).not.toBeNull();
 expect(screen.getByLabelText("Poor")).not.toBeNull();
