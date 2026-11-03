@@ -112,6 +112,15 @@ describe("SavingsAccountSummaryData adapter", () => {
     expect(parseSavingsAccounts({})).toEqual([]);
     expect(parseSavingsAccounts({ savingsAccounts: [] })).toEqual([]);
   });
+  it.each([{}, { savingsAccounts: null }, { savingsAccounts: [] }])(
+    "validates client ownership even for an empty savings response %j",
+    (data) => {
+      expect(() => parseSavingsAccounts({ ...data, clientId: 123 }, 9001)).toThrow(
+        new AccountsError("malformed"),
+      );
+      expect(parseSavingsAccounts({ ...data, clientId: 9001 }, 9001)).toEqual([]);
+    },
+  );
   it("lists active accounts first, then applications, finished and refused ones, keeping the server order", () => {
     const listed = parseSavingsAccounts({
       savingsAccounts: [
