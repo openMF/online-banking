@@ -103,11 +103,21 @@ export function parseSavingsAccount(data: unknown): SavingsSummary {
   if (everActive.has(status.id)) account.availableBalance = balance ?? 0;
   return account;
 }
-export function parseSavingsAccounts(data: unknown): SavingsSummary[] {
+export function parseSavingsAccounts(data: unknown, clientId?: number): SavingsSummary[] {
   if (!record(data)) return malformed();
   if (data.savingsAccounts == null) return [];
   if (!Array.isArray(data.savingsAccounts)) return malformed();
-  const accounts = data.savingsAccounts.map(parseSavingsAccount);
+  if (clientId != null && data.clientId != null && data.clientId !== clientId) return malformed();
+  const accounts = data.savingsAccounts.map((account) => {
+    if (
+      clientId != null &&
+      record(account) &&
+      account.clientId != null &&
+      account.clientId !== clientId
+    )
+      return malformed();
+    return parseSavingsAccount(account);
+  });
   if (new Set(accounts.map((account) => account.id)).size !== accounts.length) malformed();
   // A stable sort keeps the server's account-number order inside each group.
   return accounts.sort((a, b) => (statusRank[a.status.id] ?? 4) - (statusRank[b.status.id] ?? 4));
@@ -148,6 +158,7 @@ export function createAccountsClient(session: CustomerSession) {
           clientId,
           accounts: parseSavingsAccounts(
             await request(`clients/${clientId}/accounts`, signal, { fields: "savingsAccounts" }),
+            clientId,
           ),
         })),
       );
