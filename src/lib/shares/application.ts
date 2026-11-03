@@ -186,7 +186,13 @@ export function requestedCount(value: string, terms: ShareTerms): number {
 /** The application date controls the backend market-price schedule. This is an estimate only. */
 export function priceOn(terms: ShareTerms, date: string): string {
   let price = terms.unitPrice;
-  for (const m of terms.marketPrices) if (m.date <= date) price = m.price;
+  let latestDate = "";
+  for (const m of terms.marketPrices) {
+    if (m.date <= date && m.date >= latestDate) {
+      latestDate = m.date;
+      price = m.price;
+    }
+  }
   return price;
 }
 export function applicationPayload(

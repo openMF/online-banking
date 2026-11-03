@@ -105,9 +105,9 @@ export function parseSavingsAccount(data: unknown): SavingsSummary {
 }
 export function parseSavingsAccounts(data: unknown, clientId?: number): SavingsSummary[] {
   if (!record(data)) return malformed();
+  if (clientId != null && data.clientId != null && data.clientId !== clientId) return malformed();
   if (data.savingsAccounts == null) return [];
   if (!Array.isArray(data.savingsAccounts)) return malformed();
-  if (clientId != null && data.clientId != null && data.clientId !== clientId) return malformed();
   const accounts = data.savingsAccounts.map((account) => {
     if (
       clientId != null &&

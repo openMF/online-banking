@@ -144,6 +144,25 @@ it("handles optional limits, periods and charges and uses the date's real price 
   expect(data).not.toHaveProperty("charges");
   expect(data).not.toHaveProperty("lockinPeriodFrequency");
 });
+it.each([false, true])(
+  "uses the latest applicable market price regardless of order (reversed: %s)",
+  (reversed) => {
+    const prices = [
+      { fromDate: [2026, 1, 1], shareValue: 10.25 },
+      { fromDate: [2025, 6, 1], shareValue: 8.5 },
+      { fromDate: [2027, 1, 1], shareValue: 15 },
+    ];
+    const terms = parseTerms(
+      template(true, { marketPrice: reversed ? prices.reverse() : prices }),
+      clientId,
+      productId,
+    );
+    expect(priceOn(terms, "2025-05-31")).toBe("0.1");
+    expect(priceOn(terms, "2025-06-01")).toBe("8.5");
+    expect(priceOn(terms, "2026-01-01")).toBe("10.25");
+    expect(priceOn(terms, "2026-11-04")).toBe("10.25");
+  },
+);
 it.each(["0", "-1", "1", "51", "1.5", "1e2", "NaN", "9007199254740992", "", " 10"])(
   "rejects unsupported share count %s",
   (value) => {
@@ -171,6 +190,7 @@ it("only selects active savings deposits in the selected client's currency", asy
   ).toThrow();
 });
 it.each([
+  { clientId: 123 },
   { clientId: 123, savingsAccounts: [savingsAccount()] },
   { savingsAccounts: [savingsAccount({ clientId: 123 })] },
 ])("rejects a cross-client discovery response before sending a write", async (mismatch) => {
