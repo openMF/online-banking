@@ -121,7 +121,7 @@ describe("StepUpPanel", () => {
     expect(field.getAttribute("inputmode")).toBe("numeric");
     expect(field.maxLength).toBe(6);
     expect(field.getAttribute("pattern")).toBe("[0-9]{6}");
-    expect(document.activeElement).toBe(field);
+    await waitFor(() => expect(document.activeElement).toBe(field));
   });
 
   it("does not create a second challenge when React runs effects twice (StrictMode)", async () => {
