@@ -1,3 +1,5 @@
+import { ShareApplication } from "./ShareApplication";
+import type { ShareApplicationClient } from "../lib/shares/application";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import {
@@ -25,11 +27,13 @@ const statuses: Record<ShareAccount["status"], string> = {
 };
 export function ShareAccounts({
   client,
+  application,
   clients,
   onExpired,
   onClose,
 }: {
   client: ShareClient;
+  application?: ShareApplicationClient;
   clients: readonly number[];
   onExpired: () => void;
   onClose: () => void;
@@ -39,6 +43,8 @@ export function ShareAccounts({
     clients.length === 1 ? clients[0] : undefined,
   );
   const clientId = selected != null && clients.includes(selected) ? selected : undefined;
+  const [applying, setApplying] = useState(false);
+  const applyEntry = useRef<HTMLButtonElement>(null);
   const [accountId, setAccountId] = useState<number>();
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{
@@ -67,7 +73,7 @@ export function ShareAccounts({
     heading.current?.focus();
   }, [accountId]);
   useEffect(() => {
-    if (clientId == null) return;
+    if (clientId == null || applying) return;
     const controller = new AbortController();
     const task =
       accountId == null
@@ -92,7 +98,7 @@ export function ShareAccounts({
       },
     );
     return () => controller.abort();
-  }, [client, clientId, accountId, revision]);
+  }, [client, clientId, accountId, revision, applying]);
   useEffect(() => {
     if (current?.list && lastAccount.current != null) {
       buttons.current.get(lastAccount.current)?.focus();
@@ -122,6 +128,22 @@ export function ShareAccounts({
       <dd>{money(a.value, a.currency)}</dd>
     </dl>
   );
+  if (applying && application && clientId != null)
+    return (
+      <ShareApplication
+        key={clientId}
+        client={application}
+        clientId={clientId}
+        onExpired={onExpired}
+        onCreated={() => setRevision((r) => r + 1)}
+        onClose={() => {
+          setApplying(false);
+          setAccountId(undefined);
+          setRevision((r) => r + 1);
+          requestAnimationFrame(() => applyEntry.current?.focus());
+        }}
+      />
+    );
   return (
     <section className="share-accounts" aria-labelledby="shares-heading" aria-busy={loading}>
       <h2 id="shares-heading" ref={heading} tabIndex={-1}>
@@ -221,6 +243,16 @@ export function ShareAccounts({
         </>
       )}
       <div className="loan-actions">
+        {application && (
+          <button
+            className="button button-primary"
+            ref={applyEntry}
+            disabled={clientId == null}
+            onClick={() => setApplying(true)}
+          >
+            {t("Solicitar acciones")}
+          </button>
+        )}
         <button
           className="button button-outline"
           disabled={loading || clientId == null || current?.error?.code === "expired"}

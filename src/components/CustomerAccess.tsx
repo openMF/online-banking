@@ -1,3 +1,4 @@
+import { createShareApplicationClient } from "../lib/shares/application";
 import { ShareAccounts } from "./ShareAccounts";
 import { createShareClient } from "../lib/shares/client";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -229,6 +230,7 @@ export function CustomerHome({
 
   const [sharesOpen, setSharesOpen] = useState(false);
   const shareClient = useMemo(() => createShareClient(session), [session]);
+  const shareApplication = useMemo(() => createShareApplicationClient(session), [session]);
   const sharesEntry = useRef<HTMLButtonElement>(null);
 
   const [loanOpen, setLoanOpen] = useState(false);
@@ -379,6 +381,7 @@ export function CustomerHome({
       {sharesOpen ? (
         <ShareAccounts
           client={shareClient}
+          application={shareApplication}
           clients={session.identity.clients}
           onExpired={() => {
             if (ended.current) return;
