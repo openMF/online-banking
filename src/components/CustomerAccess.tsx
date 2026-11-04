@@ -25,6 +25,7 @@ import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
 import { SurveyParticipation } from "./SurveyParticipation";
 import { createSurveyClient } from "../lib/surveys/client";
+import { PersonalReports } from "./PersonalReports";
 import type { Segment } from "../lib/demo";
 
 /** Configuration chooses an explicit customer login; demo remains a separate opt-in. */
@@ -251,6 +252,9 @@ export function CustomerHome({
   const [securityOpen, setSecurityOpen] = useState(false);
   const securityEntry = useRef<HTMLButtonElement>(null);
 
+  const [reportsOpen, setReportsOpen] = useState(false);
+  const reportsEntry = useRef<HTMLButtonElement>(null);
+
   const [transferOpen, setTransferOpen] = useState(false);
   const transferEntry = useRef<HTMLButtonElement>(null);
 
@@ -399,7 +403,6 @@ export function CustomerHome({
           onPasswordChanged={() => {
             if (ended.current) return;
             ended.current = true;
-            // The server already ended every session; logout only forgets the local credential.
             onEnd(false, session.logout(), "passwordChanged");
           }}
           onExpired={() => {
@@ -452,6 +455,19 @@ export function CustomerHome({
             requestAnimationFrame(() => surveyEntry.current?.focus());
           }}
         />
+      ) : reportsOpen ? (
+        <PersonalReports
+          session={session}
+          onExpired={() => {
+            if (ended.current) return;
+            ended.current = true;
+            onEnd(true, session.logout());
+          }}
+          onClose={() => {
+            setReportsOpen(false);
+            requestAnimationFrame(() => reportsEntry.current?.focus());
+          }}
+        />
       ) : transferOpen ? (
         <CustomerTransferArea
           session={session}
@@ -468,7 +484,6 @@ export function CustomerHome({
         />
       ) : (
         <>
-          {/* Unmounted while a screen is open, so it reads balances again when that closes. */}
           <SavingsAccounts
             client={accountsClient}
             onExpired={() => {
@@ -543,6 +558,14 @@ export function CustomerHome({
             onClick={() => setSurveyOpen(true)}
           >
             {t("Participar en encuestas")}
+          </button>
+
+          <button
+            ref={reportsEntry}
+            className="button button-primary"
+            onClick={() => setReportsOpen(true)}
+          >
+            {t("Informes personales")}
           </button>
 
           <button
