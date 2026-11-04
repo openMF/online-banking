@@ -5,20 +5,24 @@ import { defineConfig } from "vitest/config";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Unit / component tests (src/**/*.test.ts[x]). Browser tests live in tests/ (Playwright).
 export default defineConfig({
-  plugins: [react()],
-  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
-    test: {
-    environment: "jsdom",
-    environmentOptions: {
-      jsdom: {
-        url: "http://localhost",
-      },
-    },
-    include: ["src/**/*.test.{ts,tsx}"],
-    restoreMocks: true,
-    unstubGlobals: true,
-    unstubEnvs: true,
-  },
+plugins: [react()],
+resolve: {
+alias: {
+"@": path.resolve(__dirname, "src"),
+},
+},
+test: {
+environment: "jsdom",
+environmentOptions: {
+jsdom: {
+url: "http://localhost",
+},
+},
+setupFiles: ["./src/test-setup.ts"],
+include: ["src/**/*.test.{ts,tsx}"],
+restoreMocks: true,
+unstubGlobals: true,
+unstubEnvs: true,
+},
 });

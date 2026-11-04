@@ -48,6 +48,11 @@ export interface CustomerSession {
   readonly expiresAt: number;
   /** Uses this login's pinned tenant and memory-only credential. Never uses demo storage. */
   request(resource: string, options: CustomerRequest): Promise<CustomerResponse>;
+    /** Downloads a file using this login's pinned tenant and memory-only credential. */
+  download?(
+    resource: string,
+    options: CustomerRequest,
+  ): Promise<CustomerDownloadResponse>;
   /** Forgets the credential immediately; true means the access-token logout was acknowledged. */
   logout(): Promise<boolean>;
 }
@@ -65,16 +70,26 @@ export interface CustomerRequest {
    */
   stepUpToken?: string;
 }
+
 export interface CustomerResponse {
   status: number;
   ok: boolean;
   data: unknown;
 }
 
+export interface CustomerDownloadResponse {
+  status: number;
+  ok: boolean;
+  blob: Blob;
+  contentType: string;
+}
+
 const positiveId = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+
 const nonempty = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
+
 const object = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
@@ -90,6 +105,7 @@ function parseIdentity(data: Record<string, unknown>): CustomerIdentity {
   ) {
     throw new AuthenticationError("malformed");
   }
+
   return Object.freeze({
     userId: data.userId,
     username: data.username,
@@ -104,14 +120,17 @@ function parseIdentity(data: Record<string, unknown>): CustomerIdentity {
 }
 
 function accessKey(value: unknown): string {
-  if (!nonempty(value) || value.length > 2048 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value))
+  if (!nonempty(value) || value.length > 2048 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
     throw new AuthenticationError("malformed");
+  }
+
   try {
     // The plugin uses base64(raw access token), not base64(username:password).
     if (!/^[\x21-\x39\x3b-\x7e]+$/.test(atob(value))) throw new Error();
   } catch {
     throw new AuthenticationError("malformed");
   }
+
   return value;
 }
 
@@ -129,7 +148,12 @@ export function createAuthenticationClient({
   /** Test seam: the retry policy and what it waits with. */
   retry?: { policy?: Partial<RetryPolicy>; env?: Partial<RetryEnv> };
 } = {}) {
-  type Answer = { status: number; ok: boolean; data: unknown; retryAfter: string | null };
+  type Answer = {
+    status: number;
+    ok: boolean;
+    data: unknown;
+    retryAfter: string | null;
+  };
 
   /** One try. */
   async function attempt(
@@ -144,18 +168,28 @@ export function createAuthenticationClient({
   ): Promise<Answer> {
     const controller = new AbortController();
     let timedOut = false;
+
     const cancel = () => controller.abort();
     signal?.addEventListener("abort", cancel, { once: true });
+
     if (signal?.aborted) cancel();
+
     const timer = setTimeout(() => {
       timedOut = true;
       cancel();
     }, timeoutMs);
+
     try {
-      if (controller.signal.aborted) throw new AuthenticationError("cancelled");
+      if (controller.signal.aborted) {
+        throw new AuthenticationError("cancelled");
+      }
+
       const url = buildSelfServiceUrl(config, resource);
-      for (const [name, value] of Object.entries(query ?? {}))
+
+      for (const [name, value] of Object.entries(query ?? {})) {
         url.searchParams.set(name, String(value));
+      }
+
       const response = await transport(url, {
         method,
         headers: {
@@ -172,14 +206,19 @@ export function createAuthenticationClient({
         referrerPolicy: "no-referrer",
         signal: controller.signal,
       });
+
       let data: unknown;
+
       try {
         data = await response.json();
       } catch {
         data = null;
       }
-      if (controller.signal.aborted)
+
+      if (controller.signal.aborted) {
         throw new AuthenticationError(timedOut ? "timeout" : "cancelled");
+      }
+
       return {
         status: response.status,
         ok: response.ok,
@@ -187,10 +226,12 @@ export function createAuthenticationClient({
         retryAfter: response.headers?.get("Retry-After") ?? null,
       };
     } catch (error) {
-      if (controller.signal.aborted)
+      if (controller.signal.aborted) {
         throw new AuthenticationError(timedOut ? "timeout" : "cancelled");
+      }
+
       if (error instanceof AuthenticationError) throw error;
-      // No answer at all: say whether the device is offline, which is not the bank's fault.
+
       throw new AuthenticationError(
         typeof navigator !== "undefined" && navigator.onLine === false ? "offline" : "network",
       );
@@ -227,7 +268,6 @@ export function createAuthenticationClient({
         env: retry?.env,
         onRetry: () => handle.retrying(),
       }).catch((error) => {
-        // Cancelled while waiting to try again: the same error as a cancelled single request.
         if (!(error instanceof AuthenticationError) && signal?.aborted) {
           throw new AuthenticationError("cancelled");
         }
@@ -242,13 +282,18 @@ export function createAuthenticationClient({
       password: string,
       signal?: AbortSignal,
     ): Promise<CustomerSession> {
-      if (!username.trim() || !password.trim()) throw new AuthenticationError("invalidCredentials");
+      if (!username.trim() || !password.trim()) {
+        throw new AuthenticationError("invalidCredentials");
+      }
+
       let config: SelfServiceConfig;
+
       try {
         config = Object.freeze({ ...(await configuration()) });
       } catch {
         throw new AuthenticationError("configuration");
       }
+
       const { ok, status, data } = await request(
         config,
         "authentication",
@@ -256,38 +301,49 @@ export function createAuthenticationClient({
         undefined,
         signal,
       );
+
       if (status === 401) throw new AuthenticationError("invalidCredentials");
-      // Accept special states only on the documented success/renewal status boundary.
+
       if (ok || status === 403) {
-        if (object(data) && data.shouldRenewPassword === true)
+        if (object(data) && data.shouldRenewPassword === true) {
           throw new AuthenticationError("passwordRenewal");
-        if (object(data) && data.isTwoFactorAuthenticationRequired === true)
+        }
+
+        if (object(data) && data.isTwoFactorAuthenticationRequired === true) {
           throw new AuthenticationError("additional");
+        }
       }
+
       if (status === 403) throw new AuthenticationError("denied");
       if (!ok) throw new AuthenticationError("server");
       if (!object(data)) throw new AuthenticationError("malformed");
       if (data.authenticated === false) throw new AuthenticationError("pending");
+
       if (
         data.authenticated !== true ||
         data.shouldRenewPassword !== false ||
         data.isTwoFactorAuthenticationRequired !== false
-      )
+      ) {
         throw new AuthenticationError("malformed");
+      }
+
       const identity = parseIdentity(data);
       let key: string | null = accessKey(data.base64EncodedAuthenticationKey);
       let closing: Promise<boolean> | undefined;
       const expiresAt = now() + 15 * 60_000;
       const lifetime = new AbortController();
+
       return Object.freeze({
         identity,
         expiresAt,
+
         async request(resource: string, options: CustomerRequest) {
           if (!key || now() >= expiresAt) {
             key = null;
             lifetime.abort();
             throw new AuthenticationError("expired");
           }
+
           const response = await request(
             config,
             resource,
@@ -298,31 +354,125 @@ export function createAuthenticationClient({
             options.query,
             options.stepUpToken,
           );
+
           if (response.status === 401) {
             key = null;
             lifetime.abort();
           }
+
           if (now() >= expiresAt) {
             key = null;
             lifetime.abort();
             throw new AuthenticationError("expired");
           }
+
           return response;
         },
+
+        async download(resource: string, options: CustomerRequest) {
+          if (!key || now() >= expiresAt) {
+            key = null;
+            lifetime.abort();
+            throw new AuthenticationError("expired");
+          }
+
+          if (options.method !== "GET") {
+            throw new AuthenticationError("denied");
+          }
+
+          return trackRequest(async () => {
+            const controller = new AbortController();
+            const signal = options.signal
+              ? AbortSignal.any([options.signal, lifetime.signal, controller.signal])
+              : AbortSignal.any([lifetime.signal, controller.signal]);
+
+            let timedOut = false;
+
+            const timer = setTimeout(() => {
+              timedOut = true;
+              controller.abort();
+            }, timeoutMs);
+
+            try {
+              const url = buildSelfServiceUrl(config, resource);
+
+              for (const [name, value] of Object.entries(options.query ?? {})) {
+                url.searchParams.set(name, String(value));
+              }
+
+              const response = await transport(url, {
+                method: "GET",
+                headers: {
+                  Accept: "*/*",
+                  "Fineract-Platform-TenantId": config.tenantId,
+                  Authorization: `Basic ${key}`,
+                },
+                credentials: "omit",
+                cache: "no-store",
+                redirect: "error",
+                referrerPolicy: "no-referrer",
+                signal,
+              });
+
+              if (response.status === 401) {
+                key = null;
+                lifetime.abort();
+              }
+
+              const blob = await response.blob();
+
+              if (now() >= expiresAt) {
+                key = null;
+                lifetime.abort();
+                throw new AuthenticationError("expired");
+              }
+
+              return {
+                status: response.status,
+                ok: response.ok,
+                blob,
+                contentType: response.headers.get("Content-Type") ?? "",
+              };
+            } catch (error) {
+              if (error instanceof AuthenticationError) throw error;
+
+              if (signal.aborted) {
+                throw new AuthenticationError(timedOut ? "timeout" : "cancelled");
+              }
+
+              throw new AuthenticationError(
+                typeof navigator !== "undefined" && navigator.onLine === false
+                  ? "offline"
+                  : "network",
+              );
+            } finally {
+              clearTimeout(timer);
+            }
+          });
+        },
+
         logout() {
           if (closing) return closing;
+
           const currentKey = key;
           key = null;
           lifetime.abort();
+
           closing = (async () => {
             if (!currentKey) return false;
+
             try {
               const response = await request(config, "authentication/logout", {}, currentKey);
-              return response.ok && object(response.data) && response.data.status === "success";
+              return (
+                response.ok &&
+                object(response.data) &&
+                response.data.status === "success"
+              );
             } catch {
               return false;
             }
           })();
+
           return closing;
         },
       });
