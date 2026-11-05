@@ -93,6 +93,7 @@ function numberOrUndefined(value: unknown): number | undefined {
 export function toStepUpError(error: unknown): StepUpError {
   if (error instanceof StepUpError) return error;
   if (error instanceof SelfServiceError) {
+    if (error.status === 401) return new StepUpError("session.required");
     if (error.code === "error.network") {
       // Offline and a timeout read differently from "could not connect": say which.
       const problem = error.problem;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  StepUpError,
   toStepUpError,
   type StepUpAction,
   type StepUpApi,
@@ -188,6 +189,14 @@ export function useStepUpChallenge({
           payload: currentPayload,
         });
         if (!mounted.current) return;
+        if (
+          !created ||
+          created.action !== currentAction ||
+          !Number.isSafeInteger(created.challengeId) ||
+          created.challengeId <= 0
+        ) {
+          throw new StepUpError("invalid");
+        }
         applyChallenge(created, cfg);
         setPhase("code");
       } catch (error) {
@@ -209,6 +218,17 @@ export function useStepUpChallenge({
         .getConfig()
         .then((cfg) => {
           if (!mounted.current) return;
+          if (
+            !cfg ||
+            typeof cfg.enabled !== "boolean" ||
+            typeof cfg.sessionBound !== "boolean" ||
+            !Array.isArray(cfg.protectedActions) ||
+            !cfg.protectedActions.every((value) => typeof value === "string") ||
+            !Array.isArray(cfg.availableChannels) ||
+            !cfg.availableChannels.every((value) => ["SMS", "EMAIL", "TOTP"].includes(value))
+          ) {
+            throw new StepUpError("misconfigured");
+          }
           setConfig(cfg);
           latest.current.config = cfg;
           if (!cfg.enabled || !cfg.protectedActions.includes(currentAction)) {
@@ -278,6 +298,14 @@ export function useStepUpChallenge({
       )
         .then((grant) => {
           if (!mounted.current || verified.current) return;
+          if (
+            !grant ||
+            grant.action !== active.action ||
+            typeof grant.stepUpToken !== "string" ||
+            !grant.stepUpToken.trim()
+          ) {
+            throw new StepUpError("invalid");
+          }
           verified.current = true;
           setPhase("done");
           done(grant.stepUpToken);

@@ -255,7 +255,8 @@ export function CustomerHome({
   const [reportsOpen, setReportsOpen] = useState(false);
   const reportsEntry = useRef<HTMLButtonElement>(null);
 
-  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState<"own" | "tpt" | null>(null);
+  const beneficiaryTransferEntry = useRef<HTMLButtonElement>(null);
   const transferEntry = useRef<HTMLButtonElement>(null);
 
   // Keep transfer state here so closing the screen cannot allow a duplicate transfer.
@@ -471,6 +472,7 @@ export function CustomerHome({
       ) : transferOpen ? (
         <CustomerTransferArea
           session={session}
+          kind={transferOpen}
           onSend={onSend}
           onExpired={() => {
             if (ended.current) return;
@@ -478,8 +480,8 @@ export function CustomerHome({
             onEnd(true, session.logout());
           }}
           onClose={() => {
-            setTransferOpen(false);
-            requestAnimationFrame(() => transferEntry.current?.focus());
+            setTransferOpen(null);
+            requestAnimationFrame(() => (transferOpen === "tpt" ? beneficiaryTransferEntry : transferEntry).current?.focus());
           }}
         />
       ) : (
@@ -498,19 +500,33 @@ export function CustomerHome({
             <p>{t("Los movimientos de tus cuentas aún no están integrados.")}</p>
           </div>
 
-          <button
-            ref={transferEntry}
-            className="button button-primary"
-            disabled={transferBlocked}
-            onClick={() => {
-              setTransfer((current) =>
-                current.kind === "done" ? { kind: "idle" } : current,
-              );
-              setTransferOpen(true);
-            }}
-          >
-            {t("Transferir entre mis cuentas")}
-          </button>
+          <div className="customer-transfer-actions">
+            <button
+              ref={transferEntry}
+              className="button button-primary"
+              disabled={transferBlocked}
+              onClick={() => {
+                setTransfer((current) =>
+                  current.kind === "done" ? { kind: "idle" } : current,
+                );
+                setTransferOpen("own");
+              }}
+            >
+              {t("Transferir entre mis cuentas")}
+            </button>
+
+            <button
+              ref={beneficiaryTransferEntry}
+              className="button button-primary"
+              disabled={transferBlocked}
+              onClick={() => {
+                setTransfer((current) => current.kind === "done" ? { kind: "idle" } : current);
+                setTransferOpen("tpt");
+              }}
+            >
+              {t("Transferir a un beneficiario")}
+            </button>
+          </div>
 
           {transfer.kind !== "idle" && (
             <p className="form-note" role="status" data-testid="transfer-track">
