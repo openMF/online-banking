@@ -1014,6 +1014,22 @@
     "Confirmar solicitud de acciones": "Confirmar solicitud de acciones",
     "Consultar estado de acciones": "Consultar estado de acciones",
     "Selecciona una opción": "Selecciona una opción",
-    "Dividendos para clientes inactivos": "Dividendos para clientes inactivos"
+    "Dividendos para clientes inactivos": "Dividendos para clientes inactivos",
+    "Transferir a un beneficiario": "Transferir a un beneficiario",
+    "Beneficiario registrado": "Beneficiario registrado",
+    "{name} · Cuenta terminada en {number}": "{name} · Cuenta terminada en {number}",
+    "Selecciona la cuenta de origen.": "Selecciona la cuenta de origen.",
+    "Selecciona un beneficiario registrado.": "Selecciona un beneficiario registrado.",
+    "No pudimos verificar la moneda de origen. Actualiza las cuentas antes de transferir.": "No pudimos verificar la moneda de origen. Actualiza las cuentas antes de transferir.",
+    "El concepto admite como máximo 200 caracteres.": "El concepto admite como máximo 200 caracteres.",
+    "Envía dinero a una cuenta de ahorro de un beneficiario registrado.": "Envía dinero a una cuenta de ahorro de un beneficiario registrado.",
+    "No tienes cuentas de ahorro disponibles para enviar una transferencia.": "No tienes cuentas de ahorro disponibles para enviar una transferencia.",
+    "No hay beneficiarios con cuentas de ahorro disponibles. Registra un beneficiario con tu institución antes de transferir.": "No hay beneficiarios con cuentas de ahorro disponibles. Registra un beneficiario con tu institución antes de transferir.",
+    "Selecciona una cuenta de origen": "Selecciona una cuenta de origen",
+    "Selecciona un beneficiario registrado": "Selecciona un beneficiario registrado",
+    "Tu institución valida los fondos, los límites y que ambas cuentas usen la misma moneda. No se ofrece conversión de moneda.": "Tu institución valida los fondos, los límites y que ambas cuentas usen la misma moneda. No se ofrece conversión de moneda.",
+    "Esta transferencia requiere una segunda firma. Contacta a tu institución para usar el proceso de aprobación. No se movió dinero.": "Esta transferencia requiere una segunda firma. Contacta a tu institución para usar el proceso de aprobación. No se movió dinero.",
+    "El importe supera el límite de este beneficiario. No se movió dinero.": "El importe supera el límite de este beneficiario. No se movió dinero.",
+    "Verificando la moneda de origen…": "Verificando la moneda de origen…"
   }
 }
