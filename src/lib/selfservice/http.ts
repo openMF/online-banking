@@ -153,6 +153,16 @@ async function viaCustomer<T>(path: string, options: RequestOptions): Promise<T>
     });
   } catch (error) {
     if (error instanceof AuthenticationError && error.code === "expired") {
+      // CustomerSession can expire after dispatch, even after reading a successful response.
+      // An exception here cannot prove a financial POST was refused. An actual HTTP 401 below
+      // still establishes a session refusal; a lost write response must remain uncertain.
+      if (path.replace(/^\/+/, "") === "accounttransfers" && options.method === "POST") {
+        throw new SelfServiceError(
+          0,
+          "error.network",
+          "The transfer response could not be confirmed",
+        );
+      }
       throw new SelfServiceError(401, "error.http.401", "The session ended");
     }
     // Network, timeout, cancelled, malformed: the same words as a direct call, nothing leaked.

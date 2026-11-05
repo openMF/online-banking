@@ -24,6 +24,8 @@ export type TransferErrorCode =
   | "funds"
   /** The amount is over the limit of the beneficiary. Nothing moved. */
   | "limit"
+  | "beneficiary"
+  | "approval"
   /** The daily limit of the account is used up. Nothing moved. */
   | "daily"
   /** The server does not accept one of the two accounts: the list changed. Nothing moved. */
@@ -74,9 +76,10 @@ function codesOf(error: SelfServiceError): string {
  * (no answer, a timeout, a server error) is `uncertain`, never "unavailable": the transfer may
  * have run, so the screen must not offer to send it again.
  */
-export function toTransferError(error: unknown, write = false): TransferError {
+export function toTransferError(error: unknown, write = false, kind?: TransferKind): TransferError {
   if (error instanceof TransferError) return error;
-  if (!(error instanceof SelfServiceError)) return new TransferError("unknown");
+  if (!(error instanceof SelfServiceError))
+    return new TransferError(write ? "uncertain" : "unknown");
 
   const { status } = error;
   if (status === 401) return new TransferError("session");
@@ -96,9 +99,37 @@ export function toTransferError(error: unknown, write = false): TransferError {
   if (stepUp !== null) return new TransferError("stepup");
 
   const codes = codesOf(error);
+  if (codes.includes("error.msg.selfservice.stepup.session.required"))
+    return new TransferError("session");
+  if (codes.includes("error.msg.selfservice.stepup.")) return new TransferError("stepup");
+  if (write && kind === "tpt") {
+    // Only documented refusal codes establish a pre-execution rejection. Do not infer a
+    // financial outcome from a vaguely matching new error or from HTTP 400/403 alone.
+    const refusals: [RegExp, TransferErrorCode][] = [
+      [/^error\.msg\.savingsaccount\.transaction\.insufficient\.account\.balance$/, "funds"],
+      [
+        /^error\.msg\.beneficiary\.transfer\.amount\.limit\.for\.beneficiary\.exceeded$/,
+        "beneficiary",
+      ],
+      [
+        /^error\.msg\.beneficiary\.daily\.tpt\.transfer\.limit\.for\.fromaccountid\.\d+\.fromaccounttype\.[12]\.exceeded$/,
+        "daily",
+      ],
+      [/^validation\.msg\.accounttransfer\.invalid\.(from|to)\.account\.details$/, "accounts"],
+      [/^validation\.msg\.accounttransfer\.same\.from\.to\.account\.details$/, "same"],
+      [/^error\.msg\.savingsaccount\.transaction\.in\.the\.future$/, "date"],
+      [/^validation\.msg\.transferapproval\.approvalId\.dual\.approval\.required$/i, "approval"],
+    ];
+    return new TransferError(
+      refusals.find(([pattern]) => codes.split(" ").some((code) => pattern.test(code)))?.[1] ??
+        "uncertain",
+    );
+  }
   if (/insufficient/.test(codes)) return new TransferError("funds");
-  if (/beneficiary\.transfer\.amount\.limit/.test(codes)) return new TransferError("limit");
+  if (/beneficiary\.transfer\.amount\.limit/.test(codes))
+    return new TransferError(kind === "tpt" ? "beneficiary" : "limit");
   if (/daily\.tpt\.transfer\.limit/.test(codes)) return new TransferError("daily");
+  if (/dual\.approval\.required/.test(codes)) return new TransferError("approval");
   if (/invalid\.(from|to)\.account/.test(codes)) return new TransferError("accounts");
   if (/same\.from\.to/.test(codes)) return new TransferError("same");
   if (/in\.the\.future/.test(codes)) return new TransferError("date");
@@ -166,7 +197,7 @@ function parseAccount(value: unknown): TransferAccount {
   if (
     !positiveId(value.accountId) ||
     !text(value.accountNo) ||
-    !positiveId(type) ||
+    (type !== 1 && type !== 2) ||
     !positiveId(value.clientId) ||
     !positiveId(value.officeId)
   )
@@ -191,9 +222,16 @@ function parseAccounts(value: unknown): TransferAccount[] {
 }
 
 /** Reads `GET /accounttransfers/template`. Anything unexpected is `malformed`, never guessed. */
-export function parseTemplate(data: unknown): TransferTemplate {
+export function parseTemplate(data: unknown, kind: TransferKind = "own"): TransferTemplate {
   if (!record(data)) throw new TransferError("malformed");
-  return { from: parseAccounts(data.fromAccountOptions), to: parseAccounts(data.toAccountOptions) };
+  const template = {
+    from: parseAccounts(data.fromAccountOptions),
+    to: parseAccounts(data.toAccountOptions),
+  };
+  if (kind === "tpt" && template.to.some((account) => !account.clientName)) {
+    throw new TransferError("malformed");
+  }
+  return template;
 }
 
 /** Reads a savings account (`GET /savingsaccounts/{id}`). It only adds advice, so it is lenient. */
@@ -320,7 +358,16 @@ function readReference(answer: unknown, fromAccountId: number): number {
   if (answer.savingsId !== undefined && answer.savingsId !== fromAccountId) {
     throw new TransferError("uncertain");
   }
-  if (answer.rollbackTransaction === true) throw new TransferError("uncertain");
+  if (answer.rollbackTransaction != null && answer.rollbackTransaction !== false)
+    throw new TransferError("uncertain");
+  if (
+    (answer.status !== undefined && answer.status !== "success") ||
+    answer.error ||
+    (answer.errors != null && (!Array.isArray(answer.errors) || answer.errors.length > 0)) ||
+    answer.approvalId != null ||
+    (answer.pendingApproval != null && answer.pendingApproval !== false)
+  )
+    throw new TransferError("uncertain");
   return answer.resourceId;
 }
 
@@ -329,7 +376,7 @@ export function createHttpTransfersApi(seams: Seams = {}): TransfersApi {
   return {
     async getTemplate(kind, signal) {
       try {
-        return parseTemplate(await getTransferTemplate(kind, { ...transport, signal }));
+        return parseTemplate(await getTransferTemplate(kind, { ...transport, signal }), kind);
       } catch (error) {
         throw toTransferError(error);
       }
@@ -352,6 +399,26 @@ export function createHttpTransfersApi(seams: Seams = {}): TransfersApi {
 
     async create(kind, input, stepUpToken) {
       if (isOffline()) throw new TransferError("offline"); // nothing was sent
+      if (kind === "tpt") {
+        // Re-read registration and mapping before dispatch. The POST validator rechecks on the
+        // server as well: this read cannot authorise a destination or eliminate the race.
+        const current = await this.getTemplate(kind);
+        const matches = (account: TransferAccount, expected: TransferAccount) =>
+          account.accountId === expected.accountId &&
+          account.accountType === expected.accountType &&
+          account.clientId === expected.clientId &&
+          account.officeId === expected.officeId &&
+          account.accountNo === expected.accountNo &&
+          account.clientName === expected.clientName;
+        if (
+          input.from.accountType !== SAVINGS_ACCOUNT ||
+          input.to.accountType !== SAVINGS_ACCOUNT ||
+          !current.from.some((account) => matches(account, input.from)) ||
+          !current.to.some((account) => matches(account, input.to))
+        ) {
+          throw new TransferError("accounts");
+        }
+      }
       const date = todayIso(now?.());
       const body: CreateTransferBody = {
         fromOfficeId: input.from.officeId,
@@ -372,7 +439,7 @@ export function createHttpTransfersApi(seams: Seams = {}): TransfersApi {
       try {
         answer = await createTransfer(kind, body, { ...transport, stepUpToken });
       } catch (error) {
-        throw toTransferError(error, true);
+        throw toTransferError(error, true, kind);
       }
       const reference = readReference(answer, input.from.accountId);
       return {
