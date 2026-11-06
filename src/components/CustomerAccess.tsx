@@ -27,6 +27,7 @@ import { SurveyParticipation } from "./SurveyParticipation";
 import { createSurveyClient } from "../lib/surveys/client";
 import { PersonalReports } from "./PersonalReports";
 import type { Segment } from "../lib/demo";
+import { ProductCatalogue } from "./ProductCatalogue";
 
 /** Configuration chooses an explicit customer login; demo remains a separate opt-in. */
 export function CustomerAccess({
@@ -227,7 +228,8 @@ export function CustomerHome({
 }) {
   const { t } = useI18n();
   const ended = useRef(false);
-
+  const [catalogueOpen, setCatalogueOpen] = useState(false);
+  const catalogueEntry = useRef<HTMLButtonElement>(null);
   const [sharesOpen, setSharesOpen] = useState(false);
   const shareClient = useMemo(() => createShareClient(session), [session]);
   const shareApplication = useMemo(() => createShareApplicationClient(session), [session]);
@@ -378,7 +380,16 @@ export function CustomerHome({
         </dl>
       </div>
 
-      {sharesOpen ? (
+       {catalogueOpen ? (
+  <ProductCatalogue
+  session={session}
+  onExpired={handleExpired}
+  onClose={() => {
+    setCatalogueOpen(false);
+    requestAnimationFrame(() => catalogueEntry.current?.focus());
+  }}
+/>
+) : sharesOpen ? (
         <ShareAccounts
           client={shareClient}
           application={shareApplication}
@@ -527,6 +538,14 @@ export function CustomerHome({
                     : t("Tu última transferencia se realizó.")}
             </p>
           )}
+
+          <button
+  ref={catalogueEntry}
+  className="button button-primary"
+  onClick={() => setCatalogueOpen(true)}
+>
+  {t("Browse Available Products")}
+</button>
 
           <button
             ref={sharesEntry}
