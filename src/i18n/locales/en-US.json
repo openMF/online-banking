@@ -1014,6 +1014,22 @@
     "Confirmar solicitud de acciones": "Confirm share application",
     "Consultar estado de acciones": "Check share status",
     "Selecciona una opción": "Select an option",
-    "Dividendos para clientes inactivos": "Dividends for inactive clients"
+    "Dividendos para clientes inactivos": "Dividends for inactive clients",
+    "Transferir a un beneficiario": "Transfer to a beneficiary",
+    "Beneficiario registrado": "Registered beneficiary",
+    "{name} · Cuenta terminada en {number}": "{name} · Account ending in {number}",
+    "Selecciona la cuenta de origen.": "Select the source account.",
+    "Selecciona un beneficiario registrado.": "Select a registered beneficiary.",
+    "No pudimos verificar la moneda de origen. Actualiza las cuentas antes de transferir.": "We could not verify the source currency. Refresh the accounts before transferring.",
+    "El concepto admite como máximo 200 caracteres.": "The description allows up to 200 characters.",
+    "Envía dinero a una cuenta de ahorro de un beneficiario registrado.": "Send money to a registered beneficiary’s savings account.",
+    "No tienes cuentas de ahorro disponibles para enviar una transferencia.": "You have no savings accounts available to send a transfer.",
+    "No hay beneficiarios con cuentas de ahorro disponibles. Registra un beneficiario con tu institución antes de transferir.": "No beneficiaries with available savings accounts were found. Register a beneficiary with your institution before transferring.",
+    "Selecciona una cuenta de origen": "Select a source account",
+    "Selecciona un beneficiario registrado": "Select a registered beneficiary",
+    "Tu institución valida los fondos, los límites y que ambas cuentas usen la misma moneda. No se ofrece conversión de moneda.": "Your institution checks funds, limits and that both accounts use the same currency. Currency conversion is not available.",
+    "Esta transferencia requiere una segunda firma. Contacta a tu institución para usar el proceso de aprobación. No se movió dinero.": "This transfer requires a second signature. Contact your institution to use the approval process. No money moved.",
+    "El importe supera el límite de este beneficiario. No se movió dinero.": "The amount exceeds this beneficiary’s limit. No money moved.",
+    "Verificando la moneda de origen…": "Verifying the source currency…"
   }
 }

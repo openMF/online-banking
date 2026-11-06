@@ -30,6 +30,7 @@ type Props = {
   /** The server does not require step-up for this action: carry on without a token. */
   onNotRequired?: () => void;
   onBack: () => void;
+  onExpired?: () => void;
   /** Text of the back button (a Spanish source string). Defaults to going back to the summary. */
   backLabel?: string;
 };
@@ -92,10 +93,14 @@ export function StepUpPanel({
   onVerified,
   onNotRequired,
   onBack,
+  onExpired,
   backLabel = "Volver al resumen",
 }: Props) {
   const state = useStepUpChallenge({ api, action, payload, onVerified, onNotRequired });
   const { phase, challenge, errorCode } = state;
+  useEffect(() => {
+    if (errorCode === "session.required") onExpired?.();
+  }, [errorCode, onExpired]);
   const [otp, setOtp] = useState("");
   // The authenticator app (TOTP): the user types the code of the app, or one of the recovery codes.
   const [recovery, setRecovery] = useState(false);

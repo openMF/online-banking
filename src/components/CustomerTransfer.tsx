@@ -17,6 +17,7 @@ import {
   type TransferAccount,
   type TransferErrorCode,
   type TransferInput,
+  type TransferKind,
   type TransferReceipt,
   type TransferTemplate,
   type TransfersApi,
@@ -24,8 +25,9 @@ import {
 import { StepUpPanel } from "./StepUpPanel";
 
 type Props = {
+  kind?: TransferKind;
   api: TransfersApi;
-  /** The verification asked for before the transfer (`OWN_TRANSFER`). */
+  /** The verification asked for before the transfer (`OWN_TRANSFER` or `TPT_TRANSFER`). */
   stepUpApi: StepUpApi;
   /** Back to the home of the customer. */
   onClose: () => void;
@@ -48,7 +50,7 @@ export type SendEvent =
 
 type Phase = "loading" | "failed" | "form" | "review" | "verify" | "sending" | "done" | "uncertain";
 
-type Field = "to" | "amount" | "description";
+type Field = "from" | "to" | "amount" | "description";
 
 const FAILURES: Partial<Record<TransferErrorCode, string>> = {
   funds:
@@ -63,6 +65,9 @@ const FAILURES: Partial<Record<TransferErrorCode, string>> = {
     "Tu institución no aceptó los datos de la transferencia. Revisa el importe y el concepto. No se movió dinero.",
   refused: "Tu institución no autorizó esta transferencia. No se movió dinero.",
   busy: "Hay demasiadas solicitudes. Espera un momento e inténtalo de nuevo. No se movió dinero.",
+  approval:
+    "Esta transferencia requiere una segunda firma. Contacta a tu institución para usar el proceso de aprobación. No se movió dinero.",
+  beneficiary: "El importe supera el límite de este beneficiario. No se movió dinero.",
   stepup: "La verificación ya no es válida. Inténtalo de nuevo.",
   malformed: "No pudimos verificar la respuesta de tu institución. Inténtalo más tarde.",
   network: PROBLEM_MESSAGES.network,
@@ -105,7 +110,7 @@ function amountProblem(problem: AmountProblem, decimals: number): string {
 }
 
 /**
- * Transfer between the own accounts of the logged-in customer (MX-478, US-E07-01).
+ * Shared own-account (MX-478) and registered-beneficiary (MX-480) transfer workflow.
  *
  * Steps: form, review, verification (`OWN_TRANSFER`, bound to the five fields of the transfer),
  * send, receipt. The server decides the limits and whether the money is there; this screen shows
@@ -114,7 +119,25 @@ function amountProblem(problem: AmountProblem, decimals: number): string {
  * A transfer moves money, so it is sent once and never repeated: one request at a time, and an
  * answer that does not arrive is shown as "uncertain" with no way to send the same transfer again.
  */
-export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }: Props) {
+export function CustomerTransfer({
+  kind = "own",
+  api,
+  stepUpApi,
+  onClose,
+  onExpired,
+  onSend,
+}: Props) {
+  const tpt = kind === "tpt";
+  const title = tpt ? "Transferir a un beneficiario" : "Transferir entre mis cuentas";
+  const destinationLabel = tpt ? "Beneficiario registrado" : "Cuenta de destino";
+  // The template supplies the recipient name and account, not a beneficiary id or alias.
+  const destinationText = (account: TransferAccount) =>
+    tpt
+      ? translateWith("{name} · Cuenta terminada en {number}", {
+          name: account.clientName ?? translate("Beneficiario registrado"),
+          number: account.accountNo.slice(-4),
+        })
+      : accountLabel(account);
   const [phase, setPhase] = useState<Phase>("loading");
   const [template, setTemplate] = useState<TransferTemplate | null>(null);
   const [loadError, setLoadError] = useState<TransferErrorCode | null>(null);
@@ -135,6 +158,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
   const mounted = useRef(true);
   const heading = useRef<HTMLHeadingElement>(null);
   const fieldRefs = {
+    from: useRef<HTMLSelectElement>(null),
     to: useRef<HTMLSelectElement>(null),
     amount: useRef<HTMLInputElement>(null),
     description: useRef<HTMLInputElement>(null),
@@ -153,6 +177,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
     mounted.current = true;
     return () => {
       mounted.current = false;
+      grant.current = null;
     };
   }, []);
 
@@ -163,7 +188,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
     setPhase("loading");
     setLoadError(null);
     api
-      .getTemplate("own", controller.signal)
+      .getTemplate(kind, controller.signal)
       .then((loaded) => {
         if (controller.signal.aborted) return;
         setTemplate(loaded);
@@ -171,7 +196,9 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
         setFromKey((current) =>
           loaded.from.some((account) => keyOf(account) === current)
             ? current
-            : keyOfFirstSavings(loaded),
+            : tpt
+              ? ""
+              : keyOfFirstSavings(loaded),
         );
         setPhase("form");
       })
@@ -188,7 +215,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
     return () => controller.abort();
     // `onExpired` is the caller's callback: a new function each render must not read again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api, load]);
+  }, [api, kind, load]);
 
   const accounts = useMemo(
     () => (template?.from ?? []).filter((account) => account.accountType === SAVINGS_ACCOUNT),
@@ -249,7 +276,12 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
   // What is sent, or null while the form is not valid. The decimals come from the source account
   // and can arrive after the person typed, so this is asked again at every step, never assumed.
   const ready: TransferInput | null =
-    from && to && parsed.ok && description.trim()
+    from &&
+    to &&
+    parsed.ok &&
+    description.trim() &&
+    description.trim().length <= 200 &&
+    (!tpt || currency)
       ? { from, to, amount: parsed.value, description: description.trim() }
       : null;
 
@@ -257,10 +289,26 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
     event.preventDefault();
     setFailure(null);
     setProblem(null);
-    if (!from || !to) return fail("to", translate("Selecciona la cuenta de destino."));
+    if (!from) return fail("from", translate("Selecciona la cuenta de origen."));
+    if (!to)
+      return fail(
+        "to",
+        translate(
+          tpt ? "Selecciona un beneficiario registrado." : "Selecciona la cuenta de destino.",
+        ),
+      );
+    if (tpt && !currency)
+      return fail(
+        undefined,
+        translate(
+          "No pudimos verificar la moneda de origen. Actualiza las cuentas antes de transferir.",
+        ),
+      );
     if (!parsed.ok) return fail("amount", amountProblem(parsed.problem, decimals));
     if (!description.trim())
       return fail("description", translate("Escribe un concepto para la transferencia."));
+    if (description.trim().length > 200)
+      return fail("description", translate("El concepto admite como máximo 200 caracteres."));
     setPhase("review");
   }
 
@@ -294,7 +342,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
   }
 
   async function send(token: string | null) {
-    if (working.current) return;
+    if (working.current || !mounted.current) return;
     if (!ready) return backToForm();
     working.current = true;
     setPhase("sending");
@@ -302,7 +350,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
     // The caller keeps track of the transfer even when this screen is closed meanwhile.
     onSend?.({ kind: "start" });
     try {
-      const done = await api.create("own", ready, token ?? undefined);
+      const done = await api.create(kind, ready, token ?? undefined);
       grant.current = null;
       onSend?.({ kind: "done", reference: done.reference });
       if (!mounted.current) return;
@@ -311,6 +359,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
       onSend?.({ kind: "seen" });
     } catch (error) {
       const code = toTransferError(error, true).code;
+      if (code === "uncertain" || tpt) grant.current = null;
       onSend?.({ kind: code === "uncertain" ? "uncertain" : "failed" });
       if (!mounted.current) return;
       if (code === "session") {
@@ -359,7 +408,9 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
   const subtitle: Record<Phase, string> = {
     loading: "Estamos cargando tus cuentas.",
     failed: "No pudimos cargar tus cuentas.",
-    form: "Mueve dinero entre tus cuentas de ahorro.",
+    form: tpt
+      ? "Envía dinero a una cuenta de ahorro de un beneficiario registrado."
+      : "Mueve dinero entre tus cuentas de ahorro.",
     review:
       "Revisa los datos. Al confirmar se envía la transferencia y no se puede deshacer. Tu institución puede pedirte antes un código de verificación.",
     verify: "Antes de enviarla, confirma que eres tú.",
@@ -373,6 +424,8 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
       ? `${formatAmount(String(summary.available), decimals)}${currency ? ` ${currency}` : ""}`
       : null;
 
+  const canFill = accounts.length >= (tpt ? 1 : 2) && (!tpt || destinations.length > 0);
+
   return (
     <LocalizedTree>
       <section className="customer-transfer security-view" aria-labelledby={ids.title}>
@@ -382,7 +435,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
         </button>
         <div>
           <h2 id={ids.title} ref={heading} tabIndex={-1} className="transfer-title">
-            Transferir entre mis cuentas
+            {title}
           </h2>
           <p className="authenticator-intro">{subtitle[phase]}</p>
         </div>
@@ -413,27 +466,46 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
           </div>
         )}
 
-        {phase === "form" && accounts.length < 2 && (
+        {phase === "form" && accounts.length < (tpt ? 1 : 2) && (
           <div className="authenticator-block" role="status">
             <p>
-              Necesitas al menos dos cuentas de ahorro activas para transferir entre tus cuentas.
+              {tpt
+                ? "No tienes cuentas de ahorro disponibles para enviar una transferencia."
+                : "Necesitas al menos dos cuentas de ahorro activas para transferir entre tus cuentas."}
             </p>
           </div>
         )}
 
-        {phase === "form" && accounts.length >= 2 && (
+        {phase === "form" && tpt && accounts.length > 0 && destinations.length === 0 && (
+          <p className="authenticator-block" role="status">
+            No hay beneficiarios con cuentas de ahorro disponibles. Registra un beneficiario con tu
+            institución antes de transferir.
+          </p>
+        )}
+
+        {phase === "form" && canFill && (
           <form className="authenticator-block form-stack" onSubmit={review} noValidate>
             <label htmlFor={ids.from}>Cuenta de origen</label>
             <select
               id={ids.from}
+              ref={fieldRefs.from}
+              required
+              aria-invalid={problem?.field === "from" ? true : undefined}
+              aria-describedby={problem?.field === "from" ? ids.error : undefined}
               value={fromKey}
               onChange={(event) => {
+                grant.current = null;
                 setFromKey(event.target.value);
                 // The destination cannot be the source.
                 if (toKey === event.target.value) setToKey("");
                 setProblem(null);
               }}
             >
+              {tpt && (
+                <option value="" disabled>
+                  Selecciona una cuenta de origen
+                </option>
+              )}
               {accounts.map((account) => (
                 <option key={keyOf(account)} value={keyOf(account)}>
                   {accountLabel(account)}
@@ -446,7 +518,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
               </p>
             )}
 
-            <label htmlFor={ids.to}>Cuenta de destino</label>
+            <label htmlFor={ids.to}>{destinationLabel}</label>
             <select
               id={ids.to}
               ref={fieldRefs.to}
@@ -455,16 +527,17 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
               aria-invalid={problem?.field === "to" ? true : undefined}
               aria-describedby={problem?.field === "to" ? ids.error : undefined}
               onChange={(event) => {
+                grant.current = null;
                 setToKey(event.target.value);
                 setProblem(null);
               }}
             >
               <option value="" disabled>
-                Selecciona una cuenta de destino
+                {tpt ? "Selecciona un beneficiario registrado" : "Selecciona una cuenta de destino"}
               </option>
               {destinations.map((account) => (
                 <option key={keyOf(account)} value={keyOf(account)}>
-                  {accountLabel(account)}
+                  {destinationText(account)}
                 </option>
               ))}
             </select>
@@ -487,6 +560,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
                 .filter(Boolean)
                 .join(" ")}
               onChange={(event) => {
+                grant.current = null;
                 setAmountText(event.target.value);
                 setProblem(null);
               }}
@@ -523,11 +597,27 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
                 <Verbatim text={failureText} />
               </p>
             )}
-            {failure === "accounts" && (
+            {tpt && (
+              <>
+                <p className="stepup-meta">
+                  Tu institución valida los fondos, los límites y que ambas cuentas usen la misma
+                  moneda. No se ofrece conversión de moneda.
+                </p>
+                {from && !currency && (
+                  <p role="status">
+                    {summary
+                      ? "No pudimos verificar la moneda de origen. Actualiza las cuentas antes de transferir."
+                      : "Verificando la moneda de origen…"}
+                  </p>
+                )}
+              </>
+            )}
+            {(failure === "accounts" || tpt) && (
               <button
                 type="button"
                 className="button button-outline"
                 onClick={() => {
+                  grant.current = null;
                   setFailure(null);
                   setToKey("");
                   setSummaries({});
@@ -538,7 +628,11 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
                 Actualizar mis cuentas
               </button>
             )}
-            <button className="button button-primary" type="submit">
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={tpt && !!from && !summary}
+            >
               Revisar transferencia
               <ArrowRight size={17} aria-hidden="true" />
             </button>
@@ -557,7 +651,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
               <div>
                 <dt>Para</dt>
                 <dd>
-                  <Verbatim text={accountLabel(ready.to)} />
+                  <Verbatim text={destinationText(ready.to)} />
                 </dd>
               </div>
               <div>
@@ -606,9 +700,10 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
                   </p>
                 )}
                 <StepUpPanel
-                  key={round}
+                  key={`${round}:${transferKey(ready)}`}
                   api={stepUpApi}
-                  action="OWN_TRANSFER"
+                  onExpired={onExpired}
+                  action={tpt ? "TPT_TRANSFER" : "OWN_TRANSFER"}
                   payload={stepUpPayload(ready)}
                   submitLabel="Verificar y enviar"
                   onVerified={(token) => {
@@ -653,7 +748,7 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
               <div>
                 <dt>Para</dt>
                 <dd>
-                  <Verbatim text={accountLabel(receipt.to)} />
+                  <Verbatim text={destinationText(receipt.to)} />
                 </dd>
               </div>
               <div>
@@ -704,11 +799,13 @@ export function CustomerTransfer({ api, stepUpApi, onClose, onExpired, onSend }:
  */
 export function CustomerTransferArea({
   session,
+  kind = "own",
   onClose,
   onExpired,
   onSend,
 }: {
   session: CustomerSession;
+  kind?: TransferKind;
   onClose: () => void;
   onExpired: () => void;
   onSend?: (event: SendEvent) => void;
@@ -720,6 +817,7 @@ export function CustomerTransferArea({
   }));
   return (
     <CustomerTransfer
+      kind={kind}
       api={clients.transfers}
       stepUpApi={clients.stepUp}
       onClose={onClose}

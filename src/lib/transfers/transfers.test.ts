@@ -409,10 +409,19 @@ describe("the http api", () => {
   });
 
   it("goes to the beneficiary path for a transfer to a third party", async () => {
-    const { customer, calls } = fakeCustomer({ data: { resourceId: 9 } });
+    const { customer, calls } = fakeCustomer(
+      {
+        data: {
+          fromAccountOptions: [rawAccount(input.from)],
+          toAccountOptions: [rawAccount(input.to)],
+        },
+      },
+      { data: { resourceId: 9 } },
+    );
     await createHttpTransfersApi({ customer, now }).create("tpt", input);
-    expect(calls[0].options.query).toEqual({ type: "tpt" });
-    expect(calls[0].options.stepUpToken).toBeUndefined();
+    expect(calls).toHaveLength(2);
+    expect(calls[1].options.query).toEqual({ type: "tpt" });
+    expect(calls[1].options.stepUpToken).toBeUndefined();
   });
 
   it.each([
@@ -494,10 +503,10 @@ describe("the http api", () => {
     expect(error.code).toBe("stepup");
   });
 
-  it("ends the screen when the session ended", async () => {
+  it("does not mistake a local expiry exception after possible dispatch for a refusal", async () => {
     const { customer } = fakeCustomer(new AuthenticationError("expired"));
     const error = await rejected(createHttpTransfersApi({ customer, now }).create("own", input));
-    expect(error.code).toBe("session");
+    expect(error.code).toBe("uncertain");
   });
 
   describe("the summary of an account", () => {

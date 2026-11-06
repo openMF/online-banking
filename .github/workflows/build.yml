@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [ master ]
 
+# The build only reads the repository; the deploy job asks for what Pages needs.
+permissions:
+  contents: read
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -47,15 +51,30 @@ jobs:
       - name: Run build
         run : npm run build
 
-      - name: Deploy to github pages
+      # The repository rulesets cover every branch, gh-pages included (no direct or force push),
+      # so the site is published from an artifact instead of a branch.
+      - name: Upload GitHub Pages artifact
         if: ${{ github.event_name == 'push' }}
-        uses: JamesIves/github-pages-deploy-action@v4.9.0
+        uses: actions/upload-pages-artifact@v5
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages
-          folder: ./dist/
-          # single-commit resets gh-pages to exactly the latest dist/ contents
-          # (force-push style), so the branch only ever holds the newest build
-          # and never accumulates history.
-          single-commit: true
-          silent: true 
+          path: ./dist/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: ${{ github.event_name == 'push' }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Let a deployment that started finish; a newer push deploys after it.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

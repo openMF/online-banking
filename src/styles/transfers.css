@@ -17,3 +17,13 @@
 .customer-transfer .transfer-receipt .review-details {
   margin: 8px 0;
 }
+
+/* Keep both transfer entry points together without adding another action row on phones. */
+.customer-transfer-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.customer-transfer-actions > .button {
+  padding: 6px 8px;
+}
