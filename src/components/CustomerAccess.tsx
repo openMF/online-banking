@@ -382,13 +382,17 @@ export function CustomerHome({
 
        {catalogueOpen ? (
   <ProductCatalogue
-  session={session}
-  onExpired={handleExpired}
-  onClose={() => {
-    setCatalogueOpen(false);
-    requestAnimationFrame(() => catalogueEntry.current?.focus());
-  }}
-/>
+    session={session}
+    onExpired={() => {
+      if (ended.current) return;
+      ended.current = true;
+      onEnd(true, session.logout());
+    }}
+    onClose={() => {
+      setCatalogueOpen(false);
+      requestAnimationFrame(() => catalogueEntry.current?.focus());
+    }}
+  />
 ) : sharesOpen ? (
         <ShareAccounts
           client={shareClient}
