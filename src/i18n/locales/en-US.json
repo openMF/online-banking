@@ -645,7 +645,6 @@
     "Selecciona un cliente": "Select a client",
     "Producto de ahorro": "Savings product",
     "Selecciona un producto": "Select a product",
-    "Consultando productos y condiciones...": "Loading products and terms...",
     "No hay productos de ahorro disponibles para este cliente.": "No savings products are available for this client.",
     "Tasa de interés anual": "Annual interest rate",
     "Depósito mínimo de apertura": "Minimum opening deposit",
@@ -1032,6 +1031,19 @@
     "Tu institución valida los fondos, los límites y que ambas cuentas usen la misma moneda. No se ofrece conversión de moneda.": "Your institution checks funds, limits and that both accounts use the same currency. Currency conversion is not available.",
     "Esta transferencia requiere una segunda firma. Contacta a tu institución para usar el proceso de aprobación. No se movió dinero.": "This transfer requires a second signature. Contact your institution to use the approval process. No money moved.",
     "El importe supera el límite de este beneficiario. No se movió dinero.": "The amount exceeds this beneficiary’s limit. No money moved.",
-    "Verificando la moneda de origen…": "Verifying the source currency…"
+    "Verificando la moneda de origen…": "Verifying the source currency…",
+"Productos disponibles": "Available Products",
+"No pudimos cargar parte de la información de los productos. Aquí se muestran los resultados disponibles.": "Some product information could not be loaded. Available results are shown below.",
+"No hay productos disponibles para tus cuentas autorizadas.": "No products are currently available for your authorized accounts.",
+"La información de los productos no está disponible por ahora.": "Product information is currently unavailable.",
+"Productos de ahorro": "Savings Products",
+"Productos de préstamo": "Loan Products",
+"Productos de acciones": "Share Products",
+"Las condiciones detalladas del producto no están disponibles.": "Detailed product conditions are unavailable.",
+"Explora los productos de ahorro, préstamo y acciones que ofrece tu institución. La disponibilidad y las condiciones finales serán confirmadas por tu institución.": "Browse savings, loan and share products offered by your institution. Product availability and final terms are confirmed by your institution.",
+"Consultando productos y condiciones...": "Loading available products and conditions.",
+"Mínimo": "Minimum",
+"Máximo": "Maximum",
+"Precio unitario": "Unit price"
   }
 }
