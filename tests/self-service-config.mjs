@@ -17,6 +17,7 @@ import { createSelfServiceConfigLoader } from "../src/lib/self-service-config-lo
 const valid = {
   baseUrl: "https://bank.example/fineract-provider/api/v1/self",
   tenantId: "tenant_01-test",
+  inactivityTimeoutMinutes: 10,
 };
 const validate = (baseUrl, options) => validateSelfServiceConfig({ ...valid, baseUrl }, options);
 
@@ -98,6 +99,32 @@ for (const tenantId of [
 ]) {
   test(`reject invalid tenant: ${JSON.stringify(tenantId)}`, () => {
     assert.throws(() => validateSelfServiceConfig({ ...valid, tenantId }), SelfServiceConfigError);
+  });
+}
+
+test("inactivity timeout defaults to 10 minutes and accepts 5-15", () => {
+  assert.equal(validate(valid.baseUrl).inactivityTimeoutMinutes, 10);
+  assert.equal(
+    validateSelfServiceConfig({ ...valid, inactivityTimeoutMinutes: 5 }).inactivityTimeoutMinutes,
+    5,
+  );
+  assert.equal(
+    validateSelfServiceConfig({ ...valid, inactivityTimeoutMinutes: 15 }).inactivityTimeoutMinutes,
+    15,
+  );
+  assert.equal(
+    validateSelfServiceConfig({ ...valid, inactivityTimeoutMinutes: "8" }).inactivityTimeoutMinutes,
+    8,
+  );
+});
+
+for (const timeout of [4, 16, 0, -5, 10.5, "abc", ""]) {
+  if (timeout === "") continue; // empty string is treated as default
+  test(`reject invalid inactivity timeout: ${JSON.stringify(timeout)}`, () => {
+    assert.throws(
+      () => validateSelfServiceConfig({ ...valid, inactivityTimeoutMinutes: timeout }),
+      SelfServiceConfigError,
+    );
   });
 }
 test("missing configuration never falls back to a shared instance", () => {
@@ -237,6 +264,7 @@ test("startup JSON supports demo-only mode, allowlists public settings, and reje
       assert.deepEqual(JSON.parse(readFileSync(output, "utf8")), {
         baseUrl: env.SELF_SERVICE_BASE_URL.replace(/\/$/, ""),
         tenantId: env.SELF_SERVICE_TENANT_ID,
+        inactivityTimeoutMinutes: 10,
       });
       assert.equal(readFileSync(output, "utf8").includes("private-sentinel"), false);
       assert.equal(result.stdout, "");
@@ -350,6 +378,7 @@ test("Vite development middleware serves the same public contract and safe error
           assert.deepEqual(JSON.parse(body), {
             baseUrl: "http://[::1]:8443/proxy/api/v1/self",
             tenantId: "local",
+            inactivityTimeoutMinutes: 10,
           });
         } else {
           assert.match(JSON.parse(body).error, /SELF_SERVICE_/);

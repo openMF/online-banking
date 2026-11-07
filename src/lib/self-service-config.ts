@@ -9,6 +9,7 @@
 export interface SelfServiceConfig {
   readonly baseUrl: string;
   readonly tenantId: string;
+  readonly inactivityTimeoutMinutes?: number;
 }
 
 export interface ConfigValidationOptions {
@@ -42,7 +43,7 @@ export function validateSelfServiceConfig(
   if (!input || typeof input !== "object") {
     throw new SelfServiceConfigError("Self Service configuration is missing.");
   }
-  const { baseUrl, tenantId } = input as Record<string, unknown>;
+  const { baseUrl, tenantId, inactivityTimeoutMinutes } = input as Record<string, unknown>;
   if (typeof baseUrl !== "string" || !baseUrl.trim()) {
     throw new SelfServiceConfigError("SELF_SERVICE_BASE_URL is required.");
   }
@@ -95,7 +96,28 @@ export function validateSelfServiceConfig(
       "SELF_SERVICE_TENANT_ID is required: use 1–100 letters, digits, underscores, or hyphens, starting with a letter or digit.",
     );
   }
-  return Object.freeze({ baseUrl: `${url.origin}${pathname}`, tenantId });
+  let timeoutMinutes = 10;
+  if (
+    inactivityTimeoutMinutes !== undefined &&
+    inactivityTimeoutMinutes !== null &&
+    inactivityTimeoutMinutes !== ""
+  ) {
+    const parsed =
+      typeof inactivityTimeoutMinutes === "number"
+        ? inactivityTimeoutMinutes
+        : Number(String(inactivityTimeoutMinutes).trim());
+    if (!Number.isInteger(parsed) || parsed < 5 || parsed > 15) {
+      throw new SelfServiceConfigError(
+        "SELF_SERVICE_INACTIVITY_TIMEOUT_MINUTES must be an integer between 5 and 15.",
+      );
+    }
+    timeoutMinutes = parsed;
+  }
+  return Object.freeze({
+    baseUrl: `${url.origin}${pathname}`,
+    tenantId,
+    inactivityTimeoutMinutes: timeoutMinutes,
+  });
 }
 
 export function configFromEnvironment(
@@ -106,7 +128,13 @@ export function configFromEnvironment(
   // A partially supplied or invalid pair still fails validation.
   if (!env.SELF_SERVICE_BASE_URL && !env.SELF_SERVICE_TENANT_ID) return null;
   return validateSelfServiceConfig(
-    { baseUrl: env.SELF_SERVICE_BASE_URL, tenantId: env.SELF_SERVICE_TENANT_ID },
+    {
+      baseUrl: env.SELF_SERVICE_BASE_URL,
+      tenantId: env.SELF_SERVICE_TENANT_ID,
+      inactivityTimeoutMinutes:
+        env.SELF_SERVICE_INACTIVITY_TIMEOUT_MINUTES ??
+        env.VITE_SELF_SERVICE_INACTIVITY_TIMEOUT_MINUTES,
+    },
     options,
   );
 }
