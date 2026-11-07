@@ -73,7 +73,7 @@ check "the container reports healthy" "healthy" "$(
 echo "== with a Self Service configuration"
 url="https://bank.example/fineract-provider/api/v1/self"
 port=$(start config -e "SELF_SERVICE_BASE_URL=$url" -e SELF_SERVICE_TENANT_ID=default)
-check "the configuration is written for the browser" "{\"baseUrl\":\"$url\",\"tenantId\":\"default\"}" \
+check "the configuration is written for the browser" "{\"baseUrl\":\"$url\",\"tenantId\":\"default\",\"inactivityTimeoutMinutes\":10}" \
   "$(curl -s "http://127.0.0.1:$port/runtime-config.json")"
 
 echo "== with a wrong configuration"

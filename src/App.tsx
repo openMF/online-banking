@@ -305,7 +305,11 @@ export default function App() {
           if (reason === "passwordChanged") {
             // The server ended every session when the password changed: say why, and that the new
             // password is the one to use. The (failed) logout of the old token adds nothing.
-            setSessionNotice("Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.");
+            setSessionNotice("Tu contraseña cambió. Inicia sesión de nuevo con la nueva contraseña.");
+            return;
+          }
+          if (reason === "inactivity") {
+            setSessionNotice("Tu sesión se cerró por inactividad. Inicia sesión de nuevo para continuar.");
             return;
           }
           setSessionNotice(expired

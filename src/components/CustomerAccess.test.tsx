@@ -56,6 +56,7 @@ beforeEach(() => {
   configuration.mockResolvedValue({
     baseUrl: "https://bank.invalid/api/v1/self",
     tenantId: "test",
+    inactivityTimeoutMinutes: 10,
   });
 });
 afterEach(() => {
@@ -232,8 +233,39 @@ it("expires after ten minutes of inactivity, including under StrictMode", async 
   await act(async () => {
     await vi.advanceTimersByTimeAsync(600000);
   });
-  expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise));
+  expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise), "inactivity");
   expect(verified.logout).toHaveBeenCalledOnce();
+});
+
+it("supports configurable inactivity timeout (e.g. 5 minutes) and renders note accordingly", async () => {
+  vi.useFakeTimers();
+  const verified = session(),
+    onEnd = vi.fn();
+  render(
+    <I18nProvider>
+      <CustomerHome session={verified} inactivityTimeoutMinutes={5} onEnd={onEnd} />
+    </I18nProvider>,
+  );
+  expect(screen.getByText(/tras 5 minutos de inactividad/i)).toBeDefined();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(299000);
+  });
+  expect(onEnd).not.toHaveBeenCalled();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1000);
+  });
+  expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise), "inactivity");
+  expect(verified.logout).toHaveBeenCalledOnce();
+});
+
+it("renders the friendly inactivity note in English when locale is en-US", async () => {
+  window.localStorage.setItem("mifos-locale", "en-US");
+  render(
+    <I18nProvider>
+      <CustomerHome session={session()} inactivityTimeoutMinutes={7} onEnd={vi.fn()} />
+    </I18nProvider>,
+  );
+  expect(screen.getByText(/after 7 minutes of inactivity/i)).toBeDefined();
 });
 
 it("enforces the absolute lifetime despite activity and checks expiry on return to a suspended tab", async () => {
@@ -255,7 +287,7 @@ it("enforces the absolute lifetime despite activity and checks expiry on return 
   expect(onEnd).not.toHaveBeenCalled();
   vi.setSystemTime(verified.expiresAt + 1);
   fireEvent.focus(window);
-  expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise));
+  expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise), "expired");
 });
 
 it("displays office name, roles, and client ID from the session identity", () => {
