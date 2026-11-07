@@ -1,7 +1,14 @@
 import { createShareApplicationClient } from "../lib/shares/application";
 import { ShareAccounts } from "./ShareAccounts";
 import { createShareClient } from "../lib/shares/client";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { Brand } from "./ui";
 import { LocaleToggle, translateWith, useI18n } from "../i18n";
@@ -27,6 +34,7 @@ import { SurveyParticipation } from "./SurveyParticipation";
 import { createSurveyClient } from "../lib/surveys/client";
 import { PersonalReports } from "./PersonalReports";
 import type { Segment } from "../lib/demo";
+import { ProductCatalogue } from "./ProductCatalogue";
 
 /** Configuration chooses an explicit customer login; demo remains a separate opt-in. */
 export function CustomerAccess({
@@ -229,6 +237,9 @@ export function CustomerHome({
 }) {
   const { t } = useI18n();
   const ended = useRef(false);
+  const [catalogueOpen, setCatalogueOpen] = useState(false);
+  const catalogueEntry = useRef<HTMLButtonElement>(null);
+
   const [timeoutMinutes, setTimeoutMinutes] = useState(initialTimeout ?? 10);
 
   useEffect(() => {
@@ -236,7 +247,9 @@ export function CustomerHome({
       setTimeoutMinutes(initialTimeout);
       return;
     }
+
     let active = true;
+
     void getSelfServiceConfig().then(
       (cfg) => {
         if (active && cfg.inactivityTimeoutMinutes !== undefined) {
@@ -245,6 +258,7 @@ export function CustomerHome({
       },
       () => {},
     );
+
     return () => {
       active = false;
     };
@@ -311,6 +325,12 @@ export function CustomerHome({
 
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
+
+  const handleExpired = useCallback(() => {
+    if (ended.current) return;
+    ended.current = true;
+    endRef.current(true, session.logout());
+  }, [session]);
 
   useEffect(() => {
     let lastActivity = Date.now();
@@ -400,7 +420,16 @@ export function CustomerHome({
         </dl>
       </div>
 
-      {sharesOpen ? (
+      {catalogueOpen ? (
+        <ProductCatalogue
+          session={session}
+          onExpired={handleExpired}
+          onClose={() => {
+            setCatalogueOpen(false);
+            requestAnimationFrame(() => catalogueEntry.current?.focus());
+          }}
+        />
+      ) : sharesOpen ? (
         <ShareAccounts
           client={shareClient}
           application={shareApplication}
@@ -502,7 +531,12 @@ export function CustomerHome({
           }}
           onClose={() => {
             setTransferOpen(null);
-            requestAnimationFrame(() => (transferOpen === "tpt" ? beneficiaryTransferEntry : transferEntry).current?.focus());
+            requestAnimationFrame(() =>
+              (transferOpen === "tpt"
+                ? beneficiaryTransferEntry
+                : transferEntry
+              ).current?.focus(),
+            );
           }}
         />
       ) : (
@@ -541,7 +575,9 @@ export function CustomerHome({
               className="button button-primary"
               disabled={transferBlocked}
               onClick={() => {
-                setTransfer((current) => current.kind === "done" ? { kind: "idle" } : current);
+                setTransfer((current) =>
+                  current.kind === "done" ? { kind: "idle" } : current,
+                );
                 setTransferOpen("tpt");
               }}
             >
@@ -564,6 +600,14 @@ export function CustomerHome({
                     : t("Tu última transferencia se realizó.")}
             </p>
           )}
+
+          <button
+            ref={catalogueEntry}
+            className="button button-primary"
+            onClick={() => setCatalogueOpen(true)}
+          >
+            {t("Productos disponibles")}
+          </button>
 
           <button
             ref={sharesEntry}

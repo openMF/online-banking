@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { useI18n } from "../i18n";
 import {
   LoanError,
@@ -85,10 +91,10 @@ export function LoanApplication({
       mounted.current = false;
     };
   }, []);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (review) reviewHeading.current?.focus();
   }, [review]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (loan || error) outcome.current?.focus();
   }, [loan, error]);
   useEffect(() => {

@@ -645,7 +645,6 @@
     "Selecciona un cliente": "Selecciona un cliente",
     "Producto de ahorro": "Producto de ahorro",
     "Selecciona un producto": "Selecciona un producto",
-    "Consultando productos y condiciones...": "Consultando productos y condiciones...",
     "No hay productos de ahorro disponibles para este cliente.": "No hay productos de ahorro disponibles para este cliente.",
     "Tasa de interés anual": "Tasa de interés anual",
     "Depósito mínimo de apertura": "Depósito mínimo de apertura",
@@ -1032,6 +1031,19 @@
     "Tu institución valida los fondos, los límites y que ambas cuentas usen la misma moneda. No se ofrece conversión de moneda.": "Tu institución valida los fondos, los límites y que ambas cuentas usen la misma moneda. No se ofrece conversión de moneda.",
     "Esta transferencia requiere una segunda firma. Contacta a tu institución para usar el proceso de aprobación. No se movió dinero.": "Esta transferencia requiere una segunda firma. Contacta a tu institución para usar el proceso de aprobación. No se movió dinero.",
     "El importe supera el límite de este beneficiario. No se movió dinero.": "El importe supera el límite de este beneficiario. No se movió dinero.",
-    "Verificando la moneda de origen…": "Verificando la moneda de origen…"
+    "Verificando la moneda de origen…": "Verificando la moneda de origen…",
+    "Productos disponibles": "Productos disponibles",
+    "No pudimos cargar parte de la información de los productos. Aquí se muestran los resultados disponibles.": "No pudimos cargar parte de la información de los productos. Aquí se muestran los resultados disponibles.",
+    "No hay productos disponibles para tus cuentas autorizadas.": "No hay productos disponibles para tus cuentas autorizadas.",
+    "La información de los productos no está disponible por ahora.": "La información de los productos no está disponible por ahora.",
+    "Productos de ahorro": "Productos de ahorro",
+    "Productos de préstamo": "Productos de préstamo",
+    "Productos de acciones": "Productos de acciones",
+    "Mínimo": "Mínimo",
+    "Máximo": "Máximo",
+    "Precio unitario": "Precio unitario",
+    "Las condiciones detalladas del producto no están disponibles.": "Las condiciones detalladas del producto no están disponibles.",
+    "Explora los productos de ahorro, préstamo y acciones que ofrece tu institución. La disponibilidad y las condiciones finales serán confirmadas por tu institución.": "Explora los productos de ahorro, préstamo y acciones que ofrece tu institución. La disponibilidad y las condiciones finales serán confirmadas por tu institución.",
+    "Consultando productos y condiciones...": "Consultando productos y condiciones..."
   }
 }
