@@ -224,19 +224,46 @@ export function CustomerLogin({
 
 export function CustomerHome({
   session,
+  inactivityTimeoutMinutes: initialTimeout,
   onEnd,
 }: {
   session: CustomerSession;
+  inactivityTimeoutMinutes?: number;
   onEnd: (
     expired: boolean,
     revocation: Promise<boolean>,
-    reason?: "passwordChanged",
+    reason?: "passwordChanged" | "inactivity" | "expired",
   ) => void;
 }) {
   const { t } = useI18n();
   const ended = useRef(false);
   const [catalogueOpen, setCatalogueOpen] = useState(false);
   const catalogueEntry = useRef<HTMLButtonElement>(null);
+
+  const [timeoutMinutes, setTimeoutMinutes] = useState(initialTimeout ?? 10);
+
+  useEffect(() => {
+    if (initialTimeout !== undefined) {
+      setTimeoutMinutes(initialTimeout);
+      return;
+    }
+
+    let active = true;
+
+    void getSelfServiceConfig().then(
+      (cfg) => {
+        if (active && cfg.inactivityTimeoutMinutes !== undefined) {
+          setTimeoutMinutes(cfg.inactivityTimeoutMinutes);
+        }
+      },
+      () => {},
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [initialTimeout]);
+
   const [sharesOpen, setSharesOpen] = useState(false);
   const shareClient = useMemo(() => createShareClient(session), [session]);
   const shareApplication = useMemo(() => createShareApplicationClient(session), [session]);
@@ -313,18 +340,17 @@ export function CustomerHome({
       if (!ended.current) lastActivity = Date.now();
     };
 
-    const end = () => {
+    const end = (reason?: "inactivity" | "expired") => {
       if (ended.current) return;
       ended.current = true;
-      endRef.current(true, session.logout());
+      endRef.current(true, session.logout(), reason);
     };
 
     const check = () => {
-      if (
-        Date.now() >= session.expiresAt ||
-        Date.now() - lastActivity >= 10 * 60_000
-      ) {
-        end();
+      if (Date.now() >= session.expiresAt) {
+        end("expired");
+      } else if (Date.now() - lastActivity >= timeoutMinutes * 60_000) {
+        end("inactivity");
       }
     };
 
@@ -343,7 +369,7 @@ export function CustomerHome({
       window.removeEventListener("focus", check);
       document.removeEventListener("visibilitychange", check);
     };
-  }, [session]);
+  }, [session, timeoutMinutes]);
 
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -634,8 +660,9 @@ export function CustomerHome({
       )}
 
       <p className="form-note">
-        {t(
-          "La sesión se conserva solo en esta página y termina al recargar, tras 10 minutos de inactividad o después de 15 minutos.",
+        {translateWith(
+          "La sesión se conserva solo en esta página y termina al recargar, tras {minutes} minutos de inactividad o después de 15 minutos.",
+          { minutes: timeoutMinutes },
         )}
       </p>
 

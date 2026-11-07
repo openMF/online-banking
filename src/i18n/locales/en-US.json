@@ -623,6 +623,8 @@
     "Usuario verificado por tu institución:": "Username verified by your institution:",
     "Las cuentas y operaciones aún no están integradas. No se muestran saldos ni movimientos de demostración en esta sesión.": "Accounts and operations are not integrated yet. No demo balances or transactions are shown in this session.",
     "La sesión se conserva solo en esta página y termina al recargar, tras 10 minutos de inactividad o después de 15 minutos.": "Your session stays only in this page and ends on reload, after 10 minutes of inactivity or after 15 minutes.",
+    "La sesión se conserva solo en esta página y termina al recargar, tras {minutes} minutos de inactividad o después de 15 minutos.": "Your session stays only in this page and ends on reload, after {minutes} minutes of inactivity or after 15 minutes.",
+    "Tu sesión se cerró por inactividad. Inicia sesión de nuevo para continuar.": "Your session was closed due to inactivity. Sign in again to continue.",
     "Usuario o contraseña incorrectos.": "Incorrect username or password.",
     "No se completó el acceso. Tu cuenta puede estar pendiente de confirmación o deshabilitada. Contacta a tu institución.": "Sign-in was not completed. Your account may be pending confirmation or disabled. Contact your institution.",
     "Tu institución requiere autenticación adicional. Continúa por sus canales oficiales; este acceso aún no admite ese paso.": "Your institution requires additional authentication. Continue through its official channels; this sign-in does not support that step yet.",
