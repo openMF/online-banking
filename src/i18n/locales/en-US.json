@@ -1039,6 +1039,9 @@
 "Productos de acciones": "Share Products",
 "Las condiciones detalladas del producto no están disponibles.": "Detailed product conditions are unavailable.",
 "Explora los productos de ahorro, préstamo y acciones que ofrece tu institución. La disponibilidad y las condiciones finales serán confirmadas por tu institución.": "Browse savings, loan and share products offered by your institution. Product availability and final terms are confirmed by your institution.",
-"Consultando productos y condiciones...": "Loading available products and conditions."
+"Consultando productos y condiciones...": "Loading available products and conditions.",
+"Mínimo": "Minimum",
+"Máximo": "Maximum",
+"Precio unitario": "Unit price"
   }
 }

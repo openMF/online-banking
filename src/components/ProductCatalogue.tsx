@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import type { CustomerSession } from "../lib/authentication/client";
 import {
@@ -61,6 +61,12 @@ export function ProductCatalogue({
   const [shares, setShares] = useState<ShareProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -253,7 +259,7 @@ export function ProductCatalogue({
       className="savings-application"
       aria-labelledby="catalogue-heading"
     >
-      <h2 id="catalogue-heading" tabIndex={-1}>
+      <h2 id="catalogue-heading" tabIndex={-1} ref={headingRef}>
         {t("Productos disponibles")}
       </h2>
 
