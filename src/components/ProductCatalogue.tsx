@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { useI18n } from "../i18n";
 import type { CustomerSession } from "../lib/authentication/client";
-import { createSavingsClient, type SavingsTemplate } from "../lib/savings/client";
-import { createLoanClient, type Template as LoanTemplate } from "../lib/loans/client";
+import {
+  createSavingsClient,
+  type SavingsTemplate,
+} from "../lib/savings/client";
+import {
+  createLoanClient,
+  type Template as LoanTemplate,
+} from "../lib/loans/client";
 import {
   createShareApplicationClient,
   type ShareTerms,
@@ -73,6 +79,19 @@ export function ProductCatalogue({
       const shareResults: ShareProduct[] = [];
 
       let failed = false;
+      let loanProductsLoaded = false;
+
+      // Load loan products once before checking client eligibility.
+      try {
+        await loanClient.loadProducts(controller.signal);
+        loanProductsLoaded = true;
+      } catch (e) {
+        if (isExpired(e)) {
+          onExpired();
+          return;
+        }
+        failed = true;
+      }
 
       for (const clientId of session.identity.clients) {
         if (controller.signal.aborted) return;
@@ -98,6 +117,7 @@ export function ProductCatalogue({
               );
             } catch (e) {
               if (isExpired(e)) throw e;
+              failed = true;
             }
 
             savingsResults.push({
@@ -116,40 +136,43 @@ export function ProductCatalogue({
         }
 
         // Loan products
-        try {
-          const products = await loanClient.eligibleProducts(
-            clientId,
-            controller.signal,
-          );
-
-          for (const product of products) {
-            if (controller.signal.aborted) return;
-
-            let terms: LoanTemplate | undefined;
-
-            try {
-              terms = await loanClient.loadTemplate(
-                clientId,
-                product.id,
-                controller.signal,
-              );
-            } catch (e) {
-              if (isExpired(e)) throw e;
-            }
-
-            loanResults.push({
+        if (loanProductsLoaded) {
+          try {
+            const products = await loanClient.eligibleProducts(
               clientId,
-              productId: product.id,
-              name: product.name,
-              terms,
-            });
+              controller.signal,
+            );
+
+            for (const product of products) {
+              if (controller.signal.aborted) return;
+
+              let terms: LoanTemplate | undefined;
+
+              try {
+                terms = await loanClient.loadTemplate(
+                  clientId,
+                  product.id,
+                  controller.signal,
+                );
+              } catch (e) {
+                if (isExpired(e)) throw e;
+                failed = true;
+              }
+
+              loanResults.push({
+                clientId,
+                productId: product.id,
+                name: product.name,
+                terms,
+              });
+            }
+          } catch (e) {
+            if (isExpired(e)) {
+              onExpired();
+              return;
+            }
+            failed = true;
           }
-        } catch (e) {
-          if (isExpired(e)) {
-            onExpired();
-            return;
-          }
-          failed = true;
         }
 
         // Share products
@@ -172,6 +195,7 @@ export function ProductCatalogue({
               );
             } catch (e) {
               if (isExpired(e)) throw e;
+              failed = true;
             }
 
             shareResults.push({
@@ -225,58 +249,78 @@ export function ProductCatalogue({
   }
 
   return (
-    <section className="savings-application" aria-labelledby="catalogue-heading">
+    <section
+      className="savings-application"
+      aria-labelledby="catalogue-heading"
+    >
       <h2 id="catalogue-heading" tabIndex={-1}>
-        {t("Available Products")}
+        {t("Productos disponibles")}
       </h2>
 
       <p className="form-note">
         {t(
-          "Browse savings, loan and share products offered by your institution. Product availability and final terms are confirmed by your institution.",
+          "Explora los productos de ahorro, préstamo y acciones que ofrece tu institución. La disponibilidad y las condiciones finales serán confirmadas por tu institución.",
         )}
       </p>
 
       {loading && (
         <p role="status">
-          {t("Loading available products and conditions...")}
+          {t("Consultando productos y condiciones...")}
         </p>
       )}
 
-      {error && (
-        <p role="status">
-          {t("Some product information could not be loaded. Available results are shown below.")}
-        </p>
-      )}
+      {error &&
+        (savings.length > 0 || loans.length > 0 || shares.length > 0) && (
+          <p role="status">
+            {t(
+              "No pudimos cargar parte de la información de los productos. Aquí se muestran los resultados disponibles.",
+            )}
+          </p>
+        )}
 
-      {!loading && !savings.length && !loans.length && !shares.length && (
-        <p role="status">
-          {t("No products are currently available for your authorized accounts.")}
-        </p>
-      )}
+      {error &&
+        !loading &&
+        !savings.length &&
+        !loans.length &&
+        !shares.length && (
+          <p role="status">
+            {t("La información de los productos no está disponible por ahora.")}
+          </p>
+        )}
+
+      {!error &&
+        !loading &&
+        !savings.length &&
+        !loans.length &&
+        !shares.length && (
+          <p role="status">
+            {t("No hay productos disponibles para tus cuentas autorizadas.")}
+          </p>
+        )}
 
       {savings.length > 0 && (
         <div className="savings-summary">
-          {heading("Savings Products", savings.length)}
+          {heading("Productos de ahorro", savings.length)}
 
           {savings.map((product) => (
             <div key={`${product.clientId}-${product.productId}`}>
               <h4>{product.name}</h4>
               <p className="form-note">
-                {t("Authorized client")}: {product.clientId}
+                {t("Cliente autorizado")}: {product.clientId}
               </p>
 
               {product.terms ? (
                 <dl>
                   {product.terms.currency && (
                     <>
-                      <dt>{t("Currency")}</dt>
+                      <dt>{t("Moneda")}</dt>
                       <dd>{product.terms.currency.code}</dd>
                     </>
                   )}
 
                   {product.terms.rate != null && (
                     <>
-                      <dt>{t("Annual interest rate")}</dt>
+                      <dt>{t("Tasa de interés anual")}</dt>
                       <dd>{product.terms.rate}%</dd>
                     </>
                   )}
@@ -284,7 +328,7 @@ export function ProductCatalogue({
                   {product.terms.openingBalance != null &&
                     product.terms.currency && (
                       <>
-                        <dt>{t("Minimum opening balance")}</dt>
+                        <dt>{t("Depósito mínimo de apertura")}</dt>
                         <dd>
                           {money(
                             product.terms.openingBalance,
@@ -297,7 +341,7 @@ export function ProductCatalogue({
 
                   {product.terms.chargeTerms.length > 0 && (
                     <>
-                      <dt>{t("Product charges")}</dt>
+                      <dt>{t("Cargos del producto")}</dt>
                       <dd>
                         {product.terms.chargeTerms
                           .map(
@@ -310,7 +354,11 @@ export function ProductCatalogue({
                   )}
                 </dl>
               ) : (
-                <p>{t("Detailed product conditions are unavailable.")}</p>
+                <p>
+                  {t(
+                    "Las condiciones detalladas del producto no están disponibles.",
+                  )}
+                </p>
               )}
             </div>
           ))}
@@ -319,19 +367,19 @@ export function ProductCatalogue({
 
       {loans.length > 0 && (
         <div className="savings-summary">
-          {heading("Loan Products", loans.length)}
+          {heading("Productos de préstamo", loans.length)}
 
           {loans.map((product) => (
             <div key={`${product.clientId}-${product.productId}`}>
               <h4>{product.name}</h4>
               <p className="form-note">
-                {t("Authorized client")}: {product.clientId}
+                {t("Cliente autorizado")}: {product.clientId}
               </p>
 
               {product.terms ? (
                 <>
                   <dl>
-                    <dt>{t("Currency")}</dt>
+                    <dt>{t("Moneda")}</dt>
                     <dd>{product.terms.currency}</dd>
 
                     {product.terms.fields
@@ -342,9 +390,13 @@ export function ProductCatalogue({
                         <div key={field.key}>
                           <dt>{t(field.label)}</dt>
                           <dd>
-                            {field.min != null && `${t("Minimum")}: ${field.min}`}
-                            {field.min != null && field.max != null && " · "}
-                            {field.max != null && `${t("Maximum")}: ${field.max}`}
+                            {field.min != null &&
+                              `${t("Mínimo")}: ${field.min}`}
+                            {field.min != null &&
+                              field.max != null &&
+                              " · "}
+                            {field.max != null &&
+                              `${t("Máximo")}: ${field.max}`}
                             {field.hint && ` (${t(field.hint)})`}
                           </dd>
                         </div>
@@ -353,7 +405,7 @@ export function ProductCatalogue({
 
                   {product.terms.charges.length > 0 && (
                     <div>
-                      <strong>{t("Product charges")}</strong>
+                      <strong>{t("Cargos del producto")}</strong>
                       {product.terms.charges.map((charge) => (
                         <p key={charge.chargeId}>
                           {charge.name}: {charge.amount} · {charge.basis}
@@ -363,7 +415,11 @@ export function ProductCatalogue({
                   )}
                 </>
               ) : (
-                <p>{t("Detailed product conditions are unavailable.")}</p>
+                <p>
+                  {t(
+                    "Las condiciones detalladas del producto no están disponibles.",
+                  )}
+                </p>
               )}
             </div>
           ))}
@@ -372,21 +428,21 @@ export function ProductCatalogue({
 
       {shares.length > 0 && (
         <div className="savings-summary">
-          {heading("Share Products", shares.length)}
+          {heading("Productos de acciones", shares.length)}
 
           {shares.map((product) => (
             <div key={`${product.clientId}-${product.productId}`}>
               <h4>{product.name}</h4>
               <p className="form-note">
-                {t("Authorized client")}: {product.clientId}
+                {t("Cliente autorizado")}: {product.clientId}
               </p>
 
               {product.terms ? (
                 <dl>
-                  <dt>{t("Currency")}</dt>
+                  <dt>{t("Moneda")}</dt>
                   <dd>{product.terms.currency.code}</dd>
 
-                  <dt>{t("Unit price")}</dt>
+                  <dt>{t("Precio unitario")}</dt>
                   <dd>
                     {formatMoney(
                       product.terms.unitPrice,
@@ -397,37 +453,38 @@ export function ProductCatalogue({
 
                   {product.terms.minimum != null && (
                     <>
-                      <dt>{t("Minimum shares")}</dt>
+                      <dt>{t("Mínimo de acciones")}</dt>
                       <dd>{product.terms.minimum}</dd>
                     </>
                   )}
 
                   {product.terms.nominal != null && (
                     <>
-                      <dt>{t("Nominal shares")}</dt>
+                      <dt>{t("Acciones nominales")}</dt>
                       <dd>{product.terms.nominal}</dd>
                     </>
                   )}
 
                   {product.terms.maximum != null && (
                     <>
-                      <dt>{t("Maximum shares")}</dt>
+                      <dt>{t("Máximo de acciones")}</dt>
                       <dd>{product.terms.maximum}</dd>
                     </>
                   )}
 
                   {product.terms.lockin && (
                     <>
-                      <dt>{t("Lock-in period")}</dt>
+                      <dt>{t("Periodo de bloqueo")}</dt>
                       <dd>
-                        {product.terms.lockin.count} ({product.terms.lockin.unit})
+                        {product.terms.lockin.count} (
+                        {product.terms.lockin.unit})
                       </dd>
                     </>
                   )}
 
                   {product.terms.charges.length > 0 && (
                     <>
-                      <dt>{t("Product charges")}</dt>
+                      <dt>{t("Cargos del producto")}</dt>
                       <dd>
                         {product.terms.charges
                           .map((charge) => `${charge.name}: ${charge.amount}`)
@@ -437,15 +494,23 @@ export function ProductCatalogue({
                   )}
                 </dl>
               ) : (
-                <p>{t("Detailed product conditions are unavailable.")}</p>
+                <p>
+                  {t(
+                    "Las condiciones detalladas del producto no están disponibles.",
+                  )}
+                </p>
               )}
             </div>
           ))}
         </div>
       )}
 
-      <button className="button button-outline" onClick={onClose}>
-        {t("Back to dashboard")}
+      <button
+        type="button"
+        className="button button-outline"
+        onClick={onClose}
+      >
+        {t("Volver al inicio")}
       </button>
     </section>
   );

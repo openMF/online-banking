@@ -1,7 +1,14 @@
 import { createShareApplicationClient } from "../lib/shares/application";
 import { ShareAccounts } from "./ShareAccounts";
 import { createShareClient } from "../lib/shares/client";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { LoaderCircle, LockKeyhole } from "lucide-react";
 import { Brand } from "./ui";
 import { LocaleToggle, translateWith, useI18n } from "../i18n";
@@ -292,6 +299,12 @@ export function CustomerHome({
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
 
+  const handleExpired = useCallback(() => {
+    if (ended.current) return;
+    ended.current = true;
+    endRef.current(true, session.logout());
+  }, [session]);
+
   useEffect(() => {
     let lastActivity = Date.now();
 
@@ -381,20 +394,16 @@ export function CustomerHome({
         </dl>
       </div>
 
-       {catalogueOpen ? (
-  <ProductCatalogue
-    session={session}
-    onExpired={() => {
-      if (ended.current) return;
-      ended.current = true;
-      onEnd(true, session.logout());
-    }}
-    onClose={() => {
-      setCatalogueOpen(false);
-      requestAnimationFrame(() => catalogueEntry.current?.focus());
-    }}
-  />
-) : sharesOpen ? (
+      {catalogueOpen ? (
+        <ProductCatalogue
+          session={session}
+          onExpired={handleExpired}
+          onClose={() => {
+            setCatalogueOpen(false);
+            requestAnimationFrame(() => catalogueEntry.current?.focus());
+          }}
+        />
+      ) : sharesOpen ? (
         <ShareAccounts
           client={shareClient}
           application={shareApplication}
@@ -496,7 +505,12 @@ export function CustomerHome({
           }}
           onClose={() => {
             setTransferOpen(null);
-            requestAnimationFrame(() => (transferOpen === "tpt" ? beneficiaryTransferEntry : transferEntry).current?.focus());
+            requestAnimationFrame(() =>
+              (transferOpen === "tpt"
+                ? beneficiaryTransferEntry
+                : transferEntry
+              ).current?.focus(),
+            );
           }}
         />
       ) : (
@@ -535,7 +549,9 @@ export function CustomerHome({
               className="button button-primary"
               disabled={transferBlocked}
               onClick={() => {
-                setTransfer((current) => current.kind === "done" ? { kind: "idle" } : current);
+                setTransfer((current) =>
+                  current.kind === "done" ? { kind: "idle" } : current,
+                );
                 setTransferOpen("tpt");
               }}
             >
@@ -560,12 +576,12 @@ export function CustomerHome({
           )}
 
           <button
-  ref={catalogueEntry}
-  className="button button-primary"
-  onClick={() => setCatalogueOpen(true)}
->
-  {t("Browse Available Products")}
-</button>
+            ref={catalogueEntry}
+            className="button button-primary"
+            onClick={() => setCatalogueOpen(true)}
+          >
+            {t("Productos disponibles")}
+          </button>
 
           <button
             ref={sharesEntry}
