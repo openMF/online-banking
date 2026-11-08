@@ -155,6 +155,14 @@ describe("CustomerTransfer TPT", () => {
     expect(
       (screen.getByRole("button", { name: "Revisar transferencia" }) as HTMLButtonElement).disabled,
     ).toBe(false);
+
+    // the second transfer reaches its review with the currency's decimals
+    await user.selectOptions(screen.getByLabelText("Beneficiario registrado"), "2:902");
+    await user.type(screen.getByLabelText("Importe en MXN"), "1,250.5");
+    await user.type(screen.getByLabelText("Concepto"), "Invoice");
+    await user.click(screen.getByRole("button", { name: "Revisar transferencia" }));
+    expect(await screen.findByText("1,250.50 MXN")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Confirmar transferencia" })).toBeTruthy();
   });
   it("follows the unprotected backend policy without a challenge", async () => {
     const { user, stepUp, transfers } = setup({

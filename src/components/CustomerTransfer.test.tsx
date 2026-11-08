@@ -404,6 +404,38 @@ describe("CustomerTransfer: the receipt", () => {
     expect(transfers.create).toHaveBeenCalledTimes(1);
   });
 
+  it("ignores a summary from before the transfer that answers after another transfer starts", async () => {
+    let answerFirst: (summary: {
+      currency: { code: string; decimalPlaces: number };
+      available: number;
+    }) => void = () => undefined;
+    const getSummary = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            answerFirst = resolve;
+          }),
+      )
+      .mockResolvedValue({ currency: { code: "USD", decimalPlaces: 2 }, available: 1240 });
+    const { user } = setup(fakeTransfers({ getSummary }));
+    // the transfer is done while the first summary is still on its way
+    await toReview(user);
+    await user.click(screen.getByRole("button", { name: "Confirmar transferencia" }));
+    await verify(user);
+    await screen.findByText("Transferencia realizada");
+
+    await user.click(screen.getByRole("button", { name: "Hacer otra transferencia" }));
+
+    expect(await screen.findByText("Disponible: 1,240.00 USD")).toBeTruthy();
+    expect(getSummary).toHaveBeenCalledTimes(2);
+    // the late answer of the first read carries the balance from before the transfer
+    answerFirst({ currency: { code: "USD", decimalPlaces: 2 }, available: 1250.5 });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByText("Disponible: 1,250.50 USD")).toBeNull();
+    expect(screen.getByText("Disponible: 1,240.00 USD")).toBeTruthy();
+  });
+
   it("does not need a reference to be a done transfer", async () => {
     const { user } = setup(
       fakeTransfers({
