@@ -235,8 +235,10 @@ export function CustomerTransfer({
   const currency = summary?.currency?.code;
 
   // What the source account says about itself (currency, available balance): advice only.
+  // `known` is a dependency so that clearing the summaries (after a transfer) reads them again.
+  const known = Boolean(summary);
   useEffect(() => {
-    if (!from || summaries[fromKey]) return;
+    if (!from || known) return;
     const controller = new AbortController();
     api
       .getSummary(from, controller.signal)
@@ -249,7 +251,7 @@ export function CustomerTransfer({
       });
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api, from, fromKey]);
+  }, [api, from, fromKey, known]);
 
   // Focus follows the step.
   const firstRender = useRef(true);

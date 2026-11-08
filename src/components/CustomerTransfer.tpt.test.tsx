@@ -142,6 +142,20 @@ describe("CustomerTransfer TPT", () => {
     expect(document.body.textContent).not.toContain("SYNTHETIC-GRANT");
     expect(JSON.stringify(localStorage)).not.toContain("SYNTHETIC-GRANT");
   });
+  it("verifies the source currency again for another transfer, so it can be reviewed", async () => {
+    const { user, transfers } = setup();
+    await details(user);
+    await otp(user);
+    await screen.findByText("Transferencia realizada");
+
+    await user.click(screen.getByRole("button", { name: "Hacer otra transferencia" }));
+
+    expect(await screen.findByLabelText("Importe en MXN")).toBeTruthy();
+    expect(transfers.getSummary).toHaveBeenCalledTimes(2);
+    expect(
+      (screen.getByRole("button", { name: "Revisar transferencia" }) as HTMLButtonElement).disabled,
+    ).toBe(false);
+  });
   it("follows the unprotected backend policy without a challenge", async () => {
     const { user, stepUp, transfers } = setup({
       stepUp: {
