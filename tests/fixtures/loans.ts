@@ -20,7 +20,7 @@ export const product = (id = productId) => ({
     amortizationType: false,
     interestType: false,
     interestCalculationPeriodType: false,
-    repaymentFrequencyType: false,
+    repaymentEvery: false,
   },
 });
 export const template = (id = productId) => ({

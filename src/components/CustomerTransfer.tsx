@@ -146,6 +146,8 @@ export function CustomerTransfer({
   const [amountText, setAmountText] = useState("");
   const [description, setDescription] = useState("");
   const [summaries, setSummaries] = useState<Record<string, AccountSummary>>({});
+  // Bumped after a transfer: the balance changed, so the summary is read again.
+  const [summaryRead, setSummaryRead] = useState(0);
   const [problem, setProblem] = useState<{ field?: Field; text: string } | null>(null);
   const [failure, setFailure] = useState<TransferErrorCode | null>(null);
   const [receipt, setReceipt] = useState<TransferReceipt | null>(null);
@@ -235,8 +237,11 @@ export function CustomerTransfer({
   const currency = summary?.currency?.code;
 
   // What the source account says about itself (currency, available balance): advice only.
+  // Reading again after a transfer aborts a request still in flight, so an answer from before the
+  // transfer can't show the old balance.
+  const known = Boolean(summary);
   useEffect(() => {
-    if (!from || summaries[fromKey]) return;
+    if (!from || known) return;
     const controller = new AbortController();
     api
       .getSummary(from, controller.signal)
@@ -249,7 +254,7 @@ export function CustomerTransfer({
       });
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [api, from, fromKey]);
+  }, [api, from, fromKey, known, summaryRead]);
 
   // Focus follows the step.
   const firstRender = useRef(true);
@@ -401,6 +406,7 @@ export function CustomerTransfer({
     setFailure(null);
     // The balance changed: read it again.
     setSummaries({});
+    setSummaryRead((n) => n + 1);
     setPhase("form");
   }
 
