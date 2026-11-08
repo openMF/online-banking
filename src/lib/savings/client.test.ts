@@ -280,6 +280,30 @@ describe("authenticated savings workflow", () => {
   });
 });
 
+it("sends the date of a specified-due-date charge as dueDate, the parameter Fineract reads", async () => {
+  const { client, request } = await ready();
+  const chargedTemplate = {
+    ...template(true),
+    charges: [
+      {
+        chargeId: 9,
+        name: "Synthetic opening fee",
+        amountOrPercentage: 10,
+        chargeTimeType: { id: 2 },
+        chargeCalculationType: { id: 1 },
+        dueDate: [2026, 12, 1],
+      },
+    ],
+  };
+  request.mockResolvedValueOnce({ status: 200, ok: true, data: chargedTemplate });
+  await client.loadTemplate(clientId, productId);
+  request.mockResolvedValueOnce({ status: 200, ok: true, data: chargedTemplate });
+  await client.submit(clientId, productId, "2026-10-27");
+  const body = request.mock.calls.find(([, options]) => options.method === "POST")?.[1].body;
+  expect(body).toMatchObject({
+    charges: [{ chargeId: 9, amount: 10, dueDate: "2026-12-01" }],
+  });
+});
 it("preserves product charges in the POST without sending display metadata", async () => {
   const { client, request } = await ready();
   const chargedTemplate = {
