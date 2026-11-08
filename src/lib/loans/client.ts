@@ -232,13 +232,13 @@ export function parseTemplate(
       required: true,
       value: String(v.id),
       options,
+      // Fineract has no override of its own for the repayment frequency type: the
+      // repaymentEvery override covers both "every" and its unit.
       fixed:
-        [
-          "amortizationType",
-          "interestType",
-          "interestCalculationPeriodType",
-          "repaymentFrequencyType",
-        ].includes(key) && overrides[key] !== true,
+        key === "repaymentFrequencyType"
+          ? overrides.repaymentEvery !== true
+          : ["amortizationType", "interestType", "interestCalculationPeriodType"].includes(key) &&
+            overrides[key] !== true,
     });
   }
   if (!nonempty(data.transactionProcessingStrategyCode)) return malformed();
