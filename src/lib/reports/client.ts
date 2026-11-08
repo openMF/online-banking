@@ -1,4 +1,4 @@
-import type { CustomerSession } from "../authentication/client";
+import { AuthenticationError, type CustomerSession } from "../authentication/client";
 
 export type PersonalReport = string;
 
@@ -39,7 +39,8 @@ function parseArray<T>(data: unknown, label: string): T[] {
 }
 
 export function createReportsClient(session: CustomerSession) {
-  const base = "/runreports";
+  // Relative to /v1/self, like every other resource: buildSelfServiceUrl refuses a leading "/".
+  const base = "runreports";
 
   async function get(
     resource: string,
@@ -63,6 +64,10 @@ export function createReportsClient(session: CustomerSession) {
       return response.data;
     } catch (error) {
       if (error instanceof ReportsError) throw error;
+      // The session ended (it expired, or an earlier 401 discarded the credential).
+      if (error instanceof AuthenticationError && error.code === "expired") {
+        throw new ReportsError("Your session has ended.", 401);
+      }
       throw new ReportsError(
         error instanceof Error ? error.message : "Unable to load reports.",
       );
