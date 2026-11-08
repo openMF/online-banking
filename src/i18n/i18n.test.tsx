@@ -26,6 +26,23 @@ describe("catalogs", () => {
       expect(placeholders(value), key).toEqual(placeholders(key));
   });
 
+  it("have an entry for every literal the components translate", () => {
+    const sources = import.meta.glob<string>(["../**/*.{ts,tsx}", "!../**/*.test.{ts,tsx}"], {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    });
+    const normalize = (value: string) => value.replace(/\s+/g, " ").trim();
+    const known = new Set(Object.keys(es).map(normalize));
+    const absent: string[] = [];
+    for (const [file, source] of Object.entries(sources))
+      for (const [, text] of source.matchAll(
+        /\b(?:t|translate|translateWith)\(\s*"((?:\\.|[^"\\])*)"/g,
+      ))
+        if (!known.has(normalize(JSON.parse(`"${text}"`)))) absent.push(`${file}: ${text}`);
+    expect(absent).toEqual([]);
+  });
+
   it("have no empty translations", () => {
     for (const [key, value] of Object.entries(en)) expect(value.trim(), key).not.toBe("");
   });
