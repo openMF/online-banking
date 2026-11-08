@@ -1044,6 +1044,22 @@
 "Consultando productos y condiciones...": "Loading available products and conditions.",
 "Mínimo": "Minimum",
 "Máximo": "Maximum",
-"Precio unitario": "Unit price"
+"Precio unitario": "Unit price",
+    "Participar en encuestas": "Take part in surveys",
+    "Informes personales": "Personal reports",
+    "Encuestas": "Surveys",
+    "Participa en las encuestas disponibles y comparte tus respuestas con tu institución.": "Take part in the available surveys and share your answers with your institution.",
+    "Consultando encuestas...": "Loading surveys...",
+    "No hay clientes autorizados para participar en encuestas.": "There are no authorized clients to take part in surveys.",
+    "¡Respuestas enviadas correctamente!": "Answers sent successfully!",
+    "Tu participación ha sido registrada por tu institución.": "Your institution has recorded your participation.",
+    "Tus respuestas": "Your answers",
+    "Volver a las encuestas": "Back to surveys",
+    "No hay encuestas disponibles en este momento.": "There are no surveys available right now.",
+    "No tienes permiso para acceder a esta encuesta.": "You don't have permission to access this survey.",
+    "La encuesta o las respuestas han cambiado. Actualiza la lista e inténtalo de nuevo.": "The survey or its answers have changed. Refresh the list and try again.",
+    "No pudimos confirmar el envío. No vuelvas a enviarlo; contacta con tu institución.": "We couldn't confirm the submission. Don't send it again; contact your institution.",
+    "No se pudieron consultar las encuestas. Inténtalo más tarde.": "Surveys could not be loaded. Try again later.",
+    "Responde todas las preguntas antes de enviar.": "Answer every question before sending."
   }
 }
