@@ -359,6 +359,31 @@ it.each(["expiry", "logout", "401"])(
   },
 );
 
+it("answers a download refused with 401 as a 401, and ends the session", async () => {
+  const { client, transport } = fake();
+  const session = await client.login("user", "pass");
+  // Like fetch, the body can no longer be read once the request's signal is aborted.
+  transport.mockImplementation(async (_url, init) => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("{}"));
+        init?.signal?.addEventListener("abort", () =>
+          controller.error(new DOMException("Aborted", "AbortError")),
+        );
+        setTimeout(() => controller.close(), 0);
+      },
+    });
+    return new Response(body, { status: 401 });
+  });
+
+  await expect(
+    session.download!("runreports/ClientSummary", { method: "GET" }),
+  ).resolves.toMatchObject({ status: 401, ok: false });
+  await expect(session.request("runreports", { method: "GET" })).rejects.toMatchObject({
+    code: "expired",
+  });
+});
+
 it("bounds protected requests without retrying a timed-out POST", async () => {
   vi.useFakeTimers();
   const { transport, configuration } = fake();

@@ -27,7 +27,7 @@ export interface Product {
 export interface Charge {
   chargeId: number;
   amount: number;
-  dueAsOfDate?: string;
+  dueDate?: string;
   feeOnMonthDay?: string;
   feeInterval?: number;
 }
@@ -85,7 +85,7 @@ function chargesFrom(value: unknown): Charge[] {
     if (!record(item) || !positiveId(item.chargeId) || !amount(item.amountOrPercentage))
       throw new SavingsError("malformed");
     const charge: Charge = { chargeId: item.chargeId, amount: item.amountOrPercentage };
-    if (item.dueDate != null) charge.dueAsOfDate = apiDate(item.dueDate);
+    if (item.dueDate != null) charge.dueDate = apiDate(item.dueDate);
     if (item.feeOnMonthDay != null) {
       if (!Array.isArray(item.feeOnMonthDay) || item.feeOnMonthDay.length !== 2)
         throw new SavingsError("malformed");
@@ -104,7 +104,7 @@ function chargesFrom(value: unknown): Charge[] {
     if (![2, 3, 4, 5, 6, 7, 10, 16].includes(item.chargeTimeType.id))
       throw new SavingsError("unsupported");
     if (
-      (item.chargeTimeType.id === 2 && !charge.dueAsOfDate) ||
+      (item.chargeTimeType.id === 2 && !charge.dueDate) ||
       (item.chargeTimeType.id === 6 && !charge.feeOnMonthDay) ||
       (item.chargeTimeType.id === 7 && (!charge.feeOnMonthDay || !charge.feeInterval))
     )

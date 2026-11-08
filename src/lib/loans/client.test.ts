@@ -208,6 +208,44 @@ it("validates bounds, precision, dates, options and fixed product attributes", a
     );
   expect(writes(s)).toHaveLength(0);
 });
+it("lets the repayment frequency type change with the repaymentEvery override", () => {
+  const twoUnits = {
+    ...template(),
+    repaymentFrequencyTypeOptions: [
+      { id: 2, value: "Months" },
+      { id: 1, value: "Weeks" },
+    ],
+  };
+  const field = (t: ReturnType<typeof parseTemplate>, key: string) =>
+    t.fields.find((f) => f.key === key)!;
+
+  const locked = parseTemplate(twoUnits, product(), clientId, productId);
+  expect(field(locked, "repaymentEvery").fixed).toBe(true);
+  expect(field(locked, "repaymentFrequencyType").fixed).toBe(true);
+  expect(() =>
+    payload(locked, {
+      ...valuesFor(locked),
+      repaymentFrequencyType: "1",
+      loanTermFrequencyType: "1",
+    }),
+  ).toThrow(expect.objectContaining({ code: "invalid" }));
+
+  // Fineract's allowAttributeOverrides has no repaymentFrequencyType key
+  const open = {
+    ...product(),
+    allowAttributeOverrides: { ...product().allowAttributeOverrides, repaymentEvery: true },
+  };
+  const editable = parseTemplate(twoUnits, open, clientId, productId);
+  expect(field(editable, "repaymentEvery").fixed).toBe(false);
+  expect(field(editable, "repaymentFrequencyType").fixed).toBe(false);
+  expect(
+    payload(editable, {
+      ...valuesFor(editable),
+      repaymentFrequencyType: "1",
+      loanTermFrequencyType: "1",
+    }).repaymentFrequencyType,
+  ).toBe(1);
+});
 it("carries configured product charges without inventing optional charges", () => {
   const t = parseTemplate(
     {

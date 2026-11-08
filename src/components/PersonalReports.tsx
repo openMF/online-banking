@@ -89,6 +89,7 @@ export function PersonalReports({ session, onExpired, onClose }: Props) {
       setValues(initial);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load parameters.");
+      if ((err as { status?: number })?.status === 401) onExpired();
     } finally {
       setLoading(false);
     }
