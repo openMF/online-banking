@@ -414,12 +414,14 @@ export function createAuthenticationClient({
                 signal,
               });
 
+              // Read the body before a 401 ends the session: ending it aborts this request's
+              // signal, and the body could no longer be read.
+              const blob = await response.blob();
+
               if (response.status === 401) {
                 key = null;
                 lifetime.abort();
               }
-
-              const blob = await response.blob();
 
               if (now() >= expiresAt) {
                 key = null;
