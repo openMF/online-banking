@@ -345,6 +345,7 @@ export function valuesFor(template: Template, loan?: Loan): Values {
   }
   return result;
 }
+/** Request body for a new application or, when editing, a correction. Throws LoanError("invalid") with the rejected fields. */
 export function payload(
   template: Template,
   values: Values,
