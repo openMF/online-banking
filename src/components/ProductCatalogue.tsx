@@ -36,6 +36,8 @@ type ShareProduct = {
   terms?: ShareTerms;
 };
 
+const periods = ["Días", "Semanas", "Meses", "Años"];
+
 function isExpired(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -45,6 +47,7 @@ function isExpired(error: unknown): boolean {
   );
 }
 
+/** The savings, loan and share products open to the login's clients, with each product's terms. Read only. */
 export function ProductCatalogue({
   session,
   onClose,
@@ -482,8 +485,7 @@ export function ProductCatalogue({
                     <>
                       <dt>{t("Periodo de bloqueo")}</dt>
                       <dd>
-                        {product.terms.lockin.count} (
-                        {product.terms.lockin.unit})
+                        {product.terms.lockin.count} {t(periods[product.terms.lockin.unit])}
                       </dd>
                     </>
                   )}
