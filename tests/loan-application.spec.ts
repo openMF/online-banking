@@ -171,13 +171,7 @@ for (const en of [false, true])
       .fill("1500");
     await send(page, en, true);
     await expect(page.getByText("1500 MXN", { exact: true })).toBeVisible();
-    const {
-      clientId: c,
-      productId: p,
-      submittedOnDate: d,
-      loanType: l,
-      ...updateBody
-    } = createBody;
+    const { clientId: c, productId: p, submittedOnDate: d, ...updateBody } = createBody;
     expect(mutations[1]).toEqual({
       path: "loans/473",
       method: "PUT",
