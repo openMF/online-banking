@@ -47,6 +47,7 @@ function isExpired(error: unknown): boolean {
   );
 }
 
+/** The savings, loan and share products open to the login's clients, with each product's terms. Read only. */
 export function ProductCatalogue({
   session,
   onClose,

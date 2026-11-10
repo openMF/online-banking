@@ -8,6 +8,7 @@ import { clientId, login, template } from "../../tests/fixtures/share-applicatio
 beforeEach(() => window.localStorage.clear());
 afterEach(cleanup);
 const ok = (data: unknown): CustomerResponse => ({ ok: true, status: 200, data });
+/** Renders the catalogue for a login with one client and no savings or loan products. */
 function setup(shareTemplate: (selected: boolean) => unknown = template) {
   const request = vi.fn<CustomerSession["request"]>().mockImplementation(async (path, opts) => {
     if (path === "loanproducts") return ok([]);
@@ -28,6 +29,7 @@ function setup(shareTemplate: (selected: boolean) => unknown = template) {
     </I18nProvider>,
   );
 }
+/** The text shown next to the lock-in period label. */
 async function lockin() {
   const label = await screen.findByText("Periodo de bloqueo");
   return label.nextElementSibling?.textContent;
