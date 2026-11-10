@@ -36,6 +36,8 @@ type ShareProduct = {
   terms?: ShareTerms;
 };
 
+const periods = ["Días", "Semanas", "Meses", "Años"];
+
 function isExpired(error: unknown): boolean {
   return (
     typeof error === "object" &&
@@ -482,8 +484,7 @@ export function ProductCatalogue({
                     <>
                       <dt>{t("Periodo de bloqueo")}</dt>
                       <dd>
-                        {product.terms.lockin.count} (
-                        {product.terms.lockin.unit})
+                        {product.terms.lockin.count} {t(periods[product.terms.lockin.unit])}
                       </dd>
                     </>
                   )}
