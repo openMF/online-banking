@@ -922,6 +922,107 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+/* A plain savings account opens its details: the whole row is the target (US-E04-02). */
+.account-item {
+  position: relative;
+}
+.account-item-open {
+  min-width: 0;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.account-item-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.account-item:has(.account-item-open):hover {
+  background: #faf7f3;
+}
+/* The details of one savings account and its movements (US-E04-02) */
+.savings-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  min-width: 0;
+}
+.savings-details h2,
+.savings-details h3,
+.savings-details .loan-details {
+  margin: 0;
+}
+.savings-details h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+.savings-details h3 {
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.savings-details .loan-details {
+  font-size: 14px;
+}
+.savings-details dt {
+  color: var(--muted);
+}
+.savings-details-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.savings-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.movement-item {
+  padding: 0;
+}
+.movement-toggle {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.movement-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.movement-type,
+.movement-amount {
+  font-weight: 600;
+}
+.movement-amount {
+  font-variant-numeric: tabular-nums;
+}
+.movement-meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+.movement-detail:not([hidden]) {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 14px;
+}
 /* Personal Reports */
 .personal-reports {
   width: 100%;
