@@ -73,9 +73,6 @@ test("real login uses runtime endpoint and tenant, isolates demo data and clears
   });
   expect(requests[0].headers.authorization).toBeUndefined();
   await expect(page.getByTestId("customer-username")).toHaveText("synthetic-customer");
-  await expect(
-    page.getByText("Los movimientos de tus cuentas aún no están integrados.", { exact: true }),
-  ).toBeVisible();
   await expect(page.locator("body")).not.toContainText(
     /Mariana|344988355|Mifos#26|Saldo disponible/,
   );

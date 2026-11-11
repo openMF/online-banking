@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { accounts } from "./fixtures/accounts";
+import { details, movements } from "./fixtures/savingsDetails";
 import { clientId, login, productId, template } from "./fixtures/savings";
 
 // MX-492 (US-E12-06): the whole app, screen by screen, at three widths. It FAILS on:
@@ -547,6 +548,8 @@ async function customerBackend(page: Page) {
       });
     if (path.startsWith(`clients/${clientId}/accounts`))
       return fulfill(route, accounts());
+    if (path === "savingsaccounts/42") return fulfill(route, details());
+    if (path === "savingsaccounts/42/transactions/103") return fulfill(route, movements()[0]);
     return fulfill(route, {});
   });
 }
@@ -587,6 +590,22 @@ const customerScreens: Screen[] = [
       await p.getByRole("button", { name: "Solicitar una cuenta de ahorro", exact: true }).click();
       await p.getByLabel("Producto de ahorro", { exact: true }).selectOption(String(productId));
       await p.getByLabel("Fecha de solicitud", { exact: true }).waitFor();
+    },
+    keyboard: true,
+  },
+  {
+    name: "customer: savings account details",
+    open: async (p) => {
+      await customerSignIn(p);
+      await p
+        .getByRole("button", {
+          name: "Ver detalles de Synthetic Wallet, cuenta 000000042",
+          exact: true,
+        })
+        .click();
+      // With a movement open, so its details are checked as well.
+      await p.getByRole("button", { name: /^Retiro/ }).click();
+      await p.getByText("SYN-103", { exact: true }).waitFor();
     },
     keyboard: true,
   },

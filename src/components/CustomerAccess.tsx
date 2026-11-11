@@ -9,7 +9,7 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { LoaderCircle, LockKeyhole } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { Brand } from "./ui";
 import { LocaleToggle, translateWith, useI18n } from "../i18n";
 import { getSelfServiceConfig } from "../lib/self-service";
@@ -27,7 +27,9 @@ import { createGuarantorClient } from "../lib/loans/guarantors";
 import { createLoanChargesClient } from "../lib/loans/charges";
 import { createLoanClient } from "../lib/loans/client";
 import { SavingsAccounts } from "./SavingsAccounts";
-import { createAccountsClient } from "../lib/accounts/client";
+import { SavingsAccountDetails } from "./SavingsAccountDetails";
+import { createAccountsClient, type SavingsSummary } from "../lib/accounts/client";
+import { createSavingsDetailsClient } from "../lib/accounts/details";
 import { SavingsApplication } from "./SavingsApplication";
 import { createSavingsClient } from "../lib/savings/client";
 import { SurveyParticipation } from "./SurveyParticipation";
@@ -276,6 +278,9 @@ export function CustomerHome({
   const loanEntry = useRef<HTMLButtonElement>(null);
 
   const [accountsClient] = useState(() => createAccountsClient(session));
+  const [detailsClient] = useState(() => createSavingsDetailsClient(session));
+  const [savingsAccount, setSavingsAccount] = useState<SavingsSummary>();
+  const [savingsReturn, setSavingsReturn] = useState<number>();
 
   const [savingsOpen, setSavingsOpen] = useState(false);
   const [savingsClient] = useState(() => createSavingsClient(session));
@@ -420,7 +425,18 @@ export function CustomerHome({
         </dl>
       </div>
 
-      {catalogueOpen ? (
+      {savingsAccount ? (
+        <SavingsAccountDetails
+          key={savingsAccount.id}
+          client={detailsClient}
+          account={savingsAccount}
+          onExpired={handleExpired}
+          onClose={() => {
+            setSavingsReturn(savingsAccount.id);
+            setSavingsAccount(undefined);
+          }}
+        />
+      ) : catalogueOpen ? (
         <ProductCatalogue
           session={session}
           onExpired={handleExpired}
@@ -548,12 +564,10 @@ export function CustomerHome({
               ended.current = true;
               onEnd(true, session.logout());
             }}
+            onOpen={setSavingsAccount}
+            focusAccount={savingsReturn}
+            onFocused={() => setSavingsReturn(undefined)}
           />
-
-          <div className="demo-notice" role="status">
-            <LockKeyhole size={18} aria-hidden="true" />
-            <p>{t("Los movimientos de tus cuentas aún no están integrados.")}</p>
-          </div>
 
           <div className="customer-transfer-actions">
             <button
