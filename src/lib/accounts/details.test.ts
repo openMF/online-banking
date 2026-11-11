@@ -250,26 +250,31 @@ describe("SavingsAccountTransactionData adapter", () => {
 });
 
 describe("authenticated savings details client", () => {
-  it("asks for the account with its movements, and for one movement by its own path", async () => {
+  it("asks for the account with its newest movements, and for one movement by its own path", async () => {
     const { request, client } = setup([9002, 9001]);
     const signal = new AbortController().signal;
-    expect((await client.details(42, signal)).movements).toHaveLength(3);
+    expect((await client.details(42, 21, signal)).movements).toHaveLength(3);
     request.mockResolvedValueOnce({ status: 200, ok: true, data: movements()[0] });
     expect((await client.movement(42, 103, signal)).receiptNumber).toBe("SYN-103");
     expect(request.mock.calls).toEqual([
-      ["savingsaccounts/42", { method: "GET", signal, query: { associations: "transactions" } }],
+      [
+        "savingsaccounts/42",
+        { method: "GET", signal, query: { associations: "transactions", lastTransactions: 21 } },
+      ],
       ["savingsaccounts/42/transactions/103", { method: "GET", signal, query: undefined }],
     ]);
   });
   it("refuses an account of a client this login is not linked to", async () => {
     const { client } = setup([9002]);
-    expect(await failure(client.details(42))).toEqual(malformed);
+    expect(await failure(client.details(42, 21))).toEqual(malformed);
   });
-  it("sends nothing for an identifier that is not one", async () => {
+  it("sends nothing for an identifier or a number of movements that is not one", async () => {
     const { request, client } = setup();
     for (const task of [
-      client.details(0),
-      client.details(Number.NaN),
+      client.details(0, 21),
+      client.details(Number.NaN, 21),
+      client.details(42, 0),
+      client.details(42, 2.5),
       client.movement(42, 0),
       client.movement(-1, 103),
     ])
@@ -292,7 +297,7 @@ describe("authenticated savings details client", () => {
         if (answer instanceof Error) request.mockRejectedValue(answer);
         else request.mockResolvedValue(answer);
         const error = await failure(
-          read === "details" ? client.details(42) : client.movement(42, 103),
+          read === "details" ? client.details(42, 21) : client.movement(42, 103),
         );
         expect(error, `${read} ${code}`).toEqual(new AccountsError(code));
         expect(String((error as Error).message)).not.toContain("SECRET");

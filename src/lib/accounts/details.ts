@@ -42,6 +42,7 @@ const finite = (value: unknown): value is number =>
 // Fineract sends a zero amount as null.
 const amount = (value: unknown): number =>
   value == null ? 0 : finite(value) ? value : malformed();
+/** A Fineract `[y, m, d]` date as `yyyy-MM-dd`, or undefined when there is none. */
 function day(value: unknown): string | undefined {
   if (value == null) return undefined;
   if (!Array.isArray(value) || value.length !== 3 || !value.every(Number.isInteger))
@@ -73,6 +74,7 @@ const movementTypes: Record<number, [code: string, direction: Direction]> = {
   21: ["release", "in"],
 };
 
+/** One movement of `accountId`, as both reads send it. Refuses anything it cannot verify. */
 function parseMovement(data: unknown, accountId: number): Movement & { reversed: boolean } {
   if (!record(data) || !positiveId(data.id)) return malformed();
   if (data.accountId != null && data.accountId !== accountId) return malformed();
@@ -170,17 +172,22 @@ export function parseMovementDetail(
 /** Read only. One savings account of a client linked to this login, and its movements. */
 export function createSavingsDetailsClient(session: CustomerSession) {
   return {
-    /** Every movement Fineract returns: the plugin leaves out reversed ones by default. */
-    async details(accountId: number, signal?: AbortSignal): Promise<SavingsDetails> {
-      if (!positiveId(accountId)) throw new AccountsError("denied");
+    /**
+     * The account and its newest `limit` movements (the plugin's `lastTransactions`). It has no
+     * offset: to list more, ask again with a larger limit.
+     */
+    async details(accountId: number, limit: number, signal?: AbortSignal): Promise<SavingsDetails> {
+      if (!positiveId(accountId) || !positiveId(limit)) throw new AccountsError("denied");
       return parseSavingsDetails(
         await readAccounts(session, `savingsaccounts/${accountId}`, signal, {
           associations: "transactions",
+          lastTransactions: limit,
         }),
         accountId,
         session.identity.clients,
       );
     },
+    /** How the money of one movement moved: payment method, receipt and note. */
     async movement(
       accountId: number,
       movementId: number,

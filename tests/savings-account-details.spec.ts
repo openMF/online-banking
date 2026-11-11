@@ -40,7 +40,9 @@ async function configure(page: Page, options: Partial<State> = {}): Promise<Stat
         return fulfill(route, { developerMessage: "SECRET_INTERNAL_STACK" }, state.status);
       const id = Number(read[1]),
         rows = state.transactions ?? movements(id);
-      if (!read[2]) return fulfill(route, details(id, "active", { transactions: rows }));
+      // Like the plugin: only the newest `lastTransactions` movements.
+      const newest = rows.slice(0, Number(url.searchParams.get("lastTransactions")) || undefined);
+      if (!read[2]) return fulfill(route, details(id, "active", { transactions: newest }));
       const row = rows.find((candidate) => (candidate as { id: number }).id === Number(read[2]));
       return fulfill(route, row ?? movement(Number(read[2]), "deposit", {}, id));
     }
@@ -96,6 +98,7 @@ test("opens an account from its row with the session's credential, and lists its
   for (const read of state.reads) {
     expect(read.url.pathname.endsWith("/self/savingsaccounts/42")).toBe(true);
     expect(read.url.searchParams.get("associations")).toBe("transactions");
+    expect(read.url.searchParams.get("lastTransactions")).toBe("21");
     expect(read.headers.authorization).toBe(`Basic ${login.base64EncodedAuthenticationKey}`);
     expect(read.headers["fineract-platform-tenantid"]).toBe("mx467-synthetic");
   }
@@ -138,7 +141,7 @@ test("goes back to the list with fresh balances, and to the account it came from
   expect(state.listReads).toBeGreaterThan(before);
 });
 
-test("lists twenty movements at a time, and says so when there are none", async ({ page }) => {
+test("reads twenty more movements at a time, and says so when there are none", async ({ page }) => {
   const state = await configure(page, { transactions: manyMovements(45) });
   await signIn(page);
   await open(page);
@@ -151,10 +154,18 @@ test("lists twenty movements at a time, and says so when there are none", async 
   await expect(screen(page).getByRole("button", { name: "Mostrar más movimientos" })).toHaveCount(
     0,
   );
+  // One more than is listed each time, which tells whether there are more.
+  const limits = state.reads
+    .filter((read) => !read.url.pathname.includes("/transactions/"))
+    .map((read) => read.url.searchParams.get("lastTransactions"));
+  expect([...new Set(limits)]).toEqual(["21", "41", "61"]);
   state.transactions = [];
   await screen(page).getByRole("button", { name: "Volver a mi sesión", exact: true }).click();
   await open(page);
-  await expect(screen(page)).toContainText("Aún no hay movimientos en esta cuenta.");
+  await expect(screen(page)).toContainText("No hay movimientos para mostrar.");
+  await expect(screen(page)).toContainText(
+    "Algunos movimientos, como los revertidos, pueden no mostrarse aquí.",
+  );
   await expect(rows(page)).toHaveCount(0);
 });
 
@@ -215,6 +226,9 @@ test("English renders on desktop and mobile without overflow, accessibility or r
     "Dates",
     "Transactions",
   ]);
+  await expect(screen(page)).toContainText(
+    "Some transactions, such as reversed ones, may not be shown here.",
+  );
   for (const [name, viewport] of [
     ["desktop", { width: 1440, height: 1000 }],
     ["mobile", { width: 390, height: 844 }],

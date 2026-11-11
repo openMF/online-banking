@@ -416,7 +416,10 @@ it("opens a savings account from its row, and comes back to that row with fresh 
   await screen.findByTestId("movement-103");
   expect(vi.mocked(verified.request)).toHaveBeenCalledWith(
     "savingsaccounts/42",
-    expect.objectContaining({ method: "GET", query: { associations: "transactions" } }),
+    expect.objectContaining({
+      method: "GET",
+      query: { associations: "transactions", lastTransactions: 21 },
+    }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Volver a mi sesión" }));
   expect(screen.queryByTestId("savings-account-details")).toBeNull();

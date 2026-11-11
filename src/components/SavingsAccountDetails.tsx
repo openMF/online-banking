@@ -47,6 +47,7 @@ const money = (value: number, currency: Currency) =>
 const safe = (failure: unknown) =>
   failure instanceof AccountsError ? failure : new AccountsError("unavailable");
 
+/** How a movement reads in the chosen language: its type, signed amount and day. */
 function useLabels() {
   const { t, locale } = useI18n();
   return {
@@ -83,42 +84,57 @@ export function SavingsAccountDetails({
   onClose: () => void;
 }) {
   const { t, locale, day } = useLabels();
-  const [details, setDetails] = useState<SavingsDetails>();
+  /** How many movements the customer asked to see. */
+  const [wanted, setWanted] = useState(page);
+  const [loaded, setLoaded] = useState<{
+    accountId: number;
+    listed: number;
+    details: SavingsDetails;
+  }>();
   const [error, setError] = useState<AccountsError>();
   const [attempt, setAttempt] = useState(0);
-  const [visible, setVisible] = useState(page);
   const heading = useRef<HTMLHeadingElement>(null);
   const toggles = useRef(new Map<number, HTMLButtonElement>());
   const firstNew = useRef<number | undefined>(undefined);
   const expiredRef = useRef(onExpired);
   expiredRef.current = onExpired;
+  // Never the details of another account. While more movements are read, the listed ones stay.
+  const current = loaded?.accountId === account.id ? loaded : undefined;
+  const details = current?.details;
+  const listed = current?.listed ?? 0;
   const loading = !details && !error;
+  const loadingMore = !!details && listed < wanted;
   useEffect(() => {
     heading.current?.focus();
   }, []);
   useEffect(() => {
-    setDetails(undefined);
     setError(undefined);
     const controller = new AbortController();
-    void client.details(account.id, controller.signal).then(
+    // One more than is listed, to know whether there are more. The plugin has no offset, so
+    // "show more" reads the newest ones again.
+    void client.details(account.id, wanted + 1, controller.signal).then(
       (next) => {
-        if (!controller.signal.aborted) setDetails(next);
+        if (!controller.signal.aborted)
+          setLoaded({ accountId: account.id, listed: wanted, details: next });
       },
       (failure) => {
         if (controller.signal.aborted) return;
         const known = safe(failure);
         if (known.code === "expired") expiredRef.current();
-        else setError(known);
+        else {
+          setLoaded(undefined);
+          setError(known);
+        }
       },
     );
     return () => controller.abort();
-  }, [client, account.id, attempt]);
+  }, [client, account.id, attempt, wanted]);
   useEffect(() => {
     // After "show more", the first movement that was not listed before.
     if (firstNew.current == null) return;
     toggles.current.get(firstNew.current)?.focus();
     firstNew.current = undefined;
-  }, [visible]);
+  }, [listed]);
   const shown = details ?? account;
   const currency = shown.currency;
   const dates = details
@@ -133,7 +149,7 @@ export function SavingsAccountDetails({
     <section
       className="savings-details"
       aria-labelledby="savings-details-heading"
-      aria-busy={loading}
+      aria-busy={loading || loadingMore}
       data-testid="savings-account-details"
     >
       <div className="account-item-heading">
@@ -150,7 +166,11 @@ export function SavingsAccountDetails({
         {translateWith("Cuenta {number}", { number: shown.accountNo })}
       </p>
       <p className="savings-accounts-status" role="status">
-        {loading ? t("Consultando tu cuenta…") : ""}
+        {loading
+          ? t("Consultando tu cuenta…")
+          : loadingMore
+            ? t("Consultando más movimientos…")
+            : ""}
       </p>
       {error && (
         <div className="savings-accounts-error">
@@ -220,11 +240,15 @@ export function SavingsAccountDetails({
             </>
           )}
           <h3>{t("Movimientos")}</h3>
+          {/* The plugin leaves some out: reversed ones, and deposits or withdrawals without payment details. */}
+          <p className="savings-details-note">
+            {t("Algunos movimientos, como los revertidos, pueden no mostrarse aquí.")}
+          </p>
           {details.movements.length === 0 ? (
-            <p className="savings-accounts-empty">{t("Aún no hay movimientos en esta cuenta.")}</p>
+            <p className="savings-accounts-empty">{t("No hay movimientos para mostrar.")}</p>
           ) : (
             <ol className="account-list">
-              {details.movements.slice(0, visible).map((movement) => (
+              {details.movements.slice(0, listed).map((movement) => (
                 <MovementRow
                   key={movement.id}
                   client={client}
@@ -240,13 +264,13 @@ export function SavingsAccountDetails({
               ))}
             </ol>
           )}
-          {details.movements.length > visible && (
+          {details.movements.length > listed && (
             <button
               type="button"
               className="button button-outline button-small"
               onClick={() => {
-                firstNew.current = details.movements[visible].id;
-                setVisible((current) => current + page);
+                firstNew.current = details.movements[listed].id;
+                setWanted(listed + page);
               }}
             >
               {t("Mostrar más movimientos")}

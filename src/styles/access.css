@@ -974,6 +974,11 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
 .savings-details dt {
   color: var(--muted);
 }
+.savings-details-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
 .savings-details dd {
   margin: 0;
   overflow-wrap: anywhere;

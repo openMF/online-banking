@@ -53,6 +53,16 @@ const pairs = (list: Element) =>
   ]);
 const lists = () => [...section().querySelectorAll(":scope > dl")].map(pairs);
 const rows = () => within(section()).queryAllByRole("listitem");
+// Plain DOM queries: role queries over many movements are slow enough in jsdom to time out.
+const listed = () => section().querySelectorAll("li").length;
+const more = () =>
+  [...section().querySelectorAll("button")].find(
+    (button) => button.textContent === "Mostrar más movimientos",
+  );
+/** A history of 45 movements, read the way the plugin answers `lastTransactions`. */
+const history = manyMovements(45);
+const newest = async (_account: number, limit: number) =>
+  read(details(42, "active", { transactions: history.slice(0, limit) }));
 const toggle = (id: number) =>
   within(screen.getByTestId(`movement-${id}`)).getAllByRole("button")[0];
 
@@ -64,7 +74,7 @@ it("names the account at once, then shows its balance, interest, dates and movem
   expect(document.activeElement).toBe(heading);
   expect(section().getAttribute("aria-busy")).toBe("true");
   expect(within(section()).getByRole("status").textContent).toBe("Consultando tu cuenta…");
-  expect(client.details).toHaveBeenCalledWith(42, expect.any(AbortSignal));
+  expect(client.details).toHaveBeenCalledWith(42, 21, expect.any(AbortSignal));
   await act(async () => answer(read()));
   expect(section().getAttribute("aria-busy")).toBe("false");
   expect(within(section()).getByRole("status").textContent).toBe("");
@@ -92,6 +102,10 @@ it("names the account at once, then shows its balance, interest, dates and movem
     "Interés acreditado+0.50 MXN31 oct 2026 · Saldo 1,500.50 MXN",
     "Depósito+1,500.00 MXN15 oct 2026 · Saldo 1,500.00 MXN",
   ]);
+  // The plugin leaves some movements out, so the list says it may not be complete.
+  expect(section().querySelector(".savings-details-note")?.textContent).toBe(
+    "Algunos movimientos, como los revertidos, pueden no mostrarse aquí.",
+  );
   expect(within(section()).queryByRole("alert")).toBeNull();
   expect(client.movement).not.toHaveBeenCalled();
 });
@@ -119,7 +133,9 @@ it("shows an application with its dates, but no balance, earned interest or move
     readMovement,
     parseSavingsAccount(summary(42, "pending")),
   );
-  await screen.findByText("Aún no hay movimientos en esta cuenta.");
+  await screen.findByText("No hay movimientos para mostrar.");
+  // An empty list is not proof that nothing happened: the note stays.
+  expect(section().querySelector(".savings-details-note")).not.toBeNull();
   expect(section().querySelector(".account-status")?.textContent).toBe("Pendiente de aprobación");
   expect(lists()).toEqual([
     [["Tasa de interés anual", "4.5%"]],
@@ -224,17 +240,52 @@ it("explains a movement it could not read, tries again, and never retries a refu
   expect(within(refused).getAllByRole("button")).toHaveLength(1);
 });
 
-it("lists twenty movements at a time and moves to the first new one", async () => {
-  setup(async () => read(details(42, "active", { transactions: manyMovements(45) })));
+it("reads twenty more movements at a time, keeps the listed ones meanwhile, and moves to the first new one", async () => {
+  let release: (() => void) | undefined;
+  let calls = 0;
+  const { client } = setup((account, limit) => {
+    calls += 1;
+    if (calls === 1) return newest(account, limit);
+    // Every later read waits for the test.
+    return new Promise((resolve) => (release = () => resolve(newest(account, limit))));
+  });
   await screen.findByTestId("movement-1045");
-  expect(rows()).toHaveLength(20);
-  fireEvent.click(screen.getByRole("button", { name: "Mostrar más movimientos" }));
-  expect(rows()).toHaveLength(40);
-  expect(document.activeElement).toBe(toggle(1025));
-  fireEvent.click(screen.getByRole("button", { name: "Mostrar más movimientos" }));
-  expect(rows()).toHaveLength(45);
-  expect(document.activeElement).toBe(toggle(1005));
-  expect(screen.queryByRole("button", { name: "Mostrar más movimientos" })).toBeNull();
+  expect(listed()).toBe(20);
+  const button = more()!;
+  button.focus();
+  fireEvent.click(button);
+  expect(client.details).toHaveBeenLastCalledWith(42, 41, expect.any(AbortSignal));
+  expect(listed()).toBe(20);
+  expect(section().getAttribute("aria-busy")).toBe("true");
+  expect(within(section()).getByRole("status").textContent).toBe("Consultando más movimientos…");
+  // A second click while it reads asks for nothing more, and the focus stays on the button.
+  fireEvent.click(more()!);
+  expect(client.details).toHaveBeenCalledTimes(2);
+  expect(document.activeElement).toBe(button);
+  release!();
+  await waitFor(() => expect(document.activeElement).toBe(toggle(1025)));
+  expect(listed()).toBe(40);
+  expect(section().getAttribute("aria-busy")).toBe("false");
+  fireEvent.click(more()!);
+  expect(client.details).toHaveBeenLastCalledWith(42, 61, expect.any(AbortSignal));
+  release!();
+  await waitFor(() => expect(document.activeElement).toBe(toggle(1005)));
+  expect(listed()).toBe(45);
+  expect(more()).toBeUndefined();
+});
+
+it("explains a failure while reading more movements, and asks for the same ones again", async () => {
+  const answers: SavingsDetailsClient["details"][] = [newest, fail("unavailable"), newest];
+  const { client } = setup((...args) => answers.shift()!(...args));
+  await screen.findByTestId("movement-1045");
+  fireEvent.click(more()!);
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "No pudimos consultar esta cuenta. Intenta la consulta de nuevo.",
+  );
+  expect(listed()).toBe(0);
+  fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+  await waitFor(() => expect(listed()).toBe(40));
+  expect(client.details.mock.calls.map(([, limit]) => limit)).toEqual([21, 41, 41]);
 });
 
 it("retries a failure it can recover from, and always offers the way back", async () => {
@@ -309,6 +360,9 @@ it("shows every label in English when English is chosen", async () => {
   ]);
   expect(lists()[2][0][1]).toBe("Oct 1, 2026");
   expect(rows()[0].textContent).toBe("Withdrawal−250.00 MXNNov 2, 2026 · Balance 1,250.50 MXN");
+  expect(section().querySelector(".savings-details-note")?.textContent).toBe(
+    "Some transactions, such as reversed ones, may not be shown here.",
+  );
   fireEvent.click(toggle(103));
   await within(rows()[0]).findByText("Payment method");
   expect(screen.getByRole("button", { name: "Back to my session" })).toBeTruthy();
@@ -317,7 +371,7 @@ it("shows every label in English when English is chosen", async () => {
 it("cancels its reads when it closes and ignores late answers", async () => {
   let answer!: (read: SavingsDetails) => void;
   let signal: AbortSignal | undefined;
-  const first = setup((_account, given) => {
+  const first = setup((_account, _limit, given) => {
     signal = given;
     return new Promise((resolve) => (answer = resolve));
   });
@@ -337,6 +391,41 @@ it("cancels its reads when it closes and ignores late answers", async () => {
   expect(signal?.aborted).toBe(true);
   await act(async () => answerMovement(await readMovement(42, 103)));
   expect(second.expired).not.toHaveBeenCalled();
+});
+
+it("shows nothing of the previous account while another one is read", async () => {
+  let answer!: (read: SavingsDetails) => void;
+  const client: SavingsDetailsClient = {
+    details: (id) =>
+      id === 42 ? Promise.resolve(read()) : new Promise((resolve) => (answer = resolve)),
+    movement: readMovement,
+  };
+  const view = (account: number) => (
+    <I18nProvider>
+      <SavingsAccountDetails
+        client={client}
+        account={parseSavingsAccount(summary(account))}
+        onExpired={vi.fn()}
+        onClose={vi.fn()}
+      />
+    </I18nProvider>
+  );
+  const { rerender } = render(view(42));
+  await waitFor(() => expect(rows()).toHaveLength(3));
+  rerender(view(7));
+  expect(lists()).toEqual([]);
+  expect(rows()).toHaveLength(0);
+  expect(within(section()).getByRole("status").textContent).toBe("Consultando tu cuenta…");
+  await act(async () =>
+    answer(
+      parseSavingsDetails(
+        details(7, "active", { summary: { availableBalance: 70, accountBalance: 70 } }),
+        7,
+        [9001],
+      ),
+    ),
+  );
+  expect(lists()[0]).toEqual([["Saldo disponible", "70.00 MXN"]]);
 });
 
 it("never lets a late answer for an earlier account replace the current one", async () => {
