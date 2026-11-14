@@ -11,6 +11,193 @@ A complete Spanish-language React and TypeScript experience inspired by MIFOS's 
 
 The entry point is `src/App.tsx`. The supplied Vite configuration produces a static production build in `dist/`. Deploy the entire directory, including its images and fonts, at the site root.
 
+## Installation Using AI Agent Skills (Docker Compose)
+
+This repository ships an **agent skill** that installs Online Banking on your computer with
+Docker Compose. A skill is a folder with instructions (`SKILL.md`) and a helper script. AI coding
+agents read the skill's name and description when they start, and open the full instructions when
+your request matches, for example _"Install Online Banking with Docker Compose."_ The agent then
+checks Docker, builds and starts the app, runs the verification script and tells you how to open
+it. It asks you before removing anything.
+
+- Skill: [`.agents/skills/online-banking-docker-compose/SKILL.md`](.agents/skills/online-banking-docker-compose/SKILL.md)
+- Verification script: [`.agents/skills/online-banking-docker-compose/scripts/verify-install.sh`](.agents/skills/online-banking-docker-compose/scripts/verify-install.sh)
+- Claude Code link to the same skill: [`.claude/skills/online-banking-docker-compose`](.claude/skills/online-banking-docker-compose)
+- Demo video (OpenCode with a local GPT-OSS model): see [Demo video](#demo-video) below.
+
+There is one copy of the skill. It follows the [Agent Skills](https://agentskills.io) format, which
+every agent below reads; only the way each agent finds and starts it differs.
+
+### What gets installed
+
+`docker-compose.yml` has one service, `web`. Docker builds the app with Node, then serves it with
+Nginx at **http://localhost:8080**. With no settings it runs as a standalone demo: fictional data
+kept in your browser's memory, no database, no backend and no Docker volumes. Connecting a real
+Self Service backend is optional; see [Self Service runtime configuration](#self-service-runtime-configuration-mx-453).
+
+### Prerequisites
+
+- [Git](https://git-scm.com/downloads).
+- [Docker](https://docs.docker.com/get-docker/) with the Compose plugin: `docker compose version`
+  must print a version. Docker Desktop includes it; Colima and OrbStack work too.
+- Port 8080 free on your computer.
+- Internet access for the first build (Node and Nginx images, npm packages). Node.js is not needed
+  on your computer.
+- On Windows, a shell that runs `sh` (Git Bash or WSL) for the verification script.
+
+### Install with an agent
+
+Clone the repository and start your agent inside it:
+
+```bash
+git clone https://github.com/openMF/online-banking.git   # download the code
+cd online-banking                                         # agents look for skills from here
+```
+
+Then ask: **"Install Online Banking with Docker Compose."** Each agent can also be told to use the
+skill by name, as shown below.
+
+#### 1. PI Agent
+
+Pi reads skills from `.agents/skills/` once you trust the project, because project skills can run
+commands. Trust it when Pi asks, or for one run with `--approve`:
+
+```bash
+pi --approve "Install Online Banking with Docker Compose."
+```
+
+To force the skill in an interactive session, type `/skill:online-banking-docker-compose`.
+
+#### 2. Hermes Agent
+
+Hermes reads project skills from `.agents/skills/` (and `.hermes/skills/`) only after you trust
+the repository once:
+
+```bash
+hermes skills trust      # run inside the online-banking folder
+hermes                   # then ask: Install Online Banking with Docker Compose.
+```
+
+The skill is also a slash command: `/online-banking-docker-compose`. `hermes skills untrust`
+revokes the trust. These steps follow the Hermes documentation; Hermes itself was not run against
+this skill (see [Test results](#test-results)).
+
+#### 3. Claude Code
+
+Claude Code reads project skills from `.claude/skills/`, not `.agents/skills/`. The repository
+contains `.claude/skills/online-banking-docker-compose`, a link to the shared skill, so nothing
+needs to be set up:
+
+```bash
+claude                   # then ask: Install Online Banking with Docker Compose.
+```
+
+Or type `/online-banking-docker-compose`. On Windows, git checks the link out as a small text file
+unless symlinks are enabled (`git clone -c core.symlinks=true ...`, which needs Developer Mode);
+without them, copy the `.agents/skills/online-banking-docker-compose` folder into `.claude/skills/`.
+
+#### 4. Codex
+
+Codex reads skills from `.agents/skills/`. Its sandbox blocks the network by default, and
+`docker compose up --build` also writes build state to `~/.docker`, outside the project. Allow
+both, or approve the commands when Codex asks:
+
+```bash
+codex --sandbox workspace-write -c sandbox_workspace_write.network_access=true \
+  --add-dir ~/.docker "Install Online Banking with Docker Compose."
+```
+
+To force the skill, type `$online-banking-docker-compose` or pick it from `/skills`. With a small
+local model (such as `gpt-oss:20b`), start the request with `$online-banking-docker-compose`: in
+testing, Codex didn't choose the skill by itself (see [Test results](#test-results)).
+
+#### OpenCode
+
+OpenCode (used for the demo video) also reads `.agents/skills/`; no setup is needed.
+
+### Install by hand (the same steps the skill runs)
+
+```bash
+docker compose up -d --build     # build the image and start the app in the background
+docker compose ps                # STATUS should say "Up ... (healthy)" after a few seconds
+sh .agents/skills/online-banking-docker-compose/scripts/verify-install.sh   # 4 PASS lines
+```
+
+The first build takes from under a minute to a few minutes, depending on your internet connection;
+later builds reuse Docker's cache. The verification script
+checks that the container is healthy, `/health` answers `ok`, the app page is served and
+`/runtime-config.json` is valid. It prints `All 4 checks passed` when the install works.
+
+Open **http://localhost:8080**, click **Banca en línea** (_Online banking_) and sign in with a demo
+account from [Demo Access](#demo-access), for example client number `344988355` and password
+`Mifos#26`. The `ES / EN` switch changes the language.
+
+### Logs, stopping and cleaning up
+
+```bash
+docker compose logs -f web       # follow the app's log (Ctrl+C to stop following)
+docker compose stop              # stop the app; docker compose up -d starts it again
+docker compose down              # remove the container and its network
+docker compose down --rmi local  # also remove the built online-banking image
+```
+
+The demo keeps no data in Docker, so `down` loses nothing. **Warning:** never use
+`docker system prune` or `docker volume prune` to clean up this app; they delete data that
+belongs to your other Docker projects.
+
+### Troubleshooting
+
+| Problem                                                    | What to do                                                                                                                                            |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Cannot connect to the Docker daemon`                      | Start Docker Desktop (or Colima / OrbStack) and try again                                                                                             |
+| `port is already allocated`                                | Another program uses port 8080. Stop it, or change `"8080:80"` in `docker-compose.yml` to another port such as `"8081:80"` and open that port instead |
+| `The container name "/online-banking" is already in use`   | An older copy of the app exists. Check it with `docker ps -a --filter name=online-banking`, then remove it with `docker rm -f online-banking`         |
+| Container keeps restarting; log shows `[Self Service] ...` | Your `.env` has an invalid backend setting. Fix it or delete both values, then `docker compose up -d --force-recreate web`                            |
+| Container exits with code 127                              | A shell script has Windows line endings (for example from a ZIP download). Get the code with `git clone` instead                                      |
+| The build fails while downloading                          | Network problem. Run `docker compose up -d --build` again                                                                                             |
+| The page shows an old version                              | Rebuild: `docker compose up -d --build`                                                                                                               |
+
+The skill has the full table: [SKILL.md, Troubleshooting](.agents/skills/online-banking-docker-compose/SKILL.md#troubleshooting).
+
+### Test results
+
+Tested on 2026-11-14 on a MacBook (Docker 29.2 in Colima, 4 GB VM, Compose 2.40). Each agent run
+started with no container and no `online-banking` image (Docker's build cache was kept). "Passed"
+means the verification script, run separately after the agent finished, printed 4 PASS lines.
+The local model is `gpt-oss:20b` served by Ollama 0.34.4 on the same laptop (with a 64k context).
+
+| Agent               | Model               | Prompt                                                                       | Used the skill | Passed                    |
+| ------------------- | ------------------- | ---------------------------------------------------------------------------- | -------------- | ------------------------- |
+| Claude Code 2.1.325 | hosted (default)    | _Install Online Banking with Docker Compose._                                | 1 of 1         | 1 of 1 (32 s)             |
+| PI Agent 1.5.2      | local `gpt-oss:20b` | same                                                                         | 1 of 1         | 1 of 1 (176 s)            |
+| OpenCode 2.2.5      | local `gpt-oss:20b` | same                                                                         | 2 of 2         | 2 of 2 (about 3 to 4 min) |
+| Codex 0.167.1       | local `gpt-oss:20b` | same                                                                         | 0 of 3         | 0 of 3                    |
+| Codex 0.167.1       | local `gpt-oss:20b` | _$online-banking-docker-compose Install Online Banking with Docker Compose._ | 2 of 2         | 1 of 2 (240 s)            |
+| Hermes Agent        |                     |                                                                              | not run        | not run                   |
+
+- Codex with the small local model never chose the skill on its own: it read files and wrote
+  instructions instead of running them. Naming the skill with `$online-banking-docker-compose` made
+  it follow the skill. The first such run failed because Codex's sandbox blocked Docker's build state
+  in `~/.docker` (the model then claimed success anyway; the verification script showed it wasn't
+  installed). With `--add-dir ~/.docker` the next run passed. With a larger model the plain prompt
+  may be enough; that wasn't tested.
+- Hermes Agent wasn't installed on the test machine. Its setup above follows the Hermes
+  documentation (`website/docs/user-guide/features/skills.md` in NousResearch/hermes-agent).
+- By hand: `docker compose config -q` passes; `docker compose up -d --build` from an empty state
+  passes all four checks; the verification script reports the backend settings when a valid pair is
+  set, fails with the `[Self Service] ... requires HTTPS` log when the URL uses `http://`, and exits
+  2 when the app is stopped. A browser at `http://localhost:8080` signs in to the demo with
+  `344988355` / `Mifos#26`.
+
+### Demo video
+
+A 97-second video shows OpenCode 2.2.5 with `gpt-oss:20b` running locally through Ollama, given only
+_"Install Online Banking with Docker Compose."_ The agent finds the skill, checks Docker, builds and
+starts the app and runs the verification script; then the script is run again independently and the
+app is opened in a browser. Waits are sped up; nothing else is edited. The video is attached to the
+pull request that added this section:
+[openMF/online-banking pull requests for AI-277](https://github.com/openMF/online-banking/pulls?q=is%3Apr+AI-277).
+
 ## Self Service runtime configuration (MX-453)
 
 MX-453 establishes public endpoint and tenant configuration. MX-452 consumes it for the provisional
