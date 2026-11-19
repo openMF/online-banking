@@ -138,7 +138,7 @@ account from [Demo Access](#demo-access), for example client number `344988355` 
 docker compose logs -f web       # follow the app's log (Ctrl+C to stop following)
 docker compose stop              # stop the app; docker compose up -d starts it again
 docker compose down              # remove the container and its network
-docker compose down --rmi local  # also remove the built online-banking image
+docker compose down --rmi all    # also remove the built online-banking image
 ```
 
 The demo keeps no data in Docker, so `down` loses nothing. **Warning:** never use

@@ -44,8 +44,10 @@ Then check what is already there:
 docker compose ps -a
 ```
 
-If it lists `online-banking` as running and healthy, the app is already installed: go to step 5.
-If it is stopped, `docker compose up -d` starts it again, then go to step 5.
+If the user asked to connect a Self Service backend, continue with step 3 even when the app is
+already there: step 4 then recreates the container with the new settings. Otherwise, if it lists
+`online-banking` as running and healthy, the app is already installed: go to step 5. If it is
+stopped, `docker compose up -d` starts it again, then go to step 5.
 
 Port 8080 must be free: `curl -s -m 2 -o /dev/null http://127.0.0.1:8080/` exits with code 7
 (connection refused) only when nothing listens there. If another program has the port, tell the
@@ -138,11 +140,11 @@ the troubleshooting table below.
 ```bash
 docker compose stop                 # stop the app; `docker compose up -d` starts it again
 docker compose down                 # remove the container and its network
-docker compose down --rmi local     # also remove the built online-banking image
+docker compose down --rmi all       # also remove the built online-banking image
 ```
 
 This stack has no Docker volumes, so `down` loses no saved data. Still ask the user before running
-`down --rmi local`, before `docker rm -f`, and before deleting any directory or `.env` file. Check
+`down --rmi all`, before `docker rm -f`, and before deleting any directory or `.env` file. Check
 the result with `docker compose ps -a`, which lists nothing after `down`.
 
 ## Rules
