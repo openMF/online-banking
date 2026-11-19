@@ -69,8 +69,9 @@ docker compose config | grep SELF_SERVICE_   # demo: both values are ""
 ```
 
 If either value is not `""`, show it to the user and ask whether they want that backend or the
-demo. For the demo, remove the setting with them (for example `unset SELF_SERVICE_BASE_URL
-SELF_SERVICE_TENANT_ID`, or empty both lines in `.env`), then go to step 4.
+demo. For the demo, remove the setting with them from both places it can come from: `unset
+SELF_SERVICE_BASE_URL SELF_SERVICE_TENANT_ID` for the shell, and empty both lines in the `.env`
+file. Run the check again after each change; go to step 4 only when both values are `""`.
 
 The rest of this step applies only when the user asks to connect a real Self Service backend (a
 Fineract server with the Self Service plugin). If `.env` already exists, don't overwrite it: show
