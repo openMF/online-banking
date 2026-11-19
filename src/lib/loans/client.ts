@@ -345,6 +345,7 @@ export function valuesFor(template: Template, loan?: Loan): Values {
   }
   return result;
 }
+/** Request body for a new application or, when editing, a correction. Throws LoanError("invalid") with the rejected fields. */
 export function payload(
   template: Template,
   values: Values,
@@ -389,12 +390,10 @@ export function payload(
   )
     invalid.push("repaymentsStartingFromDate");
   if (invalid.length) throw new LoanError("invalid", [...new Set(invalid)]);
+  // Fineract validates loanType on modify as well as on create, even when it is unchanged.
+  body.loanType = "individual";
   if (!editing) {
-    Object.assign(body, {
-      clientId: template.clientId,
-      productId: template.productId,
-      loanType: "individual",
-    });
+    Object.assign(body, { clientId: template.clientId, productId: template.productId });
     if (template.charges.length)
       body.charges = template.charges.map((c, i) => ({
         chargeId: c.chargeId,
