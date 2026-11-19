@@ -88,20 +88,45 @@ it("does not fabricate pending status when the server returns approved", async (
   expect(result.pending).toBe(false);
   expect(result.status.value).toBe("Approved");
 });
-it("uses PUT without customer, product, submission date or charge replacement", async () => {
+it("uses PUT with the loan type and without customer, product, submission date or charge replacement", async () => {
   const s = await ready();
   await s.client.update(await s.client.details(473), { ...s.v, principal: "1500" });
   const {
     clientId: ignoredClient,
     productId: ignoredProduct,
     submittedOnDate: ignoredDate,
-    loanType: ignoredType,
     ...expected
   } = createBody;
   expect(writes(s)[0]).toEqual([
     "loans/473",
     expect.objectContaining({ method: "PUT", body: { ...expected, principal: 1500 } }),
   ]);
+  expect(s.client.isBlocked(473)).toBe(false);
+});
+it("corrects a pending application when the server requires the loan type on PUT", async () => {
+  const s = await ready();
+  const respond = s.request.getMockImplementation()!;
+  // LoanApplicationValidator.validateForModify rejects a body without loanType.
+  s.request.mockImplementation(async (path, options) =>
+    options.method === "PUT" && !(options.body as Record<string, unknown>).loanType
+      ? {
+          status: 400,
+          ok: false,
+          data: {
+            errors: [
+              {
+                parameterName: "loanType",
+                userMessageGlobalisationCode: "validation.msg.loan.loanType.cannot.be.blank",
+              },
+            ],
+          },
+        }
+      : respond(path, options),
+  );
+  const pending = await s.client.details(473);
+  await expect(s.client.update(pending, { ...s.v, principal: "1500" })).resolves.toMatchObject({
+    id: 473,
+  });
   expect(s.client.isBlocked(473)).toBe(false);
 });
 it("withdraws with the verified command POST and required date/locale then reads withdrawn state", async () => {

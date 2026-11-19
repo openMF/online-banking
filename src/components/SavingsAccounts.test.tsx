@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { I18nProvider, LocaleToggle } from "../i18n";
 import {
@@ -14,13 +15,16 @@ beforeEach(() => localStorage.clear());
 afterEach(cleanup);
 const one = (): ClientSavings[] => [{ clientId: 9001, accounts: parseSavingsAccounts(accounts()) }];
 /** The answer is set before rendering: the list asks for it as soon as it appears. */
-function setup(listSavings: AccountsClient["listSavings"] = async () => one()) {
+function setup(
+  listSavings: AccountsClient["listSavings"] = async () => one(),
+  props: Partial<ComponentProps<typeof SavingsAccounts>> = {},
+) {
   const client = { listSavings: vi.fn(listSavings) },
     expired = vi.fn();
   const view = render(
     <I18nProvider>
       <LocaleToggle />
-      <SavingsAccounts client={client} onExpired={expired} />
+      <SavingsAccounts client={client} onExpired={expired} {...props} />
     </I18nProvider>,
   );
   return { client, expired, ...view };
@@ -193,4 +197,81 @@ it("never lets a late answer for an earlier client replace the current list", as
   await act(async () => late(one()));
   expect(screen.queryByTestId("savings-account-42")).toBeNull();
   expect(screen.getByTestId("savings-account-7")).toBeTruthy();
+});
+
+it("opens the details of a plain savings account only, and names the account it opens", async () => {
+  const open = vi.fn();
+  setup(undefined, { onOpen: open });
+  await screen.findByTestId("savings-account-42");
+  const section = screen.getByTestId("savings-accounts");
+  expect(
+    within(section)
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label")),
+  ).toEqual([
+    "Ver detalles de Synthetic Wallet, cuenta 000000042",
+    "Ver detalles de Synthetic Wallet, cuenta 000000043",
+  ]);
+  // The row reads as before: the product name is the button.
+  expect(screen.getByTestId("savings-account-42").textContent).toBe(
+    "Synthetic WalletActivaCuenta 000000042Saldo disponible1,250.50 MXN",
+  );
+  expect(within(screen.getByTestId("savings-account-57")).queryByRole("button")).toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Ver detalles de Synthetic Wallet, cuenta 000000043" }),
+  );
+  expect(open).toHaveBeenCalledWith(expect.objectContaining({ id: 43, accountNo: "000000043" }));
+  fireEvent.click(screen.getByRole("button", { name: "EN" }));
+  expect(
+    screen.getByRole("button", { name: "View details of Synthetic Wallet, account 000000042" }),
+  ).toBeTruthy();
+});
+
+it("opens nothing without a place to open it", async () => {
+  setup();
+  await screen.findByTestId("savings-account-42");
+  expect(within(screen.getByTestId("savings-accounts")).queryAllByRole("button")).toEqual([]);
+});
+
+it("gives the focus back to the account it came from once the list is read", async () => {
+  let answer!: (groups: ClientSavings[]) => void;
+  const focused = vi.fn();
+  setup(() => new Promise((resolve) => (answer = resolve)), {
+    onOpen: vi.fn(),
+    focusAccount: 43,
+    onFocused: focused,
+  });
+  expect(focused).not.toHaveBeenCalled();
+  await act(async () => answer(one()));
+  expect(document.activeElement).toBe(
+    within(screen.getByTestId("savings-account-43")).getByRole("button"),
+  );
+  expect(focused).toHaveBeenCalledOnce();
+});
+
+it("gives the focus to the list when the account is gone or the list fails", async () => {
+  for (const listSavings of [async () => one(), fail("unavailable")]) {
+    const focused = vi.fn();
+    setup(listSavings, { onOpen: vi.fn(), focusAccount: 999, onFocused: focused });
+    await waitFor(() => expect(focused).toHaveBeenCalledOnce());
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { name: "Mis cuentas de ahorro" }),
+    );
+    cleanup();
+  }
+});
+
+it("leaves the focus where the customer moved it while the list was read", async () => {
+  let answer!: (groups: ClientSavings[]) => void;
+  const focused = vi.fn();
+  setup(() => new Promise((resolve) => (answer = resolve)), {
+    onOpen: vi.fn(),
+    focusAccount: 43,
+    onFocused: focused,
+  });
+  const elsewhere = screen.getByRole("button", { name: "EN" });
+  elsewhere.focus();
+  await act(async () => answer(one()));
+  expect(document.activeElement).toBe(elsewhere);
+  expect(focused).toHaveBeenCalledOnce();
 });
