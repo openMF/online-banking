@@ -74,6 +74,16 @@ Then ask the user for both values; never invent them:
 Set both or neither. These values are visible to every browser; never put a password, API key or
 token in `.env`. Starting this backend is not part of this skill.
 
+Variables exported in your shell override `.env`. Check the values Compose will pass to the
+container:
+
+```bash
+docker compose config | grep SELF_SERVICE_
+```
+
+If they differ from the pair the user gave, show both to the user and resolve it with them (for
+example `unset SELF_SERVICE_BASE_URL SELF_SERVICE_TENANT_ID`) before step 4.
+
 ## 4. Build and start
 
 ```bash
@@ -103,12 +113,17 @@ the stack isn't running or curl is missing). Show the user the PASS/FAIL lines a
 check fails, report the failure and the log lines it prints instead of a success message, then use
 the troubleshooting table below.
 
+If the user asked for a backend, check 4 must show their `baseUrl` and `tenantId` exactly. If it
+shows other values or `null`, report that instead of success.
+
 ## 6. Tell the user how to use it
 
 - Open the address the verification script prints (**http://localhost:8080** by default) in a
   browser. The page is in Spanish by default; the language
   switch in the header changes it to English.
-- Click **Banca en línea** (_Online banking_) and sign in with a fictional demo account:
+- Click **Banca en línea** (_Online banking_). With a backend configured, this opens the customer
+  login of that server; click **Explorar demostración con datos ficticios** (_Explore demo with
+  fictional data_) first to use the demo. Sign in with a fictional demo account:
 
   | Segment             | Client number | Password   |
   | ------------------- | ------------- | ---------- |
@@ -118,7 +133,10 @@ the troubleshooting table below.
   The demo verification code is `123456`; the business second-signature code is `654321`. These
   are public test values from the README, not real credentials.
 
-- Everything stays in the browser's memory: closing the tab resets the demo. No real money moves.
+- In the demo, everything stays in the browser's memory: closing the tab resets it, and no real
+  money moves.
+- With a backend configured, the customer login signs in to that server, and transfers there are
+  real operations on it. Tell the user to connect only a test tenant with synthetic data.
 
 ## Troubleshooting
 
