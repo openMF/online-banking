@@ -123,30 +123,31 @@ export function parseSavingsAccounts(data: unknown, clientId?: number): SavingsS
   return accounts.sort((a, b) => (statusRank[a.status.id] ?? 4) - (statusRank[b.status.id] ?? 4));
 }
 
+/** One read-only GET. Every failure becomes an AccountsError, never the server's own text. */
+export async function readAccounts(
+  session: CustomerSession,
+  resource: string,
+  signal?: AbortSignal,
+  query?: Record<string, string | number>,
+) {
+  try {
+    const response = await session.request(resource, { method: "GET", signal, query });
+    if (response.status === 401) throw new AccountsError("expired");
+    if (response.status === 403 || response.status === 404) throw new AccountsError("denied");
+    if (!response.ok) throw new AccountsError("unavailable");
+    return response.data;
+  } catch (error) {
+    if (error instanceof AccountsError) throw error;
+    if (error instanceof AuthenticationError && error.code === "expired")
+      throw new AccountsError("expired");
+    throw new AccountsError(
+      error instanceof AuthenticationError && error.code === "offline" ? "offline" : "unavailable",
+    );
+  }
+}
+
 /** Read only. Lists the accounts of the clients linked to this login, never any other client. */
 export function createAccountsClient(session: CustomerSession) {
-  async function request(
-    resource: string,
-    signal?: AbortSignal,
-    query?: Record<string, string | number>,
-  ) {
-    try {
-      const response = await session.request(resource, { method: "GET", signal, query });
-      if (response.status === 401) throw new AccountsError("expired");
-      if (response.status === 403 || response.status === 404) throw new AccountsError("denied");
-      if (!response.ok) throw new AccountsError("unavailable");
-      return response.data;
-    } catch (error) {
-      if (error instanceof AccountsError) throw error;
-      if (error instanceof AuthenticationError && error.code === "expired")
-        throw new AccountsError("expired");
-      throw new AccountsError(
-        error instanceof AuthenticationError && error.code === "offline"
-          ? "offline"
-          : "unavailable",
-      );
-    }
-  }
   return {
     /** One request per linked client. Any failure fails the whole list: a partial one looks complete. */
     async listSavings(signal?: AbortSignal): Promise<ClientSavings[]> {
@@ -157,7 +158,9 @@ export function createAccountsClient(session: CustomerSession) {
         clients.map(async (clientId) => ({
           clientId,
           accounts: parseSavingsAccounts(
-            await request(`clients/${clientId}/accounts`, signal, { fields: "savingsAccounts" }),
+            await readAccounts(session, `clients/${clientId}/accounts`, signal, {
+              fields: "savingsAccounts",
+            }),
             clientId,
           ),
         })),
