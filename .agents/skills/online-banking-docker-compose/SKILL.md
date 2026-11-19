@@ -36,7 +36,11 @@ git clone https://github.com/openMF/online-banking.git
 cd online-banking
 ```
 
-If an `online-banking` directory already exists, use it; don't delete or overwrite it.
+If an `online-banking` directory already exists, don't delete or overwrite it. Use it only if its
+`docker-compose.yml` has the `web` service with `image: online-banking:latest` and the file
+`.agents/skills/online-banking-docker-compose/scripts/verify-install.sh` exists (an older
+checkout lacks it). Otherwise tell the user what is missing and ask whether to update that
+checkout (`git pull`) or clone into another directory.
 
 Then check what is already there:
 
@@ -44,8 +48,9 @@ Then check what is already there:
 docker compose ps -a
 ```
 
-If the user asked to connect a Self Service backend, continue with step 3 even when the app is
-already there: step 4 then recreates the container with the new settings. Otherwise, if it lists
+If the user asked to stop or uninstall the app, go to [Stop or uninstall](#stop-or-uninstall)
+instead; don't start it. If the user asked to connect a Self Service backend, continue with step 3
+even when the app is already there: step 4 then recreates the container with the new settings. Otherwise, if it lists
 `online-banking` as running and healthy, the app is already installed: go to step 5. If it is
 stopped, `docker compose up -d` starts it again, then go to step 5.
 
@@ -56,10 +61,20 @@ that program yourself.
 
 ## 3. Configure (usually nothing to do)
 
-The standalone demo needs no configuration and no `.env` file. Skip this step unless the user
-asks to connect a real Self Service backend (a Fineract server with the Self Service plugin).
-In that case, if `.env` already exists, don't overwrite it: show it to the user and change it only
-with their agreement. Otherwise create it from the example:
+The standalone demo needs no configuration and no `.env` file. For the demo, only check that no
+backend is set already, by a `.env` file or by a variable exported in your shell:
+
+```bash
+docker compose config | grep SELF_SERVICE_   # demo: both values are ""
+```
+
+If either value is not `""`, show it to the user and ask whether they want that backend or the
+demo. For the demo, remove the setting with them (for example `unset SELF_SERVICE_BASE_URL
+SELF_SERVICE_TENANT_ID`, or empty both lines in `.env`), then go to step 4.
+
+The rest of this step applies only when the user asks to connect a real Self Service backend (a
+Fineract server with the Self Service plugin). If `.env` already exists, don't overwrite it: show
+it to the user and change it only with their agreement. Otherwise create it from the example:
 
 ```bash
 cp -n .env.example .env   # -n: never overwrite an existing .env
@@ -113,8 +128,11 @@ the stack isn't running or curl is missing). Show the user the PASS/FAIL lines a
 check fails, report the failure and the log lines it prints instead of a success message, then use
 the troubleshooting table below.
 
-If the user asked for a backend, check 4 must show their `baseUrl` and `tenantId` exactly. If it
-shows other values or `null`, report that instead of success.
+If the user asked for a backend, check 4 must show their `tenantId` exactly and their `baseUrl` in
+normalized form: the app lowercases the host and drops a default port (`:443`) and trailing
+slashes, so `https://EXAMPLE.COM:443/v1/self/` shows as `https://example.com/v1/self`. Other values
+or `null` mean the wrong settings are active: report that instead of success. For the demo, check
+4 must show `null`.
 
 ## 6. Tell the user how to use it
 
@@ -147,7 +165,7 @@ shows other values or `null`, report that instead of success.
 | `operation not permitted` on a path under `~/.docker` (for example `~/.docker/buildx/activity`) | Your own sandbox blocks Docker's build state, not Docker itself. Don't report success. Tell the user that the agent's sandbox must allow writes to `~/.docker` (in Codex: `--add-dir ~/.docker`) or that they should approve the command to run outside the sandbox |
 | `port is already allocated` / `address already in use`                                          | Another program uses port 8080. Tell the user which one (see step 2). If they want another port, change `"8080:80"` in `docker-compose.yml` only with their permission                                                                                              |
 | `The container name "/online-banking" is already in use`                                        | Another copy of this repository (or an older run) already created the container. Show `docker ps -a --filter name=online-banking`, and ask the user before removing it with `docker rm -f online-banking`                                                           |
-| Container `Restarting` or `Exited (1)`, log shows `[Self Service] ...`                          | The `.env` settings are invalid (for example an `http://` URL or only one of the two values). Show `docker compose logs --tail=20 web`, fix `.env` with the user, then `docker compose up -d --force-recreate web`                                                  |
+| Container `Restarting` or `Exited (1)`, log shows `[Self Service] ...`                          | The settings are invalid (for example an `http://` URL or one value only). Show `docker compose logs --tail=20 web` and `docker compose config \| grep SELF_SERVICE_`; fix `.env` and shell exports with the user, then `docker compose up -d --force-recreate web` |
 | Container `Exited (127)`, log shows `not found` for a `.sh` file                                | A shell script has Windows (CRLF) line endings, for example from a ZIP download or an editor. Check with `file docker/40-self-service-config.sh`. Get the code with `git clone` instead: `.gitattributes` keeps these files LF                                      |
 | Health stays `starting` or becomes `unhealthy`                                                  | Show `docker compose logs --tail=50 web` and the output of `docker inspect --format '{{json .State.Health}}' online-banking`                                                                                                                                        |
 | The browser shows an old version after `git pull`                                               | The image wasn't rebuilt. Run `docker compose up -d --build`                                                                                                                                                                                                        |
