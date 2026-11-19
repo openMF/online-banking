@@ -11,6 +11,7 @@ import {
 } from "../lib/authentication/client";
 import { getSelfServiceConfig } from "../lib/self-service";
 import { accounts } from "../../tests/fixtures/accounts";
+import { details, movements } from "../../tests/fixtures/savingsDetails";
 import { clientId, template } from "../../tests/fixtures/savings";
 vi.mock("../lib/self-service", () => ({ getSelfServiceConfig: vi.fn() }));
 vi.mock("../lib/authentication/client", async (importOriginal) => ({
@@ -208,7 +209,8 @@ it("shows server identity and unavailable data, then clears the authenticated vi
     </I18nProvider>,
   );
   expect(screen.getByTestId("customer-username").textContent).toBe("backend-customer");
-  expect(screen.getByText("Los movimientos de tus cuentas aún no están integrados.")).toBeTruthy();
+  // The home no longer says that account movements are missing: an account opens to show them.
+  expect(document.querySelector(".demo-notice")).toBeNull();
   // Without a linked client there is nothing to ask the server.
   expect(await screen.findByText("Aún no tienes cuentas de ahorro.")).toBeTruthy();
   expect(verified.request).not.toHaveBeenCalled();
@@ -333,7 +335,13 @@ function linked() {
   request.mockImplementation(async (resource, options) => ({
     status: 200,
     ok: true,
-    data: resource.endsWith("/accounts") ? accounts() : template(Boolean(options.query?.productId)),
+    data: resource.endsWith("/accounts")
+      ? accounts()
+      : resource === "savingsaccounts/42"
+        ? details()
+        : resource.startsWith("savingsaccounts/42/transactions/")
+          ? movements()[0]
+          : template(Boolean(options.query?.productId)),
   }));
   return { ...verified, identity: { ...verified.identity, clients: [clientId] } };
 }
@@ -388,5 +396,65 @@ it("ends the session when the server says it expired while reading the accounts"
     </I18nProvider>,
   );
   await waitFor(() => expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise)));
+  expect(verified.logout).toHaveBeenCalledOnce();
+});
+
+it("opens a savings account from its row, and comes back to that row with fresh balances", async () => {
+  const verified = linked();
+  render(
+    <I18nProvider>
+      <CustomerHome session={verified} onEnd={vi.fn()} />
+    </I18nProvider>,
+  );
+  await screen.findByTestId("savings-account-42");
+  fireEvent.click(
+    screen.getByRole("button", { name: "Ver detalles de Synthetic Wallet, cuenta 000000042" }),
+  );
+  expect(screen.queryByTestId("savings-accounts")).toBeNull();
+  const heading = screen.getByRole("heading", { level: 2, name: "Synthetic Wallet" });
+  expect(document.activeElement).toBe(heading);
+  await screen.findByTestId("movement-103");
+  expect(vi.mocked(verified.request)).toHaveBeenCalledWith(
+    "savingsaccounts/42",
+    expect.objectContaining({
+      method: "GET",
+      query: { associations: "transactions", lastTransactions: 21 },
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Volver a mi sesión" }));
+  expect(screen.queryByTestId("savings-account-details")).toBeNull();
+  await screen.findByTestId("savings-account-42");
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Ver detalles de Synthetic Wallet, cuenta 000000042" }),
+    ),
+  );
+  expect(accountReads(verified)).toHaveLength(2);
+  // The next screen the customer opens and closes keeps its own focus.
+  fireEvent.click(screen.getByRole("button", { name: "Solicitar una cuenta de ahorro" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Volver a mi sesión" }));
+  await screen.findByTestId("savings-account-42");
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Solicitar una cuenta de ahorro" }),
+    ),
+  );
+});
+
+it("ends the session when the server says it expired while reading an account", async () => {
+  const verified = linked(),
+    onEnd = vi.fn();
+  render(
+    <I18nProvider>
+      <CustomerHome session={verified} onEnd={onEnd} />
+    </I18nProvider>,
+  );
+  await screen.findByTestId("savings-account-42");
+  vi.mocked(verified.request).mockResolvedValue({ status: 401, ok: false, data: {} });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Ver detalles de Synthetic Wallet, cuenta 000000042" }),
+  );
+  await waitFor(() => expect(onEnd).toHaveBeenCalledWith(true, expect.any(Promise)));
+  expect(onEnd).toHaveBeenCalledOnce();
   expect(verified.logout).toHaveBeenCalledOnce();
 });
