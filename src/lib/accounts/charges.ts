@@ -67,6 +67,9 @@ function positive(value: unknown): number {
 }
 function status(charge: Omit<SavingsCharge, "status">): ChargeStatus {
   if (!charge.active) return "inactive";
+  // Withdrawal and overdraft fees are charged at each transaction and paid as movements: they are
+  // never settled once, so a paid or owed badge would mislead. Their amounts still show.
+  if (charge.when.id === 5 || charge.when.id === 10) return "none";
   if (charge.outstanding > 0) return charge.paid > 0 ? "partial" : "pending";
   if (charge.paid > 0) return "paid";
   if (charge.waived > 0) return "waived";

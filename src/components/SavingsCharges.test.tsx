@@ -93,7 +93,8 @@ it("says what each charge is, when it applies, where it stands and what is left"
   // A percentage fee charged at each withdrawal: no amount, no status, its rate.
   expect(text(1)).toBe("Synthetic withdrawal feeEn cada retiroPorcentaje1.5%");
   expect(text(3)).toBe(
-    "Synthetic overdraft penaltyPagadoPor sobregiro · PenalizaciónMonto50.00 MXNMonto pagado50.00 MXN",
+    // Charged at each overdraft and paid as a movement: its amounts, but no badge.
+    "Synthetic overdraft penaltyPor sobregiro · PenalizaciónMonto50.00 MXNMonto pagado50.00 MXN",
   );
   expect(text(5)).toBe(
     "Synthetic waived feeCondonadoFecha específicaMonto25.00 MXNFecha de cobro15 dic 2026Monto condonado25.00 MXN",
@@ -107,7 +108,7 @@ it("says what each charge is, when it applies, where it stands and what is left"
 it("names every time a savings charge can apply, and the server's word for one it does not know", async () => {
   const times = [
     savingsCharge(1, "savingsActivation", { dueDate: undefined }),
-    savingsCharge(2, "weeklyFee"),
+    savingsCharge(2, "weeklyFee", { feeInterval: 1 }),
     savingsCharge(3, "savingsNoActivityFee"),
     savingsCharge(4, "annualFee", { feeOnMonthDay: undefined }),
     savingsCharge(5, "monthlyFee"),
@@ -119,12 +120,14 @@ it("names every time a savings charge can apply, and the server's word for one i
     savingsCharge(9, "specifiedDueDate", {
       chargeTimeType: { id: 99, code: "chargeTimeType.new", value: "Brand new" },
     }),
+    // Fineract charges a weekly fee every `feeInterval` weeks.
+    savingsCharge(10, "weeklyFee", { feeInterval: 2 }),
   ];
   setup(async () => chargesOf(times));
-  await screen.findByTestId("savings-charge-9");
+  await screen.findByTestId("savings-charge-10");
   const meta = (id: number) =>
     screen.getByTestId(`savings-charge-${id}`).querySelector(".account-item-meta")?.textContent;
-  expect([1, 2, 3, 4, 5, 6, 7, 8, 9].map(meta)).toEqual([
+  expect([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(meta)).toEqual([
     "Al activar la cuenta",
     "Cada semana",
     "Por inactividad",
@@ -134,7 +137,10 @@ it("names every time a savings charge can apply, and the server's word for one i
     "Cada 3 meses",
     "Al cerrar la cuenta",
     "Brand new",
+    "Cada 2 semanas",
   ]);
+  fireEvent.click(screen.getByRole("button", { name: "EN" }));
+  expect(meta(10)).toBe("Every 2 weeks");
 });
 
 it("shows the rate and the amount of a percentage fee once Fineract has worked it out", async () => {
@@ -259,7 +265,7 @@ it("shows every charge label in English when English is chosen", async () => {
   );
   expect(text(1)).toBe("Synthetic withdrawal feeOn each withdrawalPercentage1.5%");
   expect(text(3)).toBe(
-    "Synthetic overdraft penaltyPaidWhen the account is overdrawn · PenaltyAmount50.00 MXNAmount paid50.00 MXN",
+    "Synthetic overdraft penaltyWhen the account is overdrawn · PenaltyAmount50.00 MXNAmount paid50.00 MXN",
   );
   expect(text(5)).toBe(
     "Synthetic waived feeWaivedOn a specific dateAmount25.00 MXNDue dateDec 15, 2026Amount waived25.00 MXN",

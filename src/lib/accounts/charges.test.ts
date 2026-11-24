@@ -56,7 +56,7 @@ describe("SavingsAccountChargeData adapter", () => {
   it("names where each charge stands, a switched-off one first of all", () => {
     expect(
       Object.fromEntries(parseSavingsCharges(savingsCharges(), 42).map((c) => [c.id, c.status])),
-    ).toEqual({ 1: "none", 2: "pending", 3: "paid", 4: "partial", 5: "waived", 6: "inactive" });
+    ).toEqual({ 1: "none", 2: "pending", 3: "none", 4: "partial", 5: "waived", 6: "inactive" });
     // Paid and partly waived is paid; owed but switched off is inactive.
     expect(
       one(
@@ -68,6 +68,25 @@ describe("SavingsAccountChargeData adapter", () => {
       ).status,
     ).toBe("paid");
     expect(one(savingsCharge(8, "specifiedDueDate", { isActive: false })).status).toBe("inactive");
+  });
+  it("gives no status to fees charged at each withdrawal or overdraft, even with something owed", () => {
+    for (const time of ["withdrawalFee", "overdraftFee"] as const) {
+      for (const amounts of [
+        { amountPaid: 0, amountOutstanding: 12 },
+        { amountPaid: 30, amountOutstanding: 12 },
+        { amountPaid: 30, amountOutstanding: 0 },
+      ]) {
+        const charge = one(savingsCharge(20, time, amounts));
+        expect(charge.status, `${time} ${JSON.stringify(amounts)}`).toBe("none");
+        // The amounts themselves are kept.
+        expect(charge).toMatchObject({
+          paid: amounts.amountPaid,
+          outstanding: amounts.amountOutstanding,
+        });
+      }
+      // Switched off is still said.
+      expect(one(savingsCharge(21, time, { isActive: false })).status).toBe("inactive");
+    }
   });
   it("lists what is still owed first and switched-off charges last, keeping the server order", () => {
     expect(parseSavingsCharges(savingsCharges(), 42).map((charge) => charge.id)).toEqual([

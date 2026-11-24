@@ -103,6 +103,8 @@ export function SavingsCharges({
           : translateWith("Cada {months} meses", { months: feeInterval });
       return feeOn ? translateWith("Cada mes, el día {day}", { day: feeOn.day }) : t("Cada mes");
     }
+    if (charge.when.id === 11 && feeInterval && feeInterval > 1)
+      return translateWith("Cada {weeks} semanas", { weeks: feeInterval });
     return whenLabels[charge.when.id] ? t(whenLabels[charge.when.id]) : charge.when.value;
   };
   const row = (charge: SavingsCharge) => {

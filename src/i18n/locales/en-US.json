@@ -1006,6 +1006,7 @@
     "Cada mes, el día {day}": "Every month on day {day}",
     "Cada {months} meses": "Every {months} months",
     "Cada {months} meses, el día {day}": "Every {months} months on day {day}",
+    "Cada {weeks} semanas": "Every {weeks} weeks",
     "Penalización": "Penalty",
     "Porcentaje": "Percentage",
     "Fecha de cobro": "Due date",
