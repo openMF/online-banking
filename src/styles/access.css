@@ -974,6 +974,12 @@ body:has(dialog[open]) .network-status-region:not(.in-dialog) {
 .savings-details dt {
   color: var(--muted);
 }
+.savings-charges {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
 .savings-details-note {
   margin: 0;
   font-size: 13px;

@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { accounts } from "./fixtures/accounts";
 import { details, movements } from "./fixtures/savingsDetails";
+import { savingsCharges } from "./fixtures/savingsCharges";
 import { clientId, login, productId, template } from "./fixtures/savings";
 
 // MX-492 (US-E12-06): the whole app, screen by screen, at three widths. It FAILS on:
@@ -549,6 +550,7 @@ async function customerBackend(page: Page) {
     if (path.startsWith(`clients/${clientId}/accounts`))
       return fulfill(route, accounts());
     if (path === "savingsaccounts/42") return fulfill(route, details());
+    if (path === "savingsaccounts/42/charges") return fulfill(route, savingsCharges());
     if (path === "savingsaccounts/42/transactions/103") return fulfill(route, movements()[0]);
     return fulfill(route, {});
   });
