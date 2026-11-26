@@ -25,7 +25,12 @@ function setup(
   answerMovement: SavingsDetailsClient["movement"] = readMovement,
   account = active,
 ) {
-  const client = { details: vi.fn(answer), movement: vi.fn(answerMovement) },
+  // No charges here: SavingsCharges.test.tsx covers them.
+  const client = {
+      details: vi.fn(answer),
+      charges: vi.fn(async () => []),
+      movement: vi.fn(answerMovement),
+    },
     expired = vi.fn(),
     close = vi.fn();
   const view = render(
@@ -52,9 +57,12 @@ const pairs = (list: Element) =>
     term.nextElementSibling?.textContent,
   ]);
 const lists = () => [...section().querySelectorAll(":scope > dl")].map(pairs);
-const rows = () => within(section()).queryAllByRole("listitem");
-// Plain DOM queries: role queries over many movements are slow enough in jsdom to time out.
-const listed = () => section().querySelectorAll("li").length;
+// The movements only, not the charges. Plain DOM queries: role queries over many movements are
+// slow enough in jsdom to time out.
+const rows = () => [...section().querySelectorAll<HTMLElement>('li[data-testid^="movement-"]')];
+const listed = () => rows().length;
+/** The screen's own status line, ahead of the one in "Cargos". */
+const status = () => section().querySelector('[role="status"]')!;
 const more = () =>
   [...section().querySelectorAll("button")].find(
     (button) => button.textContent === "Mostrar más movimientos",
@@ -73,11 +81,11 @@ it("names the account at once, then shows its balance, interest, dates and movem
   expect(heading.textContent).toBe("Synthetic Wallet");
   expect(document.activeElement).toBe(heading);
   expect(section().getAttribute("aria-busy")).toBe("true");
-  expect(within(section()).getByRole("status").textContent).toBe("Consultando tu cuenta…");
+  expect(status().textContent).toBe("Consultando tu cuenta…");
   expect(client.details).toHaveBeenCalledWith(42, 21, expect.any(AbortSignal));
   await act(async () => answer(read()));
   expect(section().getAttribute("aria-busy")).toBe("false");
-  expect(within(section()).getByRole("status").textContent).toBe("");
+  expect(status().textContent).toBe("");
   expect(section().querySelector(".account-item-meta")?.textContent).toBe("Cuenta 000000042");
   expect(lists()).toEqual([
     [["Saldo disponible", "1,250.50 MXN"]],
@@ -96,7 +104,7 @@ it("names the account at once, then shows its balance, interest, dates and movem
     within(section())
       .getAllByRole("heading", { level: 3 })
       .map((title) => title.textContent),
-  ).toEqual(["Interés", "Fechas", "Movimientos"]);
+  ).toEqual(["Interés", "Fechas", "Cargos", "Movimientos"]);
   expect(rows().map((row) => row.textContent)).toEqual([
     "Retiro−250.00 MXN2 nov 2026 · Saldo 1,250.50 MXN",
     "Interés acreditado+0.50 MXN31 oct 2026 · Saldo 1,500.50 MXN",
@@ -257,7 +265,7 @@ it("reads twenty more movements at a time, keeps the listed ones meanwhile, and 
   expect(client.details).toHaveBeenLastCalledWith(42, 41, expect.any(AbortSignal));
   expect(listed()).toBe(20);
   expect(section().getAttribute("aria-busy")).toBe("true");
-  expect(within(section()).getByRole("status").textContent).toBe("Consultando más movimientos…");
+  expect(status().textContent).toBe("Consultando más movimientos…");
   // A second click while it reads asks for nothing more, and the focus stays on the button.
   fireEvent.click(more()!);
   expect(client.details).toHaveBeenCalledTimes(2);
@@ -398,6 +406,7 @@ it("shows nothing of the previous account while another one is read", async () =
   const client: SavingsDetailsClient = {
     details: (id) =>
       id === 42 ? Promise.resolve(read()) : new Promise((resolve) => (answer = resolve)),
+    charges: async () => [],
     movement: readMovement,
   };
   const view = (account: number) => (
@@ -415,7 +424,7 @@ it("shows nothing of the previous account while another one is read", async () =
   rerender(view(7));
   expect(lists()).toEqual([]);
   expect(rows()).toHaveLength(0);
-  expect(within(section()).getByRole("status").textContent).toBe("Consultando tu cuenta…");
+  expect(status().textContent).toBe("Consultando tu cuenta…");
   await act(async () =>
     answer(
       parseSavingsDetails(
@@ -441,6 +450,7 @@ it("never lets a late answer for an earlier account replace the current one", as
               [9001],
             ),
           ),
+    charges: async () => [],
     movement: readMovement,
   };
   const view = (account: number) => (

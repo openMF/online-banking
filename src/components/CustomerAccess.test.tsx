@@ -12,6 +12,7 @@ import {
 import { getSelfServiceConfig } from "../lib/self-service";
 import { accounts } from "../../tests/fixtures/accounts";
 import { details, movements } from "../../tests/fixtures/savingsDetails";
+import { savingsCharges } from "../../tests/fixtures/savingsCharges";
 import { clientId, template } from "../../tests/fixtures/savings";
 vi.mock("../lib/self-service", () => ({ getSelfServiceConfig: vi.fn() }));
 vi.mock("../lib/authentication/client", async (importOriginal) => ({
@@ -341,7 +342,9 @@ function linked() {
         ? details()
         : resource.startsWith("savingsaccounts/42/transactions/")
           ? movements()[0]
-          : template(Boolean(options.query?.productId)),
+          : resource === "savingsaccounts/42/charges"
+            ? savingsCharges()
+            : template(Boolean(options.query?.productId)),
   }));
   return { ...verified, identity: { ...verified.identity, clients: [clientId] } };
 }
@@ -421,6 +424,12 @@ it("opens a savings account from its row, and comes back to that row with fresh 
       query: { associations: "transactions", lastTransactions: 21 },
     }),
   );
+  // Its charges are read alongside, from their own path (MX-468).
+  expect(vi.mocked(verified.request)).toHaveBeenCalledWith(
+    "savingsaccounts/42/charges",
+    expect.objectContaining({ method: "GET", query: { chargeStatus: "all" } }),
+  );
+  await screen.findByTestId("savings-charge-2");
   fireEvent.click(screen.getByRole("button", { name: "Volver a mi sesión" }));
   expect(screen.queryByTestId("savings-account-details")).toBeNull();
   await screen.findByTestId("savings-account-42");

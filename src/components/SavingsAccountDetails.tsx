@@ -7,8 +7,9 @@ import type {
   SavingsDetails,
   SavingsDetailsClient,
 } from "../lib/accounts/details";
+import { formatDay, money } from "../lib/accounts/format";
+import { SavingsCharges, useSavingsCharges } from "./SavingsCharges";
 import { detailsMessages, movementMessages, savingsStatusLabels } from "../lib/accounts/messages";
-import { formatAmount } from "../lib/transfers";
 
 // The label of each SavingsAccountTransactionType id. An id that is not here shows the server's label.
 const movementLabels: Record<number, string> = {
@@ -42,8 +43,6 @@ const dateLabels: Record<keyof SavingsDetails["dates"], string> = {
 const signs: Record<Movement["direction"], string> = { in: "+", out: "−", none: "" };
 const page = 20;
 type Currency = SavingsSummary["currency"];
-const money = (value: number, currency: Currency) =>
-  `${formatAmount(value.toFixed(currency.decimalPlaces), currency.decimalPlaces)} ${currency.code}`;
 const safe = (failure: unknown) =>
   failure instanceof AccountsError ? failure : new AccountsError("unavailable");
 
@@ -57,16 +56,7 @@ function useLabels() {
       movementLabels[movement.type.id] ? t(movementLabels[movement.type.id]) : movement.type.value,
     amount: (movement: Movement, currency: Currency) =>
       `${signs[movement.direction]}${money(movement.amount, currency)}`,
-    day: (value: string) => (
-      <time dateTime={value}>
-        {new Intl.DateTimeFormat(locale, {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-          timeZone: "UTC",
-        }).format(new Date(`${value}T00:00:00Z`))}
-      </time>
-    ),
+    day: (value: string) => <time dateTime={value}>{formatDay(value, locale)}</time>,
   };
 }
 
@@ -104,6 +94,8 @@ export function SavingsAccountDetails({
   const listed = current?.listed ?? 0;
   const loading = !details && !error;
   const loadingMore = !!details && listed < wanted;
+  // Read alongside the account, and shown only with it.
+  const charges = useSavingsCharges(client, account.id, onExpired);
   useEffect(() => {
     heading.current?.focus();
   }, []);
@@ -239,6 +231,7 @@ export function SavingsAccountDetails({
               </dl>
             </>
           )}
+          <SavingsCharges charges={charges.charges} error={charges.error} onRetry={charges.retry} />
           <h3>{t("Movimientos")}</h3>
           {/* The plugin leaves some out: reversed ones, and deposits or withdrawals without payment details. */}
           <p className="savings-details-note">

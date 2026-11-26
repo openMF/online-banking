@@ -2,21 +2,25 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { accounts } from "./fixtures/accounts";
 import { login } from "./fixtures/savings";
+import { savingsCharges } from "./fixtures/savingsCharges";
 import { details, manyMovements, movement, movements } from "./fixtures/savingsDetails";
 
-// US-E04-02 (MX-467): one savings account of the signed-in customer and its movements, against a
-// faked backend.
+// US-E04-02 (MX-467): one savings account of the signed-in customer and its movements, and
+// US-E04-03 (MX-468): its charges, against a faked backend.
 const baseUrl = "https://mx467-bank.invalid/fineract-provider/api/v1/self";
 type State = {
   /** While set, the account read is answered with this status. */
   status?: number;
+  /** While set, the charges read is answered with this status. */
+  chargesStatus?: number;
   /** The movements of the account, when not the usual three. */
   transactions?: unknown[];
   listReads: number;
   reads: { url: URL; headers: Record<string, string> }[];
+  chargeReads: { url: URL; headers: Record<string, string> }[];
 };
 async function configure(page: Page, options: Partial<State> = {}): Promise<State> {
-  const state: State = { listReads: 0, reads: [], ...options };
+  const state: State = { listReads: 0, reads: [], chargeReads: [], ...options };
   const fulfill = (route: Route, data: unknown, status = 200) =>
     route.fulfill({ status, contentType: "application/json", body: JSON.stringify(data) });
   await page.route("**/runtime-config.json", (route) =>
@@ -31,6 +35,14 @@ async function configure(page: Page, options: Partial<State> = {}): Promise<Stat
     if (path === `clients/${login.clients[0]}/accounts`) {
       state.listReads += 1;
       return fulfill(route, accounts());
+    }
+    const charges = /^savingsaccounts\/(\d+)\/charges$/.exec(path);
+    if (charges) {
+      expect(request.method()).toBe("GET");
+      state.chargeReads.push({ url, headers: request.headers() });
+      if (state.chargesStatus)
+        return fulfill(route, { developerMessage: "SECRET_INTERNAL_STACK" }, state.chargesStatus);
+      return fulfill(route, savingsCharges(Number(charges[1])));
     }
     const read = /^savingsaccounts\/(\d+)(?:\/transactions\/(\d+))?$/.exec(path);
     if (read) {
@@ -71,7 +83,9 @@ async function signIn(page: Page, english = false) {
 const open = (page: Page, account = "000000042") =>
   page.getByRole("button", { name: `Ver detalles de Synthetic Wallet, cuenta ${account}` }).click();
 const screen = (page: Page) => page.getByTestId("savings-account-details");
-const rows = (page: Page) => screen(page).getByRole("listitem");
+// The movements only, not the charges.
+const rows = (page: Page) => screen(page).locator('li[data-testid^="movement-"]');
+const charges = (page: Page) => page.getByTestId("savings-charges");
 
 test("opens an account from its row with the session's credential, and lists its movements", async ({
   page,
@@ -204,6 +218,46 @@ test("an expired session ends instead of showing the account", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Acceso verificado" })).toHaveCount(0);
 });
 
+test("reads the account's charges with the session's credential, still owed first", async ({
+  page,
+}) => {
+  const state = await configure(page);
+  await signIn(page);
+  await open(page);
+  await expect(charges(page).getByRole("listitem")).toHaveCount(6);
+  await expect(charges(page).getByRole("listitem").first()).toHaveText(
+    "Synthetic annual feePendienteCada año, el 15 de eneroMonto100.00 MXNPróximo cobro15 ene 2027Monto pendiente100.00 MXN",
+  );
+  await expect(page.getByTestId("savings-charge-1")).toHaveText(
+    "Synthetic withdrawal feeEn cada retiroPorcentaje1.5%",
+  );
+  expect(state.chargeReads.length).toBeGreaterThanOrEqual(1);
+  for (const read of state.chargeReads) {
+    expect(read.url.pathname.endsWith("/self/savingsaccounts/42/charges")).toBe(true);
+    expect(read.url.searchParams.get("chargeStatus")).toBe("all");
+    expect(read.headers.authorization).toBe(`Basic ${login.base64EncodedAuthenticationKey}`);
+    expect(read.headers["fineract-platform-tenantid"]).toBe("mx467-synthetic");
+  }
+});
+
+test("a charges failure stays in its own section, and trying again shows them", async ({
+  page,
+}) => {
+  const state = await configure(page, { chargesStatus: 500 });
+  await signIn(page);
+  await open(page);
+  await expect(charges(page).getByRole("alert")).toHaveText(
+    "No pudimos consultar los cargos de esta cuenta. Intenta la consulta de nuevo.",
+  );
+  await expect(page.locator("body")).not.toContainText("SECRET_INTERNAL_STACK");
+  // The account and its movements still show.
+  await expect(rows(page)).toHaveCount(3);
+  state.chargesStatus = undefined;
+  await charges(page).getByRole("button", { name: "Reintentar", exact: true }).click();
+  await expect(charges(page).getByRole("listitem")).toHaveCount(6);
+  await expect(charges(page).getByRole("alert")).toHaveCount(0);
+});
+
 test("English renders on desktop and mobile without overflow, accessibility or runtime errors", async ({
   page,
 }) => {
@@ -224,10 +278,14 @@ test("English renders on desktop and mobile without overflow, accessibility or r
   await expect(screen(page).getByRole("heading", { level: 3 })).toHaveText([
     "Interest",
     "Dates",
+    "Charges",
     "Transactions",
   ]);
   await expect(screen(page)).toContainText(
     "Some transactions, such as reversed ones, may not be shown here.",
+  );
+  await expect(page.getByTestId("savings-charge-2")).toHaveText(
+    "Synthetic annual feePendingEvery year on January 15Amount100.00 MXNNext chargeJan 15, 2027Amount outstanding100.00 MXN",
   );
   for (const [name, viewport] of [
     ["desktop", { width: 1440, height: 1000 }],

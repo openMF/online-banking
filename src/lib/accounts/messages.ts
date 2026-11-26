@@ -14,6 +14,10 @@ export const movementMessages: Record<AccountsFailure, string> = {
   ...accountsMessages,
   unavailable: "No pudimos consultar este movimiento. Intenta la consulta de nuevo.",
 };
+export const chargesMessages: Record<AccountsFailure, string> = {
+  ...accountsMessages,
+  unavailable: "No pudimos consultar los cargos de esta cuenta. Intenta la consulta de nuevo.",
+};
 // The label of each SavingsAccountStatusType id. An id that is not here shows the server's label.
 export const savingsStatusLabels: Record<number, string> = {
   100: "Pendiente de aprobación",

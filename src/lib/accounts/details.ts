@@ -1,6 +1,8 @@
 import type { CustomerSession } from "../authentication/client";
-import { positiveId, record, validDate } from "../savings/client";
+import { positiveId, record } from "../savings/client";
+import { parseSavingsCharges, type SavingsCharge } from "./charges";
 import { AccountsError, parseSavingsAccount, readAccounts, type SavingsSummary } from "./client";
+import { amount, day, finite, malformed, text } from "./parse";
 
 /** Which way a movement moves the money: into the account, out of it, or neither. */
 export type Direction = "in" | "out" | "none";
@@ -32,25 +34,6 @@ export interface SavingsDetails extends Omit<SavingsSummary, "depositType" | "av
   movements: Movement[];
 }
 
-const text = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
-const malformed = (): never => {
-  throw new AccountsError("malformed");
-};
-const finite = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value);
-// Fineract sends a zero amount as null.
-const amount = (value: unknown): number =>
-  value == null ? 0 : finite(value) ? value : malformed();
-/** A Fineract `[y, m, d]` date as `yyyy-MM-dd`, or undefined when there is none. */
-function day(value: unknown): string | undefined {
-  if (value == null) return undefined;
-  if (!Array.isArray(value) || value.length !== 3 || !value.every(Number.isInteger))
-    return malformed();
-  const [year, month, date] = value as number[];
-  const result = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
-  return validDate(result) ? result : malformed();
-}
 // SavingsAccountTransactionType: the code Fineract pairs with each id, and its TransactionEntryType.
 const movementTypes: Record<number, [code: string, direction: Direction]> = {
   1: ["deposit", "in"],
@@ -185,6 +168,16 @@ export function createSavingsDetailsClient(session: CustomerSession) {
         }),
         accountId,
         session.identity.clients,
+      );
+    },
+    /** Every charge of the account, active or not (`chargeStatus=all`). */
+    async charges(accountId: number, signal?: AbortSignal): Promise<SavingsCharge[]> {
+      if (!positiveId(accountId)) throw new AccountsError("denied");
+      return parseSavingsCharges(
+        await readAccounts(session, `savingsaccounts/${accountId}/charges`, signal, {
+          chargeStatus: "all",
+        }),
+        accountId,
       );
     },
     /** How the money of one movement moved: payment method, receipt and note. */
